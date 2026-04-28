@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db/client";
 import {
   creatorReviewFieldLabels,
 } from "@/lib/studio/creator-review";
+import { buildBuildToReviewHandover } from "@/lib/studio/build-review-handover";
 import {
   getCourseStatusLabel,
   getEditableCourseVersion,
@@ -112,6 +113,10 @@ export default async function CreatorReviewPage({
       ),
     0,
   );
+  const handover = buildBuildToReviewHandover({
+    courseTitle: editable.course.title,
+    version: editable.version,
+  });
 
   return (
     <WorkspaceShell eyebrow="Creator Review" title={editable.course.title}>
@@ -134,6 +139,12 @@ export default async function CreatorReviewPage({
         <p className="workspace-error">
           Complete the required Creator Review checks:{" "}
           {missingFields.join(", ")}.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.error === "handover" ? (
+        <p className="workspace-error">
+          Resolve the blocking Build-to-Review handover warnings before
+          submitting this course for formal review.
         </p>
       ) : null}
 
@@ -161,6 +172,68 @@ export default async function CreatorReviewPage({
         </div>
       </section>
 
+      <section className="studio-section" aria-labelledby="handover-title">
+        <h2 id="handover-title">Build-to-Review Handover</h2>
+        <p>
+          This evidence package is what reviewers will use to understand what
+          was built, what was added, and what needs attention before publishing
+          can be considered.
+        </p>
+        <div className="context-grid">
+          <article>
+            <strong>Required blocks</strong>
+            <span>{handover.summary.requiredBlockCount}</span>
+          </article>
+          <article>
+            <strong>Creator-added blocks</strong>
+            <span>{handover.summary.creatorAddedBlockCount}</span>
+          </article>
+          <article>
+            <strong>Final test</strong>
+            <span>{handover.finalTest.ready ? "Ready" : "Not ready"}</span>
+          </article>
+          <article>
+            <strong>Certificate rule</strong>
+            <span>{handover.certificateRule}</span>
+          </article>
+          <article>
+            <strong>AI review</strong>
+            <span>{handover.aiReview.status}</span>
+          </article>
+          <article>
+            <strong>Preview</strong>
+            <span>{handover.preview.status}</span>
+          </article>
+        </div>
+        {handover.blockingWarnings.length > 0 ? (
+          <div className="workspace-error">
+            <strong>Blocking warnings</strong>
+            <ul>
+              {handover.blockingWarnings.map((warning) => (
+                <li key={`${warning.code}-${warning.message}`}>
+                  {warning.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p className="workspace-note">
+            No blocking handover warnings. This course can move to formal
+            review after Creator Review is complete.
+          </p>
+        )}
+        {handover.reviewerAttentionItems.length > 0 ? (
+          <div className="next-step-panel">
+            <h3>Reviewer attention items</h3>
+            <ul>
+              {handover.reviewerAttentionItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
+
       {creatorReviewStatus === WorkflowStepStatus.COMPLETE ? (
         <div className="next-step-panel">
           <h2>Next step: Submit for Review</h2>
@@ -168,6 +241,11 @@ export default async function CreatorReviewPage({
             <p>
               This course has been submitted and is waiting in the reviewer
               queue.
+            </p>
+          ) : handover.blockingWarnings.length > 0 ? (
+            <p>
+              Submission is blocked until the Build-to-Review handover warnings
+              are resolved.
             </p>
           ) : (
             <>

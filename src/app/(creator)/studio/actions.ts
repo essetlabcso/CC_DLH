@@ -47,6 +47,11 @@ import {
   parseBuildCompletionChecksFormData,
   summarizeBuildCompletionChecks,
 } from "@/lib/studio/build-checks";
+import {
+  buildBuildToReviewHandover,
+  canSubmitBuildToReviewHandover,
+  mergeBuildToReviewHandoverChecklist,
+} from "@/lib/studio/build-review-handover";
 import { parseCourseCapacityMapFormData } from "@/lib/studio/capacity-map";
 import { parseCourseSetupFormData } from "@/lib/studio/course-setup";
 import { buildInitialWorkflowStepRecords } from "@/lib/studio/course-workflow-records";
@@ -2167,6 +2172,22 @@ export async function completeCreatorReviewAction(
   const decisionNotes = editable.version.sourceVersionId
     ? "Creator-side quality review complete for this revision. Ready for formal review submission."
     : "Creator-side quality review complete. Ready for submit-for-review step.";
+  const creatorReviewChecklist = buildCreatorReviewChecklist(result.value);
+  const handover = buildBuildToReviewHandover(
+    {
+      courseTitle: editable.course.title,
+      version: editable.version,
+    },
+    {
+      workflowStatusOverrides: {
+        [CourseWorkflowStep.CREATOR_REVIEW]: WorkflowStepStatus.COMPLETE,
+      },
+    },
+  );
+  const checklist = mergeBuildToReviewHandoverChecklist(
+    creatorReviewChecklist,
+    handover,
+  );
 
   await prisma.$transaction([
     prisma.courseVersion.update({
@@ -2182,12 +2203,12 @@ export async function completeCreatorReviewAction(
         courseVersionId: editable.version.id,
       },
       update: {
-        checklist: buildCreatorReviewChecklist(result.value),
+        checklist,
         decisionNotes,
       },
       create: {
         courseVersionId: editable.version.id,
-        checklist: buildCreatorReviewChecklist(result.value),
+        checklist,
         decisionNotes,
       },
     }),
@@ -2259,6 +2280,27 @@ export async function submitCourseForReviewAction(courseId: string) {
     redirect(`/studio/courses/${courseId}/creator-review`);
   }
 
+  const handover = buildBuildToReviewHandover({
+    courseTitle: editable.course.title,
+    version: editable.version,
+  });
+
+  if (!canSubmitBuildToReviewHandover(handover)) {
+    redirect(
+      `/studio/courses/${courseId}/creator-review?error=handover&fields=${encodeURIComponent(
+        handover.blockingWarnings.map((warning) => warning.code).join(","),
+      )}`,
+    );
+  }
+
+  const existingReviewRecord = await prisma.courseReviewRecord.findUnique({
+    where: {
+      courseVersionId: editable.version.id,
+    },
+    select: {
+      checklist: true,
+    },
+  });
   const submittedAt = new Date();
   const isRevisionSubmission = Boolean(editable.version.sourceVersionId);
   const decisionNotes = isRevisionSubmission
@@ -2291,10 +2333,15 @@ export async function submitCourseForReviewAction(courseId: string) {
         courseVersionId: editable.version.id,
       },
       update: {
+        checklist: mergeBuildToReviewHandoverChecklist(
+          existingReviewRecord?.checklist,
+          handover,
+        ),
         decisionNotes,
       },
       create: {
         courseVersionId: editable.version.id,
+        checklist: mergeBuildToReviewHandoverChecklist(null, handover),
         decisionNotes,
       },
     }),

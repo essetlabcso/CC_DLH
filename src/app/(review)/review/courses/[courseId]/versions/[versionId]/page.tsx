@@ -23,6 +23,7 @@ import {
   getReviewQueueStatusLabel,
   getReviewVersionTypeLabel,
 } from "@/lib/review/queue";
+import { getBuildToReviewHandoverFromChecklist } from "@/lib/studio/build-review-handover";
 
 type SubmittedVersionReviewPageProps = {
   params?: Promise<{
@@ -100,6 +101,9 @@ export default async function SubmittedVersionReviewPage({
     "return",
     reviewerReturnFieldLabels,
   );
+  const handover = getBuildToReviewHandoverFromChecklist(
+    version.reviewRecord?.checklist,
+  );
 
   return (
     <WorkspaceShell
@@ -154,6 +158,110 @@ export default async function SubmittedVersionReviewPage({
           {returnMissingFields.join(", ")}.
         </p>
       ) : null}
+
+      <section className="studio-section" aria-labelledby="handover-title">
+        <h2 id="handover-title">Build-to-Review Handover</h2>
+        {handover ? (
+          <>
+            <div className="context-grid">
+              <article>
+                <strong>Required blocks</strong>
+                <span>{handover.summary.requiredBlockCount}</span>
+              </article>
+              <article>
+                <strong>Creator-added blocks</strong>
+                <span>{handover.summary.creatorAddedBlockCount}</span>
+              </article>
+              <article>
+                <strong>Final test</strong>
+                <span>{handover.finalTest.ready ? "Ready" : "Not ready"}</span>
+              </article>
+              <article>
+                <strong>Certificate rule</strong>
+                <span>{handover.certificateRule}</span>
+              </article>
+              <article>
+                <strong>AI review</strong>
+                <span>{handover.aiReview.status}</span>
+              </article>
+              <article>
+                <strong>Accessibility</strong>
+                <span>{handover.accessibility.status}</span>
+              </article>
+              <article>
+                <strong>Safeguarding</strong>
+                <span>{handover.safeguarding.status}</span>
+              </article>
+              <article>
+                <strong>Preview</strong>
+                <span>{handover.preview.status}</span>
+              </article>
+            </div>
+            {handover.blockingWarnings.length > 0 ? (
+              <div className="workspace-error">
+                <strong>Blocking warnings</strong>
+                <ul>
+                  {handover.blockingWarnings.map((warning) => (
+                    <li key={`${warning.code}-${warning.message}`}>
+                      {warning.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="workspace-note">
+                No blocking handover warnings were recorded at submission.
+              </p>
+            )}
+            {handover.reviewerAttentionItems.length > 0 ? (
+              <div className="next-step-panel">
+                <h3>Reviewer attention items</h3>
+                <ul>
+                  {handover.reviewerAttentionItems.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            <div className="decision-grid">
+              <article>
+                <h3>Required Storyboard blocks</h3>
+                {handover.requiredBlocks.length > 0 ? (
+                  <ul>
+                    {handover.requiredBlocks.map((block) => (
+                      <li key={block.id}>
+                        {block.title} · {block.type} · {block.purposeLink}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No required blocks recorded.</p>
+                )}
+              </article>
+              <article>
+                <h3>Creator-added blocks</h3>
+                {handover.creatorAddedBlocks.length > 0 ? (
+                  <ul>
+                    {handover.creatorAddedBlocks.map((block) => (
+                      <li key={block.id}>
+                        {block.title} · {block.type} ·{" "}
+                        {block.justification || "No justification"} ·{" "}
+                        {block.purposeLink || "No purpose link"}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No creator-added blocks recorded.</p>
+                )}
+              </article>
+            </div>
+          </>
+        ) : (
+          <p className="workspace-error">
+            Build-to-Review handover evidence was not found in this submission.
+          </p>
+        )}
+      </section>
 
       <section className="studio-section" aria-labelledby="review-preview-title">
         <h2 id="review-preview-title">Runtime preview</h2>

@@ -10,6 +10,10 @@ import {
   getReviewQueueStatusLabel,
   getReviewVersionTypeLabel,
 } from "@/lib/review/queue";
+import {
+  getBuildToReviewHandoverFromChecklist,
+  summarizeBuildToReviewHandover,
+} from "@/lib/studio/build-review-handover";
 
 type ReviewQueuePageProps = {
   searchParams?: Promise<{
@@ -69,29 +73,43 @@ export default async function ReviewQueuePage({
 
       {submittedVersions.length > 0 ? (
         <div className="course-list course-list-spacious">
-          {submittedVersions.map((version) => (
-            <article className="course-row" key={version.id}>
-              <div>
-                <h2>{version.course.title}</h2>
-                <p>
-                  {getReviewQueueStatusLabel(version.status)} ·{" "}
-                  {getReviewVersionTypeLabel(version)} · Version{" "}
-                  {version.versionNumber} · Submitted{" "}
-                  {formatSubmittedDate(version.submittedAt)} · Creator{" "}
-                  {version.createdBy.name} ·{" "}
-                  {countReviewBlocks(version.modules)} blocks
-                </p>
-                {version.reviewRecord?.decisionNotes ? (
-                  <p>{version.reviewRecord.decisionNotes}</p>
-                ) : null}
-              </div>
-              <Link
-                href={`/review/courses/${version.course.id}/versions/${version.id}`}
-              >
-                Open review
-              </Link>
-            </article>
-          ))}
+          {submittedVersions.map((version) => {
+            const handover = getBuildToReviewHandoverFromChecklist(
+              version.reviewRecord?.checklist,
+            );
+
+            return (
+              <article className="course-row" key={version.id}>
+                <div>
+                  <h2>{version.course.title}</h2>
+                  <p>
+                    {getReviewQueueStatusLabel(version.status)} ·{" "}
+                    {getReviewVersionTypeLabel(version)} · Version{" "}
+                    {version.versionNumber} · Submitted{" "}
+                    {formatSubmittedDate(version.submittedAt)} · Creator{" "}
+                    {version.createdBy.name} ·{" "}
+                    {countReviewBlocks(version.modules)} blocks
+                  </p>
+                  <p>{summarizeBuildToReviewHandover(handover)}</p>
+                  {handover ? (
+                    <p>
+                      Final test{" "}
+                      {handover.finalTest.ready ? "ready" : "not ready"} · AI{" "}
+                      {handover.aiReview.status} · {handover.certificateRule}
+                    </p>
+                  ) : null}
+                  {version.reviewRecord?.decisionNotes ? (
+                    <p>{version.reviewRecord.decisionNotes}</p>
+                  ) : null}
+                </div>
+                <Link
+                  href={`/review/courses/${version.course.id}/versions/${version.id}`}
+                >
+                  Open review
+                </Link>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <div className="empty-state studio-section">
