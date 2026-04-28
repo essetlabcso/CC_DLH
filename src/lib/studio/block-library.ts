@@ -1,5 +1,7 @@
 import { LessonBlockType } from "@prisma/client";
 
+import type { BuildStudioBlockContent } from "@/lib/studio/build-studio";
+
 export const creatorBlockOrigins = ["DESIGN_REQUIRED", "CREATOR_ADDED"] as const;
 
 export type CreatorBlockOrigin = (typeof creatorBlockOrigins)[number];
@@ -77,10 +79,10 @@ export const creatorAddedBlockFieldLabels: Record<string, string> = {
 
 export const blockLibrary: readonly BlockLibraryCategory[] = [
   {
-    label: "Structure and Navigation",
+    label: "Structure",
     subcategories: [
       {
-        label: "Lesson flow",
+        label: "Lesson flow and orientation",
         items: [
           libraryItem(
             "section-header",
@@ -94,15 +96,21 @@ export const blockLibrary: readonly BlockLibraryCategory[] = [
             LessonBlockType.CALLOUT,
             "Orient learners to where they are in the lesson flow.",
           ),
+          libraryItem(
+            "next-step",
+            "Next-step instruction",
+            LessonBlockType.CALLOUT,
+            "Help learners understand what to do next in the course flow.",
+          ),
         ],
       },
     ],
   },
   {
-    label: "Text and Explanation",
+    label: "Explain",
     subcategories: [
       {
-        label: "Plain-language support",
+        label: "Plain-language guidance",
         items: [
           libraryItem(
             "short-explainer",
@@ -116,15 +124,21 @@ export const blockLibrary: readonly BlockLibraryCategory[] = [
             LessonBlockType.CALLOUT,
             "Highlight one concept that supports practice or assessment.",
           ),
+          libraryItem(
+            "worked-example",
+            "Worked example",
+            LessonBlockType.TEXT,
+            "Show how the approved learner action looks in a realistic CSO context.",
+          ),
         ],
       },
     ],
   },
   {
-    label: "Practice and Scenario",
+    label: "Practice",
     subcategories: [
       {
-        label: "Applied practice",
+        label: "Applied practice tasks",
         items: [
           libraryItem(
             "guided-practice",
@@ -143,10 +157,54 @@ export const blockLibrary: readonly BlockLibraryCategory[] = [
     ],
   },
   {
-    label: "Assessment and Resources",
+    label: "Decide",
     subcategories: [
       {
-        label: "Checks and reusable aids",
+        label: "Decision support",
+        items: [
+          libraryItem(
+            "decision-point",
+            "Decision point",
+            LessonBlockType.SCENARIO,
+            "Ask learners to choose between realistic options linked to the approved action.",
+          ),
+          libraryItem(
+            "branching-scenario",
+            "Branching scenario",
+            LessonBlockType.SCENARIO,
+            "Practice a consequence-aware decision without changing the approved course scope.",
+          ),
+        ],
+      },
+    ],
+  },
+  {
+    label: "Reflect",
+    subcategories: [
+      {
+        label: "Context reflection",
+        items: [
+          libraryItem(
+            "context-reflection",
+            "Context reflection",
+            LessonBlockType.REFLECTION,
+            "Help learners compare the approved practice with their own CSO setting.",
+          ),
+          libraryItem(
+            "commitment-note",
+            "Commitment note",
+            LessonBlockType.REFLECTION,
+            "Prompt learners to identify one realistic next step after the lesson.",
+          ),
+        ],
+      },
+    ],
+  },
+  {
+    label: "Check",
+    subcategories: [
+      {
+        label: "Knowledge and readiness checks",
         items: [
           libraryItem(
             "knowledge-check",
@@ -155,20 +213,64 @@ export const blockLibrary: readonly BlockLibraryCategory[] = [
             "Check readiness for the approved learner action.",
           ),
           libraryItem(
-            "job-aid",
-            "Job aid",
-            LessonBlockType.CALLOUT,
-            "Provide a reusable field reference or checklist.",
+            "quick-check",
+            "Quick check",
+            LessonBlockType.CHECK,
+            "Confirm one essential idea before the learner continues.",
           ),
         ],
       },
     ],
   },
   {
-    label: "Accessibility and Safety",
+    label: "Apply",
     subcategories: [
       {
-        label: "Learner protection",
+        label: "Reusable field support",
+        items: [
+          libraryItem(
+            "job-aid",
+            "Job aid",
+            LessonBlockType.CALLOUT,
+            "Provide a reusable field reference or checklist.",
+          ),
+          libraryItem(
+            "template-task",
+            "Template task",
+            LessonBlockType.TEXT,
+            "Guide learners to complete a simple template linked to the approved action.",
+          ),
+        ],
+      },
+    ],
+  },
+  {
+    label: "Safeguard",
+    subcategories: [
+      {
+        label: "Safety and sensitive context",
+        items: [
+          libraryItem(
+            "safety-note",
+            "Safety note",
+            LessonBlockType.CALLOUT,
+            "Add a safeguarding, civic-space, or data safety reminder.",
+          ),
+          libraryItem(
+            "data-safety-note",
+            "Data safety note",
+            LessonBlockType.CALLOUT,
+            "Remind learners how to avoid exposing sensitive personal or organizational data.",
+          ),
+        ],
+      },
+    ],
+  },
+  {
+    label: "Access",
+    subcategories: [
+      {
+        label: "Accessibility and low-bandwidth support",
         items: [
           libraryItem(
             "accessibility-note",
@@ -177,10 +279,10 @@ export const blockLibrary: readonly BlockLibraryCategory[] = [
             "Add an equivalent low-bandwidth or accessible support note.",
           ),
           libraryItem(
-            "safety-note",
-            "Safety note",
-            LessonBlockType.CALLOUT,
-            "Add a safeguarding, civic-space, or data safety reminder.",
+            "plain-language-note",
+            "Plain-language note",
+            LessonBlockType.TEXT,
+            "Simplify a difficult term or step without changing the approved meaning.",
           ),
         ],
       },
@@ -236,7 +338,7 @@ export function buildCreatorAddedBlockContent(input: {
   libraryItem: BlockLibraryItem;
   justificationLabel: string;
   purposeLink: string;
-}) {
+}): BuildStudioBlockContent {
   return {
     title: input.title,
     purpose: input.libraryItem.purpose,
@@ -247,6 +349,11 @@ export function buildCreatorAddedBlockContent(input: {
     ].join("\n\n"),
     linkedLearnerAction: input.purposeLink,
     sourceStoryboardField: "creator-added block library",
+    accessibilityNote: "",
+    safeguardingNote: "",
+    aiReviewStatus: "not-used",
+    aiReviewNote: "",
+    reviewReadinessNote: "Creator-added block must remain aligned to the approved Design Handover.",
   };
 }
 

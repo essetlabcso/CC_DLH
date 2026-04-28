@@ -43,11 +43,17 @@ describe("Build Studio block generation", () => {
         title: "Check the decision",
         prompt: "Which pathway is safest?",
         choices: ["A", "B"],
+        safeguardingNote: "Avoid naming sensitive cases.",
+        aiReviewStatus: "human-reviewed",
+        aiReviewNote: "Creator reviewed the draft.",
       }),
     );
 
     expect(content.title).toBe("Check the decision");
     expect(content.choices).toEqual(["A", "B"]);
+    expect(content.safeguardingNote).toBe("Avoid naming sensitive cases.");
+    expect(content.aiReviewStatus).toBe("human-reviewed");
+    expect(content.aiReviewNote).toBe("Creator reviewed the draft.");
     expect(parseBuildBlockContent("{broken").title).toBe("");
   });
 
@@ -68,6 +74,10 @@ describe("Build Studio block generation", () => {
     formData.set("purpose", "Practice the approved reporting action");
     formData.set("body", "A new field scenario");
     formData.set("prompt", "What should the focal person do first?");
+    formData.set("safeguardingNote", "Use fictionalized case details.");
+    formData.set("aiReviewStatus", "human-review-pending");
+    formData.set("aiReviewNote", "Draft needs SME review.");
+    formData.set("reviewReadinessNote", "Reviewer should check realism.");
     const result = parseBuildBlockEditFormData(formData);
 
     expect(result.ok).toBe(true);
@@ -99,6 +109,10 @@ describe("Build Studio block generation", () => {
       "learning flow and planned interaction",
     );
     expect(merged.choices).toEqual(["A", "B"]);
+    expect(merged.safeguardingNote).toBe("Use fictionalized case details.");
+    expect(merged.aiReviewStatus).toBe("human-review-pending");
+    expect(merged.aiReviewNote).toBe("Draft needs SME review.");
+    expect(merged.reviewReadinessNote).toBe("Reviewer should check realism.");
   });
 
   it("finds the neighboring block when moving within a lesson", () => {

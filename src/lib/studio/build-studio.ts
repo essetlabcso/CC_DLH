@@ -20,7 +20,25 @@ export type BuildStudioBlockContent = {
   linkedLearnerAction?: string;
   sourceStoryboardField?: string;
   accessibilityNote?: string;
+  safeguardingNote?: string;
   aiHandoffNote?: string;
+  aiReviewStatus?: BuildAiReviewStatus;
+  aiReviewNote?: string;
+  reviewReadinessNote?: string;
+};
+
+export const buildAiReviewStatuses = [
+  "not-used",
+  "human-review-pending",
+  "human-reviewed",
+] as const;
+
+export type BuildAiReviewStatus = (typeof buildAiReviewStatuses)[number];
+
+export const buildAiReviewStatusLabels: Record<BuildAiReviewStatus, string> = {
+  "not-used": "AI not used",
+  "human-review-pending": "AI draft requires human review",
+  "human-reviewed": "AI draft human-reviewed",
 };
 
 export type FinalTestAuthoringInput = {
@@ -42,6 +60,10 @@ export type BuildBlockEditInput = {
   prompt?: string;
   feedback?: string;
   accessibilityNote?: string;
+  safeguardingNote?: string;
+  aiReviewStatus: BuildAiReviewStatus;
+  aiReviewNote?: string;
+  reviewReadinessNote?: string;
 };
 
 export type BuildBlockMoveDirection = "up" | "down";
@@ -49,6 +71,7 @@ export type BuildBlockMoveDirection = "up" | "down";
 export const buildBlockEditFieldLabels: Record<string, string> = {
   title: "Block title",
   purpose: "Purpose",
+  aiReviewStatus: "AI review status",
 };
 
 export const finalTestAuthoringFieldLabels: Record<string, string> = {
@@ -107,8 +130,18 @@ export function parseBuildBlockContent(value: string | undefined) {
       accessibilityNote: parsed.accessibilityNote
         ? String(parsed.accessibilityNote)
         : undefined,
+      safeguardingNote: parsed.safeguardingNote
+        ? String(parsed.safeguardingNote)
+        : undefined,
       aiHandoffNote: parsed.aiHandoffNote
         ? String(parsed.aiHandoffNote)
+        : undefined,
+      aiReviewStatus: normalizeAiReviewStatus(parsed.aiReviewStatus),
+      aiReviewNote: parsed.aiReviewNote
+        ? String(parsed.aiReviewNote)
+        : undefined,
+      reviewReadinessNote: parsed.reviewReadinessNote
+        ? String(parsed.reviewReadinessNote)
         : undefined,
     };
   } catch {
@@ -134,6 +167,15 @@ export function parseBuildBlockEditFormData(formData: FormData):
     prompt: getOptionalFormString(formData, "prompt"),
     feedback: getOptionalFormString(formData, "feedback"),
     accessibilityNote: getOptionalFormString(formData, "accessibilityNote"),
+    safeguardingNote: getOptionalFormString(formData, "safeguardingNote"),
+    aiReviewStatus: normalizeAiReviewStatus(
+      getFormString(formData, "aiReviewStatus"),
+    ),
+    aiReviewNote: getOptionalFormString(formData, "aiReviewNote"),
+    reviewReadinessNote: getOptionalFormString(
+      formData,
+      "reviewReadinessNote",
+    ),
   };
   const missingFields = Object.entries({
     title: value.title,
@@ -167,6 +209,10 @@ export function mergeBuildBlockEditContent(
     prompt: input.prompt,
     feedback: input.feedback,
     accessibilityNote: input.accessibilityNote,
+    safeguardingNote: input.safeguardingNote,
+    aiReviewStatus: input.aiReviewStatus,
+    aiReviewNote: input.aiReviewNote,
+    reviewReadinessNote: input.reviewReadinessNote,
   };
 }
 
@@ -229,6 +275,11 @@ export function buildFinalTestBlockContent(
     feedback: input.feedback,
     sourceStoryboardField: "final test authoring",
     accessibilityNote: input.accessibilityNote,
+    safeguardingNote: "",
+    aiReviewStatus: "not-used",
+    aiReviewNote: "",
+    reviewReadinessNote:
+      "Final test item should stay linked to the required learner action and use the 80% pass and certificate rule.",
   };
 }
 
@@ -298,6 +349,12 @@ function normalizeCorrectAnswer(value: string) {
   return ["A", "B", "C", "D"].includes(normalized) ? normalized : "";
 }
 
+function normalizeAiReviewStatus(value: unknown): BuildAiReviewStatus {
+  return buildAiReviewStatuses.includes(value as BuildAiReviewStatus)
+    ? (value as BuildAiReviewStatus)
+    : "not-used";
+}
+
 function buildOpeningBlock(
   lesson: CourseStoryboardLesson,
 ): BuildStudioBlockDraft {
@@ -312,7 +369,12 @@ function buildOpeningBlock(
       linkedLearnerAction: lesson.linkedLearnerAction,
       sourceStoryboardField: "lesson purpose and reason this lesson exists",
       accessibilityNote: lesson.accessibilityNote,
+      safeguardingNote: lesson.criticalActionNote,
       aiHandoffNote: lesson.aiBuildHandoffNote,
+      aiReviewStatus: "not-used",
+      aiReviewNote: "",
+      reviewReadinessNote:
+        "Required Storyboard block. Preserve the approved lesson purpose and rationale.",
     },
   };
 }
@@ -333,7 +395,12 @@ function buildPracticeBlock(
         linkedLearnerAction: lesson.linkedLearnerAction,
         sourceStoryboardField: "planned interaction",
         accessibilityNote: lesson.accessibilityNote,
+        safeguardingNote: lesson.criticalActionNote,
         aiHandoffNote: lesson.aiBuildHandoffNote,
+        aiReviewStatus: "not-used",
+        aiReviewNote: "",
+        reviewReadinessNote:
+          "Required Storyboard block. Preserve the approved reflection action.",
       },
     };
   }
@@ -356,7 +423,12 @@ function buildPracticeBlock(
         linkedLearnerAction: lesson.linkedLearnerAction,
         sourceStoryboardField: "learning flow and planned interaction",
         accessibilityNote: lesson.accessibilityNote,
+        safeguardingNote: lesson.criticalActionNote,
         aiHandoffNote: lesson.aiBuildHandoffNote,
+        aiReviewStatus: "not-used",
+        aiReviewNote: "",
+        reviewReadinessNote:
+          "Required Storyboard block. Preserve the approved practice or scenario action.",
       },
     };
   }
@@ -372,7 +444,12 @@ function buildPracticeBlock(
       linkedLearnerAction: lesson.linkedLearnerAction,
       sourceStoryboardField: "learning flow",
       accessibilityNote: lesson.accessibilityNote,
+      safeguardingNote: lesson.criticalActionNote,
       aiHandoffNote: lesson.aiBuildHandoffNote,
+      aiReviewStatus: "not-used",
+      aiReviewNote: "",
+      reviewReadinessNote:
+        "Required Storyboard block. Preserve the approved essential guidance.",
     },
   };
 }
@@ -389,7 +466,12 @@ function buildCheckBlock(lesson: CourseStoryboardLesson): BuildStudioBlockDraft 
       linkedLearnerAction: lesson.linkedLearnerAction,
       sourceStoryboardField: "knowledge check or learner output",
       accessibilityNote: lesson.accessibilityNote,
+      safeguardingNote: lesson.criticalActionNote,
       aiHandoffNote: lesson.aiBuildHandoffNote,
+      aiReviewStatus: "not-used",
+      aiReviewNote: "",
+      reviewReadinessNote:
+        "Required Storyboard block. Preserve the approved knowledge-check intent.",
     },
   };
 }
@@ -420,7 +502,12 @@ function buildJobAidBlock(
       linkedLearnerAction: lesson.linkedLearnerAction,
       sourceStoryboardField: "job aid, media, and high-stakes notes",
       accessibilityNote: lesson.accessibilityNote,
+      safeguardingNote: lesson.criticalActionNote,
       aiHandoffNote: lesson.aiBuildHandoffNote,
+      aiReviewStatus: "not-used",
+      aiReviewNote: "",
+      reviewReadinessNote:
+        "Required Storyboard block. Preserve the approved field-aid purpose.",
     },
   };
 }

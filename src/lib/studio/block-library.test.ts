@@ -2,6 +2,7 @@ import { LessonBlockType } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 
 import {
+  blockLibrary,
   blockJustificationLabels,
   buildCreatorAddedBlockContent,
   findBlockLibraryItem,
@@ -14,6 +15,20 @@ describe("Build Studio block library", () => {
 
     expect(item?.type).toBe(LessonBlockType.SCENARIO);
     expect(item?.purpose).toContain("practical action");
+  });
+
+  it("organizes the library by Annex 6 learning purposes", () => {
+    expect(blockLibrary.map((category) => category.label)).toEqual([
+      "Structure",
+      "Explain",
+      "Practice",
+      "Decide",
+      "Reflect",
+      "Check",
+      "Apply",
+      "Safeguard",
+      "Access",
+    ]);
   });
 
   it("requires a block, title, justification, and purpose link", () => {
@@ -62,5 +77,7 @@ describe("Build Studio block library", () => {
     expect(content.title).toBe("Reporting checklist");
     expect(content.body).toContain("Creator-added block");
     expect(content.linkedLearnerAction).toContain("reporting pathway");
+    expect(content.aiReviewStatus).toBe("not-used");
+    expect(content.reviewReadinessNote).toContain("Creator-added block");
   });
 });

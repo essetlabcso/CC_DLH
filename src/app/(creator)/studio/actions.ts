@@ -41,6 +41,7 @@ import {
   parseCreatorAddedBlockFormData,
 } from "@/lib/studio/block-library";
 import {
+  getBuildGovernanceIssues,
   hasBuildContent,
   hasFinalTestContent,
   parseBuildCompletionChecksFormData,
@@ -1944,6 +1945,7 @@ export async function completeBuildChecksAction(
   }
 
   const hasGeneratedContent = hasBuildContent(editable.version.modules);
+  const governanceIssues = getBuildGovernanceIssues(editable.version.modules);
   const finalTestRequired = hasCertificateIntent(
     editable.version.setup?.certificateIntent,
   );
@@ -1960,6 +1962,10 @@ export async function completeBuildChecksAction(
         result.missingFields.join(","),
       )}`,
     );
+  }
+
+  if (governanceIssues.length > 0) {
+    redirect(`/studio/courses/${courseId}/build?error=checks&fields=blockGovernanceReady`);
   }
 
   await prisma.$transaction([

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getBuildGovernanceIssues,
   hasBuildContent,
   hasFinalTestContent,
   parseBuildCompletionChecksFormData,
@@ -118,4 +119,105 @@ describe("Build completion checks", () => {
       ]),
     ).toBe(false);
   });
+
+  it("requires required Storyboard block metadata for governance readiness", () => {
+    const issues = getBuildGovernanceIssues([
+      {
+        lessons: [
+          {
+            blocks: [
+              {
+                type: "TEXT",
+                origin: "DESIGN_REQUIRED",
+                purposeLink: "",
+                justification: "",
+                content: JSON.stringify({
+                  title: "Essential guidance",
+                  purpose: "Teach the approved action",
+                }),
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(issues.map((issue) => issue.message).join(" ")).toContain(
+      "approved learner-action link",
+    );
+    expect(issues.map((issue) => issue.message).join(" ")).toContain(
+      "Storyboard source reference",
+    );
+  });
+
+  it("requires creator-added blocks to keep purpose and justification", () => {
+    const issues = getBuildGovernanceIssues([
+      {
+        lessons: [
+          {
+            blocks: [
+              buildRequiredBlock(),
+              {
+                type: "CALLOUT",
+                origin: "CREATOR_ADDED",
+                purposeLink: "",
+                justification: "",
+                content: JSON.stringify({
+                  title: "Extra note",
+                  purpose: "Add context",
+                }),
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(issues.map((issue) => issue.message).join(" ")).toContain(
+      "creator-added purpose or justification",
+    );
+  });
+
+  it("blocks AI-assisted drafts that still need human review", () => {
+    const issues = getBuildGovernanceIssues([
+      {
+        lessons: [
+          {
+            blocks: [
+              {
+                ...buildRequiredBlock(),
+                content: JSON.stringify({
+                  title: "Practice scenario",
+                  purpose: "Practice the approved action",
+                  linkedLearnerAction: "Use the approved action",
+                  sourceStoryboardField: "planned interaction",
+                  aiReviewStatus: "human-review-pending",
+                }),
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(issues.map((issue) => issue.message).join(" ")).toContain(
+      "awaiting human review",
+    );
+  });
 });
+
+function buildRequiredBlock() {
+  return {
+    type: "TEXT",
+    origin: "DESIGN_REQUIRED",
+    purposeLink: "Use the approved action",
+    justification: "",
+    content: JSON.stringify({
+      title: "Essential guidance",
+      purpose: "Teach the approved action",
+      linkedLearnerAction: "Use the approved action",
+      sourceStoryboardField: "learning flow",
+      aiReviewStatus: "not-used",
+    }),
+  };
+}

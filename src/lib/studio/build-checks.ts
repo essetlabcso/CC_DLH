@@ -1,9 +1,16 @@
+import { parseBuildBlockContent } from "@/lib/studio/build-studio";
+
 export type BuildCompletionChecksInput = {
   generatedContentConfirmed: boolean;
   actionAlignmentConfirmed: boolean;
   mobileReadinessConfirmed: boolean;
   accessibilityConfirmed: boolean;
   safetyConfirmed: boolean;
+};
+
+export type BuildGovernanceIssue = {
+  field: string;
+  message: string;
 };
 
 export type BuildCompletionValidationResult =
@@ -23,6 +30,7 @@ export const buildCompletionFieldLabels: Record<string, string> = {
   accessibilityConfirmed: "accessibility readiness",
   safetyConfirmed: "safety and local realism review",
   finalTestConfirmed: "final test readiness",
+  blockGovernanceReady: "block governance readiness",
 };
 
 export function parseBuildCompletionChecksFormData(
@@ -120,6 +128,86 @@ export function hasFinalTestContent(
       }),
     ),
   );
+}
+
+export function getBuildGovernanceIssues(
+  modules: readonly {
+    lessons: readonly {
+      blocks: readonly {
+        type: string;
+        origin: string;
+        content: string;
+        purposeLink: string | null;
+        justification: string | null;
+      }[];
+    }[];
+  }[],
+): BuildGovernanceIssue[] {
+  const blocks = modules.flatMap((module) =>
+    module.lessons.flatMap((lesson) => lesson.blocks),
+  );
+  const lessonBlocks = blocks.filter((block) => block.type !== "FINAL_TEST");
+  const issues: BuildGovernanceIssue[] = [];
+
+  if (!lessonBlocks.some((block) => block.origin === "DESIGN_REQUIRED")) {
+    issues.push({
+      field: "blockGovernanceReady",
+      message: "At least one required Storyboard block must exist.",
+    });
+  }
+
+  lessonBlocks.forEach((block, index) => {
+    const content = parseBuildBlockContent(block.content);
+    const blockLabel = content.title || `Block ${index + 1}`;
+
+    if (block.origin === "DESIGN_REQUIRED") {
+      if (!content.title || !content.purpose) {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing required title or purpose metadata.`,
+        });
+      }
+
+      if (!content.linkedLearnerAction && !block.purposeLink) {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing its approved learner-action link.`,
+        });
+      }
+
+      if (!content.sourceStoryboardField) {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing its Storyboard source reference.`,
+        });
+      }
+    }
+
+    if (block.origin === "CREATOR_ADDED") {
+      if (!block.purposeLink || !block.justification) {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing creator-added purpose or justification.`,
+        });
+      }
+
+      if (!content.linkedLearnerAction) {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing its purpose link in block content.`,
+        });
+      }
+    }
+
+    if (content.aiReviewStatus === "human-review-pending") {
+      issues.push({
+        field: "blockGovernanceReady",
+        message: `${blockLabel} has AI-assisted draft content awaiting human review.`,
+      });
+    }
+  });
+
+  return issues;
 }
 
 export function summarizeBuildCompletionChecks(

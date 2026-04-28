@@ -12,6 +12,8 @@ import {
   creatorAddedBlockFieldLabels,
 } from "@/lib/studio/block-library";
 import {
+  buildAiReviewStatusLabels,
+  buildAiReviewStatuses,
   buildBlockEditFieldLabels,
   finalTestAuthoringFieldLabels,
   getBlockTypeLabel,
@@ -19,6 +21,7 @@ import {
 } from "@/lib/studio/build-studio";
 import {
   buildCompletionFieldLabels,
+  getBuildGovernanceIssues,
   hasBuildContent,
   hasFinalTestContent,
 } from "@/lib/studio/build-checks";
@@ -154,6 +157,7 @@ export default async function BuildStudioPage({
     editable.version.setup?.certificateIntent,
   );
   const finalTestReady = hasFinalTestContent(modules);
+  const governanceIssues = getBuildGovernanceIssues(modules);
 
   return (
     <WorkspaceShell eyebrow="Build Studio" title={editable.course.title}>
@@ -317,7 +321,8 @@ export default async function BuildStudioPage({
                 <h3 id="block-library-title">Block library</h3>
                 <p>
                   Add optional blocks only when they support the approved Design
-                  Handover and a clear learner purpose.
+                  Handover and a clear learner purpose. The library is grouped
+                  by learning purpose so Build stays flexible but governed.
                 </p>
                 {blockLibrary.map((category) => (
                   <details key={category.label}>
@@ -397,6 +402,36 @@ export default async function BuildStudioPage({
               </section>
             </aside>
             <div className="build-canvas">
+              <section
+                className="final-test-panel"
+                aria-labelledby="build-governance-title"
+              >
+                <div>
+                  <p className="block-kicker">Governance</p>
+                  <h3 id="build-governance-title">Build readiness</h3>
+                  <p>
+                    Required blocks stay linked to the approved Storyboard.
+                    Creator-added blocks need a purpose link, justification,
+                    and any accessibility, safeguarding, or AI review notes
+                    needed for safe review.
+                  </p>
+                </div>
+                {governanceIssues.length > 0 ? (
+                  <div className="workspace-error">
+                    <strong>Needs attention before Preview</strong>
+                    <ul>
+                      {governanceIssues.map((issue) => (
+                        <li key={issue.message}>{issue.message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="workspace-note">
+                    Required block metadata and creator-added governance are
+                    ready for Preview checks.
+                  </p>
+                )}
+              </section>
               {finalTestAction ? (
                 <section
                   className="final-test-panel"
@@ -532,8 +567,8 @@ export default async function BuildStudioPage({
                             </p>
                             <p className="block-origin">
                               {block.origin === "CREATOR_ADDED"
-                                ? "Creator-added"
-                                : "Required from Design"}
+                                ? "Creator-added block - requires purpose and justification"
+                                : "Required Storyboard block - protected source"}
                             </p>
                             <h3>{content.title || getBlockTypeLabel(block.type)}</h3>
                             {content.purpose ? <p>{content.purpose}</p> : null}
@@ -564,13 +599,48 @@ export default async function BuildStudioPage({
                             </form>
                           </div>
                         </div>
-                        {block.origin === "CREATOR_ADDED" ? (
-                          <div className="block-content">
-                            <strong>Governance</strong>
-                            <p>Justification: {block.justification}</p>
-                            <p>Purpose link: {block.purposeLink}</p>
-                          </div>
-                        ) : null}
+                        <div className="block-content">
+                          <strong>Governance</strong>
+                          <p>
+                            Source:{" "}
+                            {block.origin === "CREATOR_ADDED"
+                              ? "Creator-added"
+                              : "Required from approved Storyboard"}
+                          </p>
+                          <p>
+                            Purpose link:{" "}
+                            {block.purposeLink ||
+                              content.linkedLearnerAction ||
+                              "Not set"}
+                          </p>
+                          {block.origin === "CREATOR_ADDED" ? (
+                            <p>
+                              Why it was added:{" "}
+                              {block.justification || "Not set"}
+                            </p>
+                          ) : (
+                            <p>
+                              Storyboard source:{" "}
+                              {content.sourceStoryboardField || "Not set"}
+                            </p>
+                          )}
+                          <p>
+                            AI status:{" "}
+                            {
+                              buildAiReviewStatusLabels[
+                                content.aiReviewStatus || "not-used"
+                              ]
+                            }
+                          </p>
+                          {content.aiReviewNote ? (
+                            <p>AI review note: {content.aiReviewNote}</p>
+                          ) : null}
+                          {content.reviewReadinessNote ? (
+                            <p>
+                              Review readiness: {content.reviewReadinessNote}
+                            </p>
+                          ) : null}
+                        </div>
                         {content.body ? (
                           <div className="block-content">
                             <strong>Content</strong>
@@ -587,6 +657,12 @@ export default async function BuildStudioPage({
                           <div className="block-content">
                             <strong>Accessibility</strong>
                             <p>{content.accessibilityNote}</p>
+                          </div>
+                        ) : null}
+                        {content.safeguardingNote ? (
+                          <div className="block-content">
+                            <strong>Safeguarding</strong>
+                            <p>{content.safeguardingNote}</p>
                           </div>
                         ) : null}
                         <form
@@ -640,6 +716,40 @@ export default async function BuildStudioPage({
                             <textarea
                               name="accessibilityNote"
                               defaultValue={content.accessibilityNote || ""}
+                            />
+                          </label>
+                          <label>
+                            <span>Safeguarding note</span>
+                            <textarea
+                              name="safeguardingNote"
+                              defaultValue={content.safeguardingNote || ""}
+                            />
+                          </label>
+                          <label>
+                            <span>AI review status</span>
+                            <select
+                              name="aiReviewStatus"
+                              defaultValue={content.aiReviewStatus || "not-used"}
+                            >
+                              {buildAiReviewStatuses.map((status) => (
+                                <option key={status} value={status}>
+                                  {buildAiReviewStatusLabels[status]}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            <span>AI review note</span>
+                            <textarea
+                              name="aiReviewNote"
+                              defaultValue={content.aiReviewNote || ""}
+                            />
+                          </label>
+                          <label>
+                            <span>Review readiness note</span>
+                            <textarea
+                              name="reviewReadinessNote"
+                              defaultValue={content.reviewReadinessNote || ""}
                             />
                           </label>
                           <button className="workspace-button" type="submit">
