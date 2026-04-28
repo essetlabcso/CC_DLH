@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildEvidenceSources,
+  getCourseFitDecisionLabel,
   parseCourseDiagnosisFormData,
 } from "./diagnosis";
 
@@ -57,6 +58,12 @@ describe("course diagnosis form parsing", () => {
     if (!result.ok) {
       expect(result.missingFields).toContain("alternativeIntervention");
     }
+  });
+
+  it("uses Needs further diagnosis wording for needs-more-evidence decisions", () => {
+    expect(getCourseFitDecisionLabel("needs-more-evidence")).toBe(
+      "Needs further diagnosis",
+    );
   });
 });
 

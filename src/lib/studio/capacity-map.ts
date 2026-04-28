@@ -39,15 +39,22 @@ export const capacityMapFieldLabels: Record<string, string> = {
 };
 
 export const decCapacityAreas = [
-  "Governance and leadership",
-  "Safeguarding and accountability",
-  "MEAL",
-  "Financial management",
-  "Donor compliance",
-  "Human rights-based approach",
-  "Advocacy and civic space",
-  "Organizational sustainability",
+  "Internal Governance and Leadership",
+  "Transparency and Accountability",
+  "Strategic Planning and Organizational Sustainability",
+  "Financial Management and Resource Mobilization",
+  "Human Resources, Inclusion, and Safeguarding",
+  "Evidence-Based Advocacy and Civic Engagement",
+  "Monitoring, Evaluation, Accountability, and Learning",
+  "Digital Skills and Data Use / IT Competencies",
+  "Networking, Partnerships, and Collective Action",
 ] as const;
+
+export type DecCapacityArea = (typeof decCapacityAreas)[number];
+
+export function isDecCapacityArea(value: string): value is DecCapacityArea {
+  return decCapacityAreas.includes(value as DecCapacityArea);
+}
 
 export function parseCourseCapacityMapFormData(
   formData: FormData,

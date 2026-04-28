@@ -8,13 +8,16 @@ import { prisma } from "@/lib/db/client";
 import {
   analysisHandoverFieldLabels,
   canAnalysisProceedToDesign,
+  getAnalysisGateDecisionLabel,
   getAnalysisHandoverStatusLabel,
   getAnalysisRouteDecisionLabel,
   isAnalysisHandoverLocked,
   requiresSeparableKnowledgeSkill,
 } from "@/lib/studio/analysis-handover";
+import { decCapacityAreas } from "@/lib/studio/capacity-map";
 import { getEditableCourseVersion, getWorkflowStepStatus } from "@/lib/studio/courses";
 import {
+  getCourseFitDecisionLabel,
   diagnosisFieldLabels,
   parseEvidenceSources,
 } from "@/lib/studio/diagnosis";
@@ -113,11 +116,12 @@ export default async function DiagnosisPage({
   const routeDecision = handover
     ? getAnalysisRouteDecisionLabel({
         courseFitDecision: diagnosis?.courseFitDecision || "",
-        ksmeRoute: handover.ksmeRoute,
-        separableKnowledgeSkillComponent:
-          handover.separableKnowledgeSkillComponent,
-      })
-    : "Prepare the Analysis handover before Design can continue.";
+          ksmeRoute: handover.ksmeRoute,
+          separableKnowledgeSkillComponent:
+            handover.separableKnowledgeSkillComponent,
+          analysisGateDecision: handover.analysisGateDecision,
+        })
+      : "Prepare the Analysis handover before Design can continue.";
   const canProceed =
     diagnosis && handover
       ? canAnalysisProceedToDesign({
@@ -125,6 +129,7 @@ export default async function DiagnosisPage({
           ksmeRoute: handover.ksmeRoute,
           separableKnowledgeSkillComponent:
             handover.separableKnowledgeSkillComponent,
+          analysisGateDecision: handover.analysisGateDecision,
         })
       : false;
 
@@ -281,7 +286,7 @@ export default async function DiagnosisPage({
               <option value="">Choose a decision</option>
               <option value="course-fit">A course is likely appropriate</option>
               <option value="needs-more-evidence">
-                Pause until stronger evidence is added
+                Needs further diagnosis
               </option>
               <option value="alternative-intervention">
                 Recommend another intervention
@@ -299,6 +304,49 @@ export default async function DiagnosisPage({
 
         <fieldset>
           <legend>Analysis-to-Design Handover</legend>
+          <div className="form-grid">
+            <label>
+              <span>Capacity area</span>
+              <select
+                name="capacityArea"
+                required
+                defaultValue={handover?.capacityArea || ""}
+              >
+                <option value="">Choose a DEC capacity area</option>
+                {decCapacityAreas.map((area) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Sub-capacity area</span>
+              <input
+                name="subCapacityArea"
+                required
+                defaultValue={handover?.subCapacityArea}
+              />
+            </label>
+          </div>
+          <div className="form-grid">
+            <label>
+              <span>Linked standard or framework</span>
+              <input
+                name="linkedStandard"
+                required
+                defaultValue={handover?.linkedStandard}
+              />
+            </label>
+            <label>
+              <span>Capacity indicator or evidence marker</span>
+              <input
+                name="capacityIndicator"
+                required
+                defaultValue={handover?.capacityIndicator}
+              />
+            </label>
+          </div>
           <label>
             <span>Validated capacity gap</span>
             <textarea
@@ -358,6 +406,35 @@ export default async function DiagnosisPage({
             />
           </label>
           <label>
+            <span>Analysis Gate decision</span>
+            <select
+              name="analysisGateDecision"
+              required
+              defaultValue={handover?.analysisGateDecision || ""}
+            >
+              <option value="">Choose a gate decision</option>
+              <option value="proceed-to-design">Proceed to Design</option>
+              <option value="proceed-with-conditions">
+                Proceed to Design with conditions
+              </option>
+              <option value="needs-further-diagnosis">
+                Needs further diagnosis
+              </option>
+              <option value="non-course-route">Non-course route</option>
+            </select>
+          </label>
+          <label>
+            <span>Referral or further-diagnosis note</span>
+            <textarea
+              name="referralOrFurtherDiagnosisNote"
+              defaultValue={handover?.referralOrFurtherDiagnosisNote}
+            />
+          </label>
+          <p className="section-subcopy">
+            Required when the issue needs further diagnosis or should be routed
+            outside course production.
+          </p>
+          <label>
             <span>Safeguards and no-harm note</span>
             <textarea
               name="safeguardsNote"
@@ -410,6 +487,14 @@ export default async function DiagnosisPage({
             <article>
               <strong>Handover status</strong>
               <span>{getAnalysisHandoverStatusLabel(handover)}</span>
+            </article>
+            <article>
+              <strong>Course-fit decision</strong>
+              <span>{getCourseFitDecisionLabel(diagnosis?.courseFitDecision || "")}</span>
+            </article>
+            <article>
+              <strong>Analysis Gate decision</strong>
+              <span>{getAnalysisGateDecisionLabel(handover.analysisGateDecision)}</span>
             </article>
             <article>
               <strong>Route decision</strong>

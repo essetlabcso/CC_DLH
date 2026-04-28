@@ -302,6 +302,10 @@ export async function saveCourseDiagnosisAction(
         courseVersionId: editable.version.id,
       },
       update: {
+        capacityArea: handover.value.capacityArea,
+        subCapacityArea: handover.value.subCapacityArea,
+        linkedStandard: handover.value.linkedStandard,
+        capacityIndicator: handover.value.capacityIndicator,
         validatedCapacityGap: handover.value.validatedCapacityGap,
         baseline: handover.value.baseline,
         desiredPractice: handover.value.desiredPractice,
@@ -310,6 +314,9 @@ export async function saveCourseDiagnosisAction(
         separableKnowledgeSkillComponent:
           handover.value.separableKnowledgeSkillComponent,
         interventionDecision: handover.value.interventionDecision,
+        analysisGateDecision: handover.value.analysisGateDecision,
+        referralOrFurtherDiagnosisNote:
+          handover.value.referralOrFurtherDiagnosisNote,
         safeguardsNote: handover.value.safeguardsNote,
         evaluationAnchor: handover.value.evaluationAnchor,
         status: "DRAFT",
@@ -318,6 +325,10 @@ export async function saveCourseDiagnosisAction(
       },
       create: {
         courseVersionId: editable.version.id,
+        capacityArea: handover.value.capacityArea,
+        subCapacityArea: handover.value.subCapacityArea,
+        linkedStandard: handover.value.linkedStandard,
+        capacityIndicator: handover.value.capacityIndicator,
         validatedCapacityGap: handover.value.validatedCapacityGap,
         baseline: handover.value.baseline,
         desiredPractice: handover.value.desiredPractice,
@@ -326,6 +337,9 @@ export async function saveCourseDiagnosisAction(
         separableKnowledgeSkillComponent:
           handover.value.separableKnowledgeSkillComponent,
         interventionDecision: handover.value.interventionDecision,
+        analysisGateDecision: handover.value.analysisGateDecision,
+        referralOrFurtherDiagnosisNote:
+          handover.value.referralOrFurtherDiagnosisNote,
         safeguardsNote: handover.value.safeguardsNote,
         evaluationAnchor: handover.value.evaluationAnchor,
       },
@@ -406,6 +420,10 @@ export async function lockAnalysisHandoverForDesignAction(courseId: string) {
   }
 
   const validation = validateAnalysisHandoverInput({
+    capacityArea: handover.capacityArea,
+    subCapacityArea: handover.subCapacityArea,
+    linkedStandard: handover.linkedStandard,
+    capacityIndicator: handover.capacityIndicator,
     validatedCapacityGap: handover.validatedCapacityGap,
     baseline: handover.baseline,
     desiredPractice: handover.desiredPractice,
@@ -414,8 +432,12 @@ export async function lockAnalysisHandoverForDesignAction(courseId: string) {
     separableKnowledgeSkillComponent:
       handover.separableKnowledgeSkillComponent,
     interventionDecision: handover.interventionDecision,
+    analysisGateDecision: handover.analysisGateDecision,
+    referralOrFurtherDiagnosisNote: handover.referralOrFurtherDiagnosisNote,
     safeguardsNote: handover.safeguardsNote,
     evaluationAnchor: handover.evaluationAnchor,
+  }, {
+    courseFitDecision: diagnosis.courseFitDecision,
   });
 
   if (!validation.ok) {
@@ -432,6 +454,7 @@ export async function lockAnalysisHandoverForDesignAction(courseId: string) {
       ksmeRoute: handover.ksmeRoute,
       separableKnowledgeSkillComponent:
         handover.separableKnowledgeSkillComponent,
+      analysisGateDecision: handover.analysisGateDecision,
     })
   ) {
     redirect(`/studio/courses/${courseId}/diagnosis?error=route`);

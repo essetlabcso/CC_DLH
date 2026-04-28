@@ -65,6 +65,12 @@ export const diagnosisFieldLabels: Record<string, string> = {
   alternativeIntervention: "alternative intervention recommendation",
 };
 
+export const courseFitDecisionLabels: Record<CourseFitDecision, string> = {
+  "course-fit": "Course design is appropriate",
+  "needs-more-evidence": "Needs further diagnosis",
+  "alternative-intervention": "Non-course intervention recommended",
+};
+
 export function parseCourseDiagnosisFormData(
   formData: FormData,
 ): CourseDiagnosisValidationResult {
@@ -107,6 +113,12 @@ export function parseCourseDiagnosisFormData(
 
 export function shouldOpenCapacityMap(decision: CourseFitDecision | "") {
   return decision === "course-fit";
+}
+
+export function getCourseFitDecisionLabel(value: string) {
+  return courseFitDecisions.includes(value as CourseFitDecision)
+    ? courseFitDecisionLabels[value as CourseFitDecision]
+    : "Not decided";
 }
 
 export function buildEvidenceSources(input: CourseDiagnosisInput) {

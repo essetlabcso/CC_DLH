@@ -270,6 +270,10 @@ model CourseDiagnosis {
 model CourseAnalysisHandover {
   id                                  String    @id @default(cuid())
   courseVersionId                     String    @unique
+  capacityArea                        String    @default("")
+  subCapacityArea                     String    @default("")
+  linkedStandard                      String    @default("")
+  capacityIndicator                   String    @default("")
   validatedCapacityGap                String    @default("")
   baseline                            String    @default("")
   desiredPractice                     String    @default("")
@@ -277,6 +281,8 @@ model CourseAnalysisHandover {
   ksmeRoute                           String    @default("")
   separableKnowledgeSkillComponent    String    @default("")
   interventionDecision                String    @default("")
+  analysisGateDecision                String    @default("")
+  referralOrFurtherDiagnosisNote      String    @default("")
   safeguardsNote                      String    @default("")
   evaluationAnchor                    String    @default("")
   status                              String    @default("DRAFT")

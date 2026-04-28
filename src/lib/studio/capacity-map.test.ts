@@ -26,7 +26,7 @@ describe("capacity map form parsing", () => {
   it("accepts a complete DEC capacity map", () => {
     const formData = new FormData();
 
-    formData.set("capacityArea", "Safeguarding and accountability");
+    formData.set("capacityArea", "Human Resources, Inclusion, and Safeguarding");
     formData.set("subarea", "Incident reporting");
     formData.set("capabilityFocus", "Safe referral and reporting pathway use");
     formData.set("linkedStandard", "DEC safeguarding practice standard");
@@ -47,12 +47,19 @@ describe("capacity map form parsing", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.capacityArea).toBe("Safeguarding and accountability");
+      expect(result.value.capacityArea).toBe(
+        "Human Resources, Inclusion, and Safeguarding",
+      );
     }
   });
 
-  it("keeps DEC capacity areas explicit", () => {
-    expect(decCapacityAreas).toContain("MEAL");
-    expect(decCapacityAreas).toContain("Advocacy and civic space");
+  it("uses the nine DEC CSO capacity areas from Annex 4", () => {
+    expect(decCapacityAreas).toHaveLength(9);
+    expect(decCapacityAreas).toContain(
+      "Monitoring, Evaluation, Accountability, and Learning",
+    );
+    expect(decCapacityAreas).toContain(
+      "Evidence-Based Advocacy and Civic Engagement",
+    );
   });
 });

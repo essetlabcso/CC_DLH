@@ -1,9 +1,11 @@
 import type { CourseAnalysisHandover } from "@prisma/client";
 
 import {
+  getAnalysisGateDecisionLabel,
   getAnalysisHandoverStatusLabel,
   getAnalysisRouteDecisionLabel,
 } from "@/lib/studio/analysis-handover";
+import { getCourseFitDecisionLabel } from "@/lib/studio/diagnosis";
 
 type AnalysisSummaryPanelProps = {
   handover: CourseAnalysisHandover;
@@ -39,8 +41,33 @@ export function AnalysisSummaryPanel({
               ksmeRoute: handover.ksmeRoute,
               separableKnowledgeSkillComponent:
                 handover.separableKnowledgeSkillComponent,
+              analysisGateDecision: handover.analysisGateDecision,
             })}
           </span>
+        </article>
+        <article>
+          <strong>Capacity area</strong>
+          <span>{handover.capacityArea || "Not set"}</span>
+        </article>
+        <article>
+          <strong>Sub-capacity area</strong>
+          <span>{handover.subCapacityArea || "Not set"}</span>
+        </article>
+        <article>
+          <strong>Linked standard</strong>
+          <span>{handover.linkedStandard || "Not set"}</span>
+        </article>
+        <article>
+          <strong>Capacity indicator</strong>
+          <span>{handover.capacityIndicator || "Not set"}</span>
+        </article>
+        <article>
+          <strong>Course-fit decision</strong>
+          <span>{getCourseFitDecisionLabel(courseFitDecision)}</span>
+        </article>
+        <article>
+          <strong>Analysis Gate decision</strong>
+          <span>{getAnalysisGateDecisionLabel(handover.analysisGateDecision)}</span>
         </article>
         <article>
           <strong>Validated gap</strong>
@@ -66,6 +93,12 @@ export function AnalysisSummaryPanel({
           <strong>Intervention decision</strong>
           <span>{handover.interventionDecision}</span>
         </article>
+        {handover.referralOrFurtherDiagnosisNote ? (
+          <article>
+            <strong>Referral or further-diagnosis note</strong>
+            <span>{handover.referralOrFurtherDiagnosisNote}</span>
+          </article>
+        ) : null}
         {handover.separableKnowledgeSkillComponent ? (
           <article>
             <strong>Separable Knowledge or Skill component</strong>
