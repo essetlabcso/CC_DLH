@@ -12,12 +12,19 @@ import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { canRoleTransitionCourseVersion } from "@/lib/db/lifecycle";
 import {
+  buildReviewerPauseChecklist,
   buildReviewerApprovalChecklist,
   buildReviewerReturnChecklist,
+  buildSpecialistReviewChecklist,
+  hasUnresolvedSpecialistReview,
   parseReviewerApprovalFormData,
+  parseReviewerPauseFormData,
   parseReviewerReturnFormData,
+  parseReviewerSpecialistReviewFormData,
   summarizeReviewerApproval,
+  summarizeReviewerPause,
   summarizeReviewerReturn,
+  summarizeSpecialistReview,
 } from "@/lib/review/decisions";
 import { summarizePublication } from "@/lib/review/publishing";
 import {
@@ -59,6 +66,10 @@ export async function approveSubmittedCourseAction(
 
   if (!version) {
     notFound();
+  }
+
+  if (hasUnresolvedSpecialistReview(version.reviewRecord?.checklist)) {
+    redirect(`${reviewPath}?error=specialist`);
   }
 
   const approvedAt = new Date();
@@ -189,14 +200,14 @@ export async function returnSubmittedCourseAction(
         reviewerId: identity.user.id,
         checklist,
         decisionNotes,
-        returnedReason: result.value.returnedReason,
+        returnedReason: decisionNotes,
       },
       create: {
         courseVersionId: version.id,
         reviewerId: identity.user.id,
         checklist,
         decisionNotes,
-        returnedReason: result.value.returnedReason,
+        returnedReason: decisionNotes,
       },
     }),
     prisma.courseLifecycleEvent.create({
@@ -214,6 +225,185 @@ export async function returnSubmittedCourseAction(
   revalidatePath("/studio");
   revalidatePath("/studio/courses");
   redirect("/review/queue?returned=1");
+}
+
+export async function requireSpecialistReviewAction(
+  courseId: string,
+  versionId: string,
+  formData: FormData,
+) {
+  const reviewPath = `/review/courses/${courseId}/versions/${versionId}`;
+  const identity = await requireWorkspaceIdentity(reviewPath);
+  const result = parseReviewerSpecialistReviewFormData(formData);
+
+  if (!result.ok) {
+    redirect(
+      `${reviewPath}?error=specialistReview&fields=${encodeURIComponent(
+        result.missingFields.join(","),
+      )}`,
+    );
+  }
+
+  const version = await prisma.courseVersion.findFirst({
+    where: {
+      id: versionId,
+      courseId,
+      status: CourseVersionStatus.SUBMITTED,
+      course: {
+        organizationId: identity.user.organizationId,
+      },
+    },
+    include: {
+      course: true,
+      reviewRecord: true,
+    },
+  });
+
+  if (!version) {
+    notFound();
+  }
+
+  const checklist = buildSpecialistReviewChecklist(
+    version.reviewRecord?.checklist,
+    result.value,
+  );
+  const decisionNotes = summarizeSpecialistReview(result.value);
+
+  await prisma.$transaction([
+    prisma.course.update({
+      where: {
+        id: version.course.id,
+      },
+      data: {
+        updatedAt: new Date(),
+      },
+    }),
+    prisma.courseReviewRecord.upsert({
+      where: {
+        courseVersionId: version.id,
+      },
+      update: {
+        reviewerId: identity.user.id,
+        checklist,
+        decisionNotes,
+        returnedReason: "",
+      },
+      create: {
+        courseVersionId: version.id,
+        reviewerId: identity.user.id,
+        checklist,
+        decisionNotes,
+      },
+    }),
+    prisma.courseLifecycleEvent.create({
+      data: {
+        courseVersionId: version.id,
+        actorId: identity.user.id,
+        fromStatus: CourseVersionStatus.SUBMITTED,
+        toStatus: CourseVersionStatus.SUBMITTED,
+        note: decisionNotes,
+      },
+    }),
+  ]);
+
+  revalidateReviewPaths(courseId, versionId);
+  redirect("/review/queue?specialist=1");
+}
+
+export async function pauseSubmittedCourseAction(
+  courseId: string,
+  versionId: string,
+  formData: FormData,
+) {
+  const reviewPath = `/review/courses/${courseId}/versions/${versionId}`;
+  const identity = await requireWorkspaceIdentity(reviewPath);
+  const result = parseReviewerPauseFormData(formData);
+
+  if (!result.ok) {
+    redirect(
+      `${reviewPath}?error=pause&fields=${encodeURIComponent(
+        result.missingFields.join(","),
+      )}`,
+    );
+  }
+
+  const version = await prisma.courseVersion.findFirst({
+    where: {
+      id: versionId,
+      courseId,
+      status: CourseVersionStatus.SUBMITTED,
+      course: {
+        organizationId: identity.user.organizationId,
+      },
+    },
+    include: {
+      course: true,
+      reviewRecord: true,
+    },
+  });
+
+  if (!version) {
+    notFound();
+  }
+
+  const returnedAt = new Date();
+  const checklist = buildReviewerPauseChecklist(
+    version.reviewRecord?.checklist,
+    result.value,
+  );
+  const decisionNotes = summarizeReviewerPause(result.value);
+
+  await prisma.$transaction([
+    prisma.courseVersion.update({
+      where: {
+        id: version.id,
+      },
+      data: {
+        status: CourseVersionStatus.RETURNED,
+        returnedAt,
+      },
+    }),
+    prisma.course.update({
+      where: {
+        id: version.course.id,
+      },
+      data: {
+        updatedAt: returnedAt,
+      },
+    }),
+    prisma.courseReviewRecord.upsert({
+      where: {
+        courseVersionId: version.id,
+      },
+      update: {
+        reviewerId: identity.user.id,
+        checklist,
+        decisionNotes,
+        returnedReason: decisionNotes,
+      },
+      create: {
+        courseVersionId: version.id,
+        reviewerId: identity.user.id,
+        checklist,
+        decisionNotes,
+        returnedReason: decisionNotes,
+      },
+    }),
+    prisma.courseLifecycleEvent.create({
+      data: {
+        courseVersionId: version.id,
+        actorId: identity.user.id,
+        fromStatus: CourseVersionStatus.SUBMITTED,
+        toStatus: CourseVersionStatus.RETURNED,
+        note: decisionNotes,
+      },
+    }),
+  ]);
+
+  revalidateReviewPaths(courseId, versionId);
+  revalidatePath("/studio");
+  revalidatePath("/studio/courses");
+  redirect("/review/queue?paused=1");
 }
 
 export async function publishApprovedCourseAction(

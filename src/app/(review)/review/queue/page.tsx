@@ -10,6 +10,7 @@ import {
   getReviewQueueStatusLabel,
   getReviewVersionTypeLabel,
 } from "@/lib/review/queue";
+import { getReviewerReviewFromChecklist } from "@/lib/review/decisions";
 import {
   getBuildToReviewHandoverFromChecklist,
   summarizeBuildToReviewHandover,
@@ -19,6 +20,8 @@ type ReviewQueuePageProps = {
   searchParams?: Promise<{
     approved?: string;
     returned?: string;
+    specialist?: string;
+    paused?: string;
   }>;
 };
 
@@ -70,11 +73,25 @@ export default async function ReviewQueuePage({
           Course returned to the creator with reviewer comments.
         </p>
       ) : null}
+      {resolvedSearchParams?.specialist === "1" ? (
+        <p className="workspace-note">
+          Specialist review requirement recorded. Approval remains blocked
+          until that review is resolved.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.paused === "1" ? (
+        <p className="workspace-note">
+          Course paused and returned with reviewer routing guidance.
+        </p>
+      ) : null}
 
       {submittedVersions.length > 0 ? (
         <div className="course-list course-list-spacious">
           {submittedVersions.map((version) => {
             const handover = getBuildToReviewHandoverFromChecklist(
+              version.reviewRecord?.checklist,
+            );
+            const reviewerReview = getReviewerReviewFromChecklist(
               version.reviewRecord?.checklist,
             );
 
@@ -100,6 +117,17 @@ export default async function ReviewQueuePage({
                   ) : null}
                   {version.reviewRecord?.decisionNotes ? (
                     <p>{version.reviewRecord.decisionNotes}</p>
+                  ) : null}
+                  {reviewerReview ? (
+                    <p>
+                      Review routing:{" "}
+                      {reviewerReview.decisionLabel ||
+                        reviewerReview.decisionType ||
+                        "Decision recorded"}
+                      {reviewerReview.specialistReviewRequired
+                        ? " · specialist review required"
+                        : ""}
+                    </p>
                   ) : null}
                 </div>
                 <Link

@@ -7,11 +7,16 @@ import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import {
   approveSubmittedCourseAction,
+  pauseSubmittedCourseAction,
+  requireSpecialistReviewAction,
   returnSubmittedCourseAction,
 } from "@/app/(review)/review/actions";
 import {
+  getReviewerReviewFromChecklist,
+  reviewerPauseFieldLabels,
   reviewerApprovalFieldLabels,
   reviewerReturnFieldLabels,
+  reviewerSpecialistFieldLabels,
 } from "@/lib/review/decisions";
 import {
   getBlockTypeLabel,
@@ -101,9 +106,24 @@ export default async function SubmittedVersionReviewPage({
     "return",
     reviewerReturnFieldLabels,
   );
+  const specialistMissingFields = getMissingFieldLabels(
+    resolvedSearchParams,
+    "specialistReview",
+    reviewerSpecialistFieldLabels,
+  );
+  const pauseMissingFields = getMissingFieldLabels(
+    resolvedSearchParams,
+    "pause",
+    reviewerPauseFieldLabels,
+  );
   const handover = getBuildToReviewHandoverFromChecklist(
     version.reviewRecord?.checklist,
   );
+  const reviewerReview = getReviewerReviewFromChecklist(
+    version.reviewRecord?.checklist,
+  );
+  const approvalBlockedBySpecialist =
+    resolvedSearchParams?.error === "specialist";
 
   return (
     <WorkspaceShell
@@ -154,9 +174,65 @@ export default async function SubmittedVersionReviewPage({
       ) : null}
       {returnMissingFields.length > 0 ? (
         <p className="workspace-error">
-          Add reviewer comments before returning the course:{" "}
+          Complete the structured return routing fields:{" "}
           {returnMissingFields.join(", ")}.
         </p>
+      ) : null}
+      {specialistMissingFields.length > 0 ? (
+        <p className="workspace-error">
+          Complete the specialist review fields:{" "}
+          {specialistMissingFields.join(", ")}.
+        </p>
+      ) : null}
+      {pauseMissingFields.length > 0 ? (
+        <p className="workspace-error">
+          Complete the pause decision fields: {pauseMissingFields.join(", ")}.
+        </p>
+      ) : null}
+      {approvalBlockedBySpecialist ? (
+        <p className="workspace-error">
+          Approval is blocked because specialist review is still required.
+          Return the course with clear action, or complete specialist review
+          outside this slice before approval.
+        </p>
+      ) : null}
+      {reviewerReview ? (
+        <section className="studio-section" aria-labelledby="routing-title">
+          <h2 id="routing-title">Current review routing</h2>
+          <div className="context-grid">
+            <article>
+              <strong>Decision</strong>
+              <span>
+                {reviewerReview.decisionLabel ||
+                  reviewerReview.decisionType ||
+                  "Recorded"}
+              </span>
+            </article>
+            <article>
+              <strong>Specialist review</strong>
+              <span>
+                {reviewerReview.specialistReviewRequired
+                  ? "Required"
+                  : "Not required"}
+              </span>
+            </article>
+            <article>
+              <strong>Return target</strong>
+              <span>{reviewerReview.returnTarget || "Not returned"}</span>
+            </article>
+          </div>
+          {reviewerReview.comments?.length ? (
+            <ul>
+              {reviewerReview.comments.map((comment) => (
+                <li key={comment.id}>
+                  {comment.severity}: {comment.affectedArea}
+                  {comment.affectedItem ? ` / ${comment.affectedItem}` : ""} -{" "}
+                  {comment.comment} Required action: {comment.requiredAction}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
       ) : null}
 
       <section className="studio-section" aria-labelledby="handover-title">
@@ -359,6 +435,13 @@ export default async function SubmittedVersionReviewPage({
                 publication readiness.
               </span>
             </label>
+            <label className="checkbox-row">
+              <input name="certificateRuleConfirmed" type="checkbox" />
+              <span>
+                Final test and certificate copy preserve the rule: 80%+ final
+                test score = pass and automated course certificate.
+              </span>
+            </label>
             <label>
               <span>Reviewer notes</span>
               <textarea name="decisionNotes" />
@@ -372,17 +455,117 @@ export default async function SubmittedVersionReviewPage({
             action={returnSubmittedCourseAction.bind(null, courseId, versionId)}
             className="checklist-form"
           >
-            <h3>Return for changes</h3>
+            <h3>Return with routing</h3>
             <p className="section-subcopy">
               Use this when the creator needs clear review comments before the
               course can be approved.
             </p>
             <label>
-              <span>Return comments</span>
-              <textarea name="returnedReason" />
+              <span>Return target</span>
+              <select name="returnTarget" defaultValue="build">
+                <option value="build">Return to Build</option>
+                <option value="design">Return to Design</option>
+                <option value="analysis">Return to Analysis</option>
+                <option value="general">General return</option>
+              </select>
+            </label>
+            <label>
+              <span>Severity</span>
+              <select name="severity" defaultValue="required-fix">
+                <option value="minor">Minor</option>
+                <option value="required-fix">Required fix</option>
+                <option value="blocking">Blocking</option>
+                <option value="specialist-review">Specialist review</option>
+              </select>
+            </label>
+            <label>
+              <span>Affected area</span>
+              <input
+                name="affectedArea"
+                placeholder="Build, Design, Analysis, final test, accessibility"
+              />
+            </label>
+            <label>
+              <span>Affected block or item</span>
+              <input name="affectedItem" placeholder="Optional block or item" />
+            </label>
+            <label>
+              <span>Reviewer comment</span>
+              <textarea name="reviewerComment" />
+            </label>
+            <label>
+              <span>Required action</span>
+              <textarea name="requiredAction" />
             </label>
             <button className="workspace-button" type="submit">
-              Return for changes
+              Return to creator
+            </button>
+          </form>
+
+          <form
+            action={requireSpecialistReviewAction.bind(
+              null,
+              courseId,
+              versionId,
+            )}
+            className="checklist-form"
+          >
+            <h3>Require specialist review</h3>
+            <p className="section-subcopy">
+              Use this for safeguarding, civic-space, accessibility, data,
+              legal, or other specialist review needs. Normal approval remains
+              blocked while this is open.
+            </p>
+            <label>
+              <span>Specialist review area</span>
+              <input
+                name="affectedArea"
+                placeholder="Safeguarding, accessibility, data safety"
+              />
+            </label>
+            <label>
+              <span>Affected block or item</span>
+              <input name="affectedItem" placeholder="Optional block or item" />
+            </label>
+            <label>
+              <span>Reason</span>
+              <textarea name="reviewerComment" />
+            </label>
+            <label>
+              <span>Required specialist action</span>
+              <textarea name="requiredAction" />
+            </label>
+            <button className="workspace-button" type="submit">
+              Flag specialist review
+            </button>
+          </form>
+
+          <form
+            action={pauseSubmittedCourseAction.bind(null, courseId, versionId)}
+            className="checklist-form"
+          >
+            <h3>Not approved / pause</h3>
+            <p className="section-subcopy">
+              Use this when the course should not proceed in its current form.
+            </p>
+            <label>
+              <span>Affected area</span>
+              <input name="affectedArea" />
+            </label>
+            <label>
+              <span>Affected block or item</span>
+              <input name="affectedItem" placeholder="Optional block or item" />
+            </label>
+            <label>
+              <span>Pause reason</span>
+              <textarea name="reviewerComment" />
+            </label>
+            <label>
+              <span>Required next action</span>
+              <textarea name="requiredAction" />
+            </label>
+            <button className="workspace-button" type="submit">
+              Pause course
             </button>
           </form>
         </div>

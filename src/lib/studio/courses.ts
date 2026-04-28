@@ -56,6 +56,7 @@ export async function getCreatorCourses(
           actionMap: true,
           storyboard: true,
           designHandover: true,
+          reviewRecord: true,
           modules: {
             orderBy: {
               sortOrder: "asc",
@@ -150,6 +151,7 @@ export async function getEditableCourseVersion(
             },
           },
           workflowSteps: true,
+          reviewRecord: true,
         },
       },
     },

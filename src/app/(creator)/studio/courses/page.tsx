@@ -10,6 +10,7 @@ import {
   getCreatorCourses,
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
+import { getReturnGuidanceFromChecklist } from "@/lib/review/decisions";
 
 import { createCourseAction } from "../actions";
 
@@ -108,8 +109,17 @@ export default async function StudioCoursesPage({
                   CourseWorkflowStep.CREATOR_REVIEW,
                 )
               : undefined;
+            const returnGuidance =
+              version?.status === "RETURNED"
+                ? getReturnGuidanceFromChecklist(
+                    version.reviewRecord?.checklist,
+                    version.reviewRecord?.returnedReason,
+                  )
+                : null;
             const continueHref =
-              version?.status === "SUBMITTED"
+              version?.status === "RETURNED" && returnGuidance
+                ? getReturnedResumeHref(course.id, returnGuidance.returnTarget)
+                : version?.status === "SUBMITTED"
                 ? "/studio/courses"
                 : previewStatus === WorkflowStepStatus.COMPLETE
                 ? `/studio/courses/${course.id}/creator-review`
@@ -127,7 +137,9 @@ export default async function StudioCoursesPage({
                 ? `/studio/courses/${course.id}/diagnosis`
                 : `/studio/courses/${course.id}/setup`;
             const continueLabel =
-              version?.status === "SUBMITTED"
+              version?.status === "RETURNED" && returnGuidance
+                ? returnGuidance.resumeLabel
+                : version?.status === "SUBMITTED"
                 ? "Submitted for review"
                 : creatorReviewStatus === WorkflowStepStatus.COMPLETE
                 ? "Ready to submit"
@@ -164,6 +176,24 @@ export default async function StudioCoursesPage({
                     {formatStepStatus(previewStatus)} · Creator Review{" "}
                     {formatStepStatus(creatorReviewStatus)}
                   </p>
+                  {returnGuidance ? (
+                    <div className="next-step-panel">
+                      <h3>{returnGuidance.decisionLabel}</h3>
+                      <p>
+                        Resume point: {returnGuidance.resumeStep}. Reason:{" "}
+                        {returnGuidance.reason}
+                      </p>
+                      <p>Required action: {returnGuidance.requiredAction}</p>
+                      {returnGuidance.affectedArea ? (
+                        <p>
+                          Affected area: {returnGuidance.affectedArea}
+                          {returnGuidance.affectedItem
+                            ? ` / ${returnGuidance.affectedItem}`
+                            : ""}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
                 <Link href={continueHref}>{continueLabel}</Link>
               </article>
@@ -180,6 +210,19 @@ export default async function StudioCoursesPage({
       )}
     </WorkspaceShell>
   );
+}
+
+function getReturnedResumeHref(courseId: string, target: string) {
+  switch (target) {
+    case "analysis":
+      return `/studio/courses/${courseId}/diagnosis`;
+    case "design":
+      return `/studio/courses/${courseId}/storyboard`;
+    case "build":
+      return `/studio/courses/${courseId}/build`;
+    default:
+      return `/studio/courses/${courseId}/build`;
+  }
 }
 
 function formatStepStatus(status: string | undefined) {
