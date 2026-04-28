@@ -1,0 +1,542 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum UserRole {
+  LEARNER
+  CREATOR
+  REVIEWER
+  ADMIN
+}
+
+enum CourseStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum CourseVersionStatus {
+  DRAFT
+  CREATOR_REVIEW
+  SUBMITTED
+  RETURNED
+  APPROVED
+  PUBLISHED
+  REVISION_DRAFT
+  REPLACED
+  ARCHIVED
+}
+
+enum CourseWorkflowStep {
+  COURSE_SETUP
+  DIAGNOSIS
+  CAPACITY_MAP
+  ACTION_MAP
+  STORYBOARD
+  BUILD
+  PREVIEW
+  CREATOR_REVIEW
+  MONITORING
+  REVISION
+}
+
+enum WorkflowStepStatus {
+  LOCKED
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+  NEEDS_ATTENTION
+}
+
+enum LessonBlockType {
+  TEXT
+  IMAGE
+  VIDEO
+  CALLOUT
+  REFLECTION
+  CHECK
+  SCENARIO
+  FINAL_TEST
+}
+
+enum CertificateStatusEventType {
+  ISSUED
+  REVOKED
+  REACTIVATED
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  memberships OrganizationMembership[]
+  courses     Course[]
+}
+
+model User {
+  id             String     @id @default(cuid())
+  organizationId String
+  email          String
+  name           String
+  status         UserStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organization  Organization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  memberships   OrganizationMembership[]
+  courses       Course[]                   @relation("CourseOwner")
+  versions      CourseVersion[]            @relation("VersionCreator")
+  events        CourseLifecycleEvent[]
+  workflowSteps CourseWorkflowStepRecord[] @relation("WorkflowStepUpdater")
+  reviewRecords CourseReviewRecord[]       @relation("CourseReviewer")
+  lessonProgress LearnerLessonProgress[]
+  finalTestAttempts LearnerFinalTestAttempt[]
+  certificates  LearnerCertificate[]
+  certificateEvents LearnerCertificateStatusEvent[] @relation("CertificateStatusActor")
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+}
+
+model OrganizationMembership {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roles        MembershipRoleAssignment[]
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model MembershipRoleAssignment {
+  id           String   @id @default(cuid())
+  membershipId String
+  role         UserRole
+  createdAt    DateTime @default(now())
+
+  membership OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, role])
+  @@index([membershipId])
+}
+
+model Course {
+  id             String       @id @default(cuid())
+  organizationId String
+  ownerId        String
+  title          String
+  slug           String
+  status         CourseStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  owner        User            @relation("CourseOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  versions     CourseVersion[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([ownerId])
+}
+
+model CourseVersion {
+  id                    String              @id @default(cuid())
+  courseId              String
+  createdById           String
+  sourceVersionId       String?
+  versionNumber         Int
+  status                CourseVersionStatus @default(DRAFT)
+  designRecord          String              @default("{}")
+  creatorReviewReadyAt  DateTime?
+  submittedAt           DateTime?
+  returnedAt            DateTime?
+  approvedAt            DateTime?
+  publishedAt           DateTime?
+  replacedAt            DateTime?
+  archivedAt            DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  course            Course                     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy         User                       @relation("VersionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  sourceVersion     CourseVersion?            @relation("VersionRevisionSource", fields: [sourceVersionId], references: [id], onDelete: SetNull)
+  revisionVersions  CourseVersion[]           @relation("VersionRevisionSource")
+  workflowSteps     CourseWorkflowStepRecord[]
+  setup             CourseSetup?
+  diagnosis         CourseDiagnosis?
+  analysisHandover  CourseAnalysisHandover?
+  capacityMap       CourseCapacityMap?
+  actionMap         CourseActionMap?
+  storyboard        CourseStoryboard?
+  designHandover    CourseDesignHandover?
+  reviewRecord      CourseReviewRecord?
+  monitoringRecord  CourseMonitoringRecord?
+  revisionRecord    CourseRevisionRecord?
+  modules           CourseModule[]
+  events            CourseLifecycleEvent[]
+  lessonProgress    LearnerLessonProgress[]
+  finalTestAttempts LearnerFinalTestAttempt[]
+  certificates       LearnerCertificate[]
+
+  @@unique([courseId, versionNumber])
+  @@index([courseId, status])
+  @@index([createdById])
+  @@index([sourceVersionId])
+}
+
+model CourseWorkflowStepRecord {
+  id              String             @id @default(cuid())
+  courseVersionId String
+  step            CourseWorkflowStep
+  status          WorkflowStepStatus @default(NOT_STARTED)
+  lockedReason    String?
+  completedAt     DateTime?
+  updatedById     String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  updatedBy     User?         @relation("WorkflowStepUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([courseVersionId, step])
+  @@index([courseVersionId, status])
+  @@index([updatedById])
+}
+
+model CourseSetup {
+  id                  String   @id @default(cuid())
+  courseVersionId     String   @unique
+  title               String
+  summary             String   @default("")
+  primaryLearnerGroup String   @default("")
+  language            String   @default("English")
+  formatAndTime       String   @default("")
+  level               String   @default("")
+  capacityArea        String   @default("")
+  sensitiveFlag       Boolean  @default(false)
+  certificateIntent   String   @default("")
+  learnerReality      String   @default("{}")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+}
+
+model CourseDiagnosis {
+  id                      String   @id @default(cuid())
+  courseVersionId         String   @unique
+  surfaceRequest          String   @default("")
+  performanceEvidence     String   @default("")
+  currentReality          String   @default("")
+  desiredReality          String   @default("")
+  affectedLearnerGroup    String   @default("")
+  evidenceSources         String   @default("{}")
+  ksmeGap                 String   @default("")
+  courseFitDecision       String   @default("")
+  alternativeIntervention String   @default("")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+}
+
+model CourseAnalysisHandover {
+  id                                  String    @id @default(cuid())
+  courseVersionId                     String    @unique
+  validatedCapacityGap                String    @default("")
+  baseline                            String    @default("")
+  desiredPractice                     String    @default("")
+  rootCauseSummary                    String    @default("")
+  ksmeRoute                           String    @default("")
+  separableKnowledgeSkillComponent    String    @default("")
+  interventionDecision                String    @default("")
+  safeguardsNote                      String    @default("")
+  evaluationAnchor                    String    @default("")
+  status                              String    @default("DRAFT")
+  lockedAt                            DateTime?
+  lockedById                          String?
+  createdAt                           DateTime  @default(now())
+  updatedAt                           DateTime  @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([lockedById])
+}
+
+model CourseCapacityMap {
+  id                  String   @id @default(cuid())
+  courseVersionId     String   @unique
+  capacityArea        String   @default("")
+  subarea             String   @default("")
+  capabilityFocus     String   @default("")
+  linkedStandard      String   @default("")
+  capacityOutcome     String   @default("")
+  diagnosisLink       String   @default("")
+  monitoringRelevance String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+}
+
+model CourseActionMap {
+  id                       String   @id @default(cuid())
+  courseVersionId          String   @unique
+  capacityGoal             String   @default("")
+  individualLearnerOutcome String   @default("")
+  observableActions        String   @default("[]")
+  practiceScenarios        String   @default("[]")
+  essentialInformation     String   @default("[]")
+  difMatrix                String   @default("{}")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+}
+
+model CourseStoryboard {
+  id               String   @id @default(cuid())
+  courseVersionId  String   @unique
+  lessonPlan       String   @default("[]")
+  aiHandoffNotes   String   @default("")
+  approvedForBuild Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+}
+
+model CourseDesignHandover {
+  id                        String    @id @default(cuid())
+  courseVersionId           String    @unique
+  coursePurpose             String    @default("")
+  performanceGoal           String    @default("")
+  learningPathway           String    @default("")
+  approvedBlockSequence     String    @default("")
+  practiceStrategy          String    @default("")
+  assessmentStrategy        String    @default("")
+  accessibilityRequirements String    @default("")
+  safeguards                String    @default("")
+  aiAuthoringBoundaries     String    @default("")
+  evaluationAnchor          String    @default("")
+  status                    String    @default("DRAFT")
+  lockedAt                  DateTime?
+  lockedById                String?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([lockedById])
+}
+
+model CourseReviewRecord {
+  id              String   @id @default(cuid())
+  courseVersionId String   @unique
+  reviewerId      String?
+  checklist       String   @default("{}")
+  decisionNotes   String   @default("")
+  returnedReason  String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  reviewer      User?         @relation("CourseReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([reviewerId])
+}
+
+model CourseMonitoringRecord {
+  id               String   @id @default(cuid())
+  courseVersionId  String   @unique
+  signalSummary    String   @default("{}")
+  improvementNotes String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+}
+
+model CourseRevisionRecord {
+  id              String   @id @default(cuid())
+  courseVersionId String   @unique
+  sourceVersionId String?
+  revisionReason  String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+}
+
+model CourseModule {
+  id        String   @id @default(cuid())
+  versionId String
+  title     String
+  sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  version CourseVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  lessons CourseLesson[]
+
+  @@unique([versionId, sortOrder])
+  @@index([versionId])
+}
+
+model CourseLesson {
+  id        String   @id @default(cuid())
+  moduleId  String
+  title     String
+  sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  module CourseModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  blocks LessonBlock[]
+  learnerProgress LearnerLessonProgress[]
+
+  @@unique([moduleId, sortOrder])
+  @@index([moduleId])
+}
+
+model LessonBlock {
+  id        String          @id @default(cuid())
+  lessonId  String
+  type      LessonBlockType
+  sortOrder Int
+  content   String          @default("{}")
+  origin    String          @default("DESIGN_REQUIRED")
+  justification String      @default("")
+  purposeLink   String      @default("")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  lesson CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  finalTestAttempts LearnerFinalTestAttempt[]
+
+  @@unique([lessonId, sortOrder])
+  @@index([lessonId])
+}
+
+model LearnerLessonProgress {
+  id              String    @id @default(cuid())
+  userId          String
+  courseVersionId String
+  lessonId        String
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  lesson        CourseLesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseVersionId, lessonId])
+  @@index([courseVersionId])
+  @@index([lessonId])
+  @@index([userId, completedAt])
+}
+
+model LearnerFinalTestAttempt {
+  id              String   @id @default(cuid())
+  userId          String
+  courseVersionId String
+  lessonBlockId   String
+  selectedAnswer  String
+  correctAnswer   String
+  scorePercent    Int
+  passed          Boolean  @default(false)
+  submittedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  lessonBlock   LessonBlock   @relation(fields: [lessonBlockId], references: [id], onDelete: Cascade)
+
+  @@index([userId, courseVersionId, submittedAt])
+  @@index([courseVersionId, passed])
+  @@index([lessonBlockId])
+}
+
+model LearnerCertificate {
+  id                String    @id @default(cuid())
+  certificateNumber String    @unique
+  userId            String
+  courseVersionId   String
+  issuedAt          DateTime  @default(now())
+  revokedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  statusEvents  LearnerCertificateStatusEvent[]
+
+  @@unique([userId, courseVersionId])
+  @@index([courseVersionId])
+  @@index([userId, issuedAt])
+  @@index([revokedAt])
+}
+
+model LearnerCertificateStatusEvent {
+  id            String                     @id @default(cuid())
+  certificateId String
+  actorId       String?
+  eventType     CertificateStatusEventType
+  note          String                     @default("")
+  createdAt     DateTime                   @default(now())
+
+  certificate LearnerCertificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  actor       User?              @relation("CertificateStatusActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([certificateId, createdAt])
+  @@index([actorId])
+  @@index([eventType, createdAt])
+}
+
+model CourseLifecycleEvent {
+  id              String               @id @default(cuid())
+  courseVersionId String
+  actorId         String?
+  fromStatus      CourseVersionStatus?
+  toStatus        CourseVersionStatus
+  note            String?
+  createdAt       DateTime             @default(now())
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  actor         User?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([courseVersionId, createdAt])
+  @@index([actorId])
+}
