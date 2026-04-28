@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AnalysisSummaryPanel } from "@/components/studio/AnalysisSummaryPanel";
+import { DesignAnchorPanel } from "@/components/studio/DesignAnchorPanel";
 import { DesignSummaryPanel } from "@/components/studio/DesignSummaryPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
@@ -41,6 +42,7 @@ type StoryboardPageProps = {
     designLocked?: string;
     error?: string;
     fields?: string;
+    items?: string;
   }>;
 };
 
@@ -141,6 +143,9 @@ export default async function StoryboardPage({
             field,
         )
     : [];
+  const missingPrerequisites = resolvedSearchParams?.items
+    ? resolvedSearchParams.items.split(",").filter(Boolean)
+    : [];
   const requiresSafetyGate = Boolean(editable.version.setup?.sensitiveFlag);
 
   return (
@@ -171,17 +176,37 @@ export default async function StoryboardPage({
           Design for Build.
         </p>
       ) : null}
+      {resolvedSearchParams?.error === "prerequisites" ? (
+        <p className="workspace-error">
+          Build cannot open yet. Complete: {missingPrerequisites.join(", ")}.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.error === "anchor-drift" ? (
+        <p className="workspace-error">
+          The Design Handover changed locked Analysis anchors. Restore:{" "}
+          {missingFields.join(", ")}.
+        </p>
+      ) : null}
 
       {handover ? (
-        <AnalysisSummaryPanel
-          handover={handover}
-          courseFitDecision={editable.version.diagnosis?.courseFitDecision}
-        />
+        <>
+          <AnalysisSummaryPanel
+            handover={handover}
+            courseFitDecision={editable.version.diagnosis?.courseFitDecision}
+          />
+          <DesignAnchorPanel
+            handover={handover}
+            title="Storyboard Analysis anchors"
+          />
+        </>
       ) : null}
 
       {designLocked && designHandover ? (
         <>
-          <DesignSummaryPanel handover={designHandover} />
+          <DesignSummaryPanel
+            handover={designHandover}
+            analysisHandover={handover}
+          />
           <div className="next-step-panel">
             <h2>Build Studio is open</h2>
             <p>
@@ -292,7 +317,11 @@ export default async function StoryboardPage({
         </fieldset>
 
         <fieldset>
-          <legend>Learning design</legend>
+          <legend>Learning Design</legend>
+          <p className="section-subcopy">
+            This section converts the approved Analysis anchors and Action Map
+            into a learner experience before Build Studio opens.
+          </p>
           <label>
             <span>Learning mode</span>
             <select

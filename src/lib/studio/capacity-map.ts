@@ -8,6 +8,11 @@ export type CourseCapacityMapInput = {
   monitoringRelevance: string;
 };
 
+export type CapacityMapAnalysisAnchors = Pick<
+  CourseCapacityMapInput,
+  "capacityArea" | "subarea" | "linkedStandard"
+>;
+
 export type CourseCapacityMapValidationResult =
   | {
       ok: true;
@@ -31,8 +36,10 @@ const requiredFields: readonly (keyof CourseCapacityMapInput)[] = [
 export const capacityMapFieldLabels: Record<string, string> = {
   capacityArea: "capacity area",
   subarea: "subarea",
+  subCapacityArea: "sub-capacity area",
   capabilityFocus: "capability focus",
   linkedStandard: "linked standard",
+  capacityIndicator: "capacity indicator",
   capacityOutcome: "capacity outcome",
   diagnosisLink: "diagnosis link",
   monitoringRelevance: "monitoring relevance",
@@ -58,12 +65,14 @@ export function isDecCapacityArea(value: string): value is DecCapacityArea {
 
 export function parseCourseCapacityMapFormData(
   formData: FormData,
+  anchors?: Partial<CapacityMapAnalysisAnchors>,
 ): CourseCapacityMapValidationResult {
   const value: CourseCapacityMapInput = {
-    capacityArea: getTextValue(formData, "capacityArea"),
-    subarea: getTextValue(formData, "subarea"),
+    capacityArea: anchors?.capacityArea?.trim() || getTextValue(formData, "capacityArea"),
+    subarea: anchors?.subarea?.trim() || getTextValue(formData, "subarea"),
     capabilityFocus: getTextValue(formData, "capabilityFocus"),
-    linkedStandard: getTextValue(formData, "linkedStandard"),
+    linkedStandard:
+      anchors?.linkedStandard?.trim() || getTextValue(formData, "linkedStandard"),
     capacityOutcome: getTextValue(formData, "capacityOutcome"),
     diagnosisLink: getTextValue(formData, "diagnosisLink"),
     monitoringRelevance: getTextValue(formData, "monitoringRelevance"),

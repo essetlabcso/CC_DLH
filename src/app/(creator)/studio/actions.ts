@@ -61,6 +61,11 @@ import {
   validateDesignHandoverInput,
 } from "@/lib/studio/design-handover";
 import {
+  getAnalysisDesignAnchors,
+  getDesignHandoverAnchorDriftFields,
+  getIncompleteDesignPrerequisites,
+} from "@/lib/studio/design-anchors";
+import {
   buildEvidenceSources,
   parseCourseDiagnosisFormData,
 } from "@/lib/studio/diagnosis";
@@ -537,16 +542,6 @@ export async function saveCourseCapacityMapAction(
   const identity = await requireWorkspaceIdentity(
     `/studio/courses/${courseId}/capacity-map`,
   );
-  const result = parseCourseCapacityMapFormData(formData);
-
-  if (!result.ok) {
-    redirect(
-      `/studio/courses/${courseId}/capacity-map?error=missing&fields=${encodeURIComponent(
-        result.missingFields.join(","),
-      )}`,
-    );
-  }
-
   const editable = await getEditableCourseVersion(
     prisma,
     {
@@ -563,6 +558,28 @@ export async function saveCourseCapacityMapAction(
 
   if (!isAnalysisHandoverLocked(editable.version.analysisHandover)) {
     redirect(`/studio/courses/${courseId}/diagnosis`);
+  }
+
+  const analysisAnchors = getAnalysisDesignAnchors(
+    editable.version.analysisHandover,
+  );
+  const result = parseCourseCapacityMapFormData(formData, {
+    capacityArea: analysisAnchors.capacityArea,
+    subarea: analysisAnchors.subCapacityArea,
+    linkedStandard: analysisAnchors.linkedStandard,
+  });
+
+  if (!result.ok || !analysisAnchors.capacityIndicator) {
+    const missingFields = [
+      ...(!result.ok ? result.missingFields : []),
+      ...(!analysisAnchors.capacityIndicator ? ["capacityIndicator"] : []),
+    ];
+
+    redirect(
+      `/studio/courses/${courseId}/capacity-map?error=missing&fields=${encodeURIComponent(
+        Array.from(new Set(missingFields)).join(","),
+      )}`,
+    );
   }
 
   await prisma.$transaction([
@@ -680,6 +697,15 @@ export async function saveCourseActionMapAction(
     redirect(`/studio/courses/${courseId}/diagnosis`);
   }
 
+  const capacityMapStatus =
+    editable.version.workflowSteps.find(
+      (step) => step.step === CourseWorkflowStep.CAPACITY_MAP,
+    )?.status ?? WorkflowStepStatus.LOCKED;
+
+  if (capacityMapStatus !== WorkflowStepStatus.COMPLETE) {
+    redirect(`/studio/courses/${courseId}/capacity-map`);
+  }
+
   await prisma.$transaction([
     prisma.courseActionMap.upsert({
       where: {
@@ -776,6 +802,9 @@ export async function saveCourseStoryboardAction(
     redirect(`/studio/courses/${courseId}/diagnosis`);
   }
 
+  const analysisAnchors = getAnalysisDesignAnchors(
+    editable.version.analysisHandover,
+  );
   if (isDesignHandoverLocked(editable.version.designHandover)) {
     redirect(`/studio/courses/${courseId}/storyboard?designLocked=1`);
   }
@@ -839,10 +868,14 @@ export async function saveCourseStoryboardAction(
         assessmentStrategy: designHandoverResult.value.assessmentStrategy,
         accessibilityRequirements:
           designHandoverResult.value.accessibilityRequirements,
-        safeguards: designHandoverResult.value.safeguards,
+        safeguards:
+          analysisAnchors.safeguardsNote ||
+          designHandoverResult.value.safeguards,
         aiAuthoringBoundaries:
           designHandoverResult.value.aiAuthoringBoundaries,
-        evaluationAnchor: designHandoverResult.value.evaluationAnchor,
+        evaluationAnchor:
+          analysisAnchors.evaluationAnchor ||
+          designHandoverResult.value.evaluationAnchor,
         status: "DRAFT",
         lockedAt: null,
         lockedById: null,
@@ -858,10 +891,14 @@ export async function saveCourseStoryboardAction(
         assessmentStrategy: designHandoverResult.value.assessmentStrategy,
         accessibilityRequirements:
           designHandoverResult.value.accessibilityRequirements,
-        safeguards: designHandoverResult.value.safeguards,
+        safeguards:
+          analysisAnchors.safeguardsNote ||
+          designHandoverResult.value.safeguards,
         aiAuthoringBoundaries:
           designHandoverResult.value.aiAuthoringBoundaries,
-        evaluationAnchor: designHandoverResult.value.evaluationAnchor,
+        evaluationAnchor:
+          analysisAnchors.evaluationAnchor ||
+          designHandoverResult.value.evaluationAnchor,
       },
     }),
     prisma.courseWorkflowStepRecord.upsert({
@@ -937,33 +974,66 @@ export async function lockDesignHandoverForBuildAction(courseId: string) {
     redirect(`/studio/courses/${courseId}/diagnosis`);
   }
 
+  const capacityMapStatus =
+    editable.version.workflowSteps.find(
+      (step) => step.step === CourseWorkflowStep.CAPACITY_MAP,
+    )?.status ?? WorkflowStepStatus.LOCKED;
+  const actionMapStatus =
+    editable.version.workflowSteps.find(
+      (step) => step.step === CourseWorkflowStep.ACTION_MAP,
+    )?.status ?? WorkflowStepStatus.LOCKED;
   const storyboardStatus =
     editable.version.workflowSteps.find(
       (step) => step.step === CourseWorkflowStep.STORYBOARD,
     )?.status ?? WorkflowStepStatus.LOCKED;
   const storyboard = editable.version.storyboard;
   const designHandover = editable.version.designHandover;
+  const validation = designHandover
+    ? validateDesignHandoverInput({
+        coursePurpose: designHandover.coursePurpose,
+        performanceGoal: designHandover.performanceGoal,
+        learningPathway: designHandover.learningPathway,
+        approvedBlockSequence: designHandover.approvedBlockSequence,
+        practiceStrategy: designHandover.practiceStrategy,
+        assessmentStrategy: designHandover.assessmentStrategy,
+        accessibilityRequirements: designHandover.accessibilityRequirements,
+        safeguards: designHandover.safeguards,
+        aiAuthoringBoundaries: designHandover.aiAuthoringBoundaries,
+        evaluationAnchor: designHandover.evaluationAnchor,
+      })
+    : { ok: false, missingFields: ["designHandover"] };
+  const incompletePrerequisites = getIncompleteDesignPrerequisites({
+    analysisLocked: isAnalysisHandoverLocked(editable.version.analysisHandover),
+    capacityMapComplete: capacityMapStatus === WorkflowStepStatus.COMPLETE,
+    actionMapComplete: actionMapStatus === WorkflowStepStatus.COMPLETE,
+    storyboardComplete: storyboardStatus === WorkflowStepStatus.COMPLETE,
+    storyboardApprovedForBuild: Boolean(storyboard?.approvedForBuild),
+    designHandoverComplete: validation.ok,
+  });
 
-  if (
-    storyboardStatus !== WorkflowStepStatus.COMPLETE ||
-    !storyboard?.approvedForBuild ||
-    !designHandover
-  ) {
-    redirect(`/studio/courses/${courseId}/storyboard?error=handover`);
+  if (incompletePrerequisites.length > 0) {
+    redirect(
+      `/studio/courses/${courseId}/storyboard?error=prerequisites&items=${encodeURIComponent(
+        incompletePrerequisites.join(","),
+      )}`,
+    );
   }
 
-  const validation = validateDesignHandoverInput({
-    coursePurpose: designHandover.coursePurpose,
-    performanceGoal: designHandover.performanceGoal,
-    learningPathway: designHandover.learningPathway,
-    approvedBlockSequence: designHandover.approvedBlockSequence,
-    practiceStrategy: designHandover.practiceStrategy,
-    assessmentStrategy: designHandover.assessmentStrategy,
-    accessibilityRequirements: designHandover.accessibilityRequirements,
-    safeguards: designHandover.safeguards,
-    aiAuthoringBoundaries: designHandover.aiAuthoringBoundaries,
-    evaluationAnchor: designHandover.evaluationAnchor,
-  });
+  const anchorDriftFields = getDesignHandoverAnchorDriftFields(
+    {
+      safeguards: designHandover?.safeguards || "",
+      evaluationAnchor: designHandover?.evaluationAnchor || "",
+    },
+    editable.version.analysisHandover,
+  );
+
+  if (anchorDriftFields.length > 0) {
+    redirect(
+      `/studio/courses/${courseId}/storyboard?error=anchor-drift&fields=${encodeURIComponent(
+        anchorDriftFields.join(","),
+      )}`,
+    );
+  }
 
   if (!validation.ok) {
     redirect(

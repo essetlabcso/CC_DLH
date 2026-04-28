@@ -3,14 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AnalysisSummaryPanel } from "@/components/studio/AnalysisSummaryPanel";
+import { DesignAnchorPanel } from "@/components/studio/DesignAnchorPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { isAnalysisHandoverLocked } from "@/lib/studio/analysis-handover";
-import {
-  capacityMapFieldLabels,
-  decCapacityAreas,
-} from "@/lib/studio/capacity-map";
+import { capacityMapFieldLabels } from "@/lib/studio/capacity-map";
 import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
@@ -133,48 +131,47 @@ export default async function CapacityMapPage({
       ) : null}
 
       {handover ? (
-        <AnalysisSummaryPanel
-          handover={handover}
-          courseFitDecision={diagnosis?.courseFitDecision}
-        />
+        <>
+          <AnalysisSummaryPanel
+            handover={handover}
+            courseFitDecision={diagnosis?.courseFitDecision}
+          />
+          <DesignAnchorPanel handover={handover} />
+        </>
       ) : null}
 
       <form action={saveAction} className="setup-form">
-        <div className="form-grid">
-          <label>
-            <span>Capacity area</span>
-            <select
-              name="capacityArea"
-              required
-              defaultValue={capacityMap?.capacityArea}
-            >
-              <option value="">Choose a DEC capacity area</option>
-              {decCapacityAreas.map((area) => (
-                <option key={area} value={area}>
-                  {area}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Subarea</span>
-            <input name="subarea" required defaultValue={capacityMap?.subarea} />
-          </label>
-        </div>
+        <section className="studio-section" aria-labelledby="capacity-source">
+          <h2 id="capacity-source">Controlled Capacity Map anchors</h2>
+          <p className="section-subcopy">
+            Capacity area, sub-capacity, linked standard, and capacity
+            indicator come from the locked Analysis Handover.
+          </p>
+          <div className="context-grid">
+            <article>
+              <strong>Capacity area</strong>
+              <span>{handover?.capacityArea || "Not set"}</span>
+            </article>
+            <article>
+              <strong>Sub-capacity</strong>
+              <span>{handover?.subCapacityArea || "Not set"}</span>
+            </article>
+            <article>
+              <strong>Linked standard</strong>
+              <span>{handover?.linkedStandard || "Not set"}</span>
+            </article>
+            <article>
+              <strong>Capacity indicator</strong>
+              <span>{handover?.capacityIndicator || "Not set"}</span>
+            </article>
+          </div>
+        </section>
         <label>
           <span>Capability focus</span>
           <textarea
             name="capabilityFocus"
             required
-            defaultValue={capacityMap?.capabilityFocus}
-          />
-        </label>
-        <label>
-          <span>Linked standard or reference</span>
-          <textarea
-            name="linkedStandard"
-            required
-            defaultValue={capacityMap?.linkedStandard}
+            defaultValue={capacityMap?.capabilityFocus || handover?.capacityIndicator}
           />
         </label>
         <label>
@@ -182,7 +179,7 @@ export default async function CapacityMapPage({
           <textarea
             name="capacityOutcome"
             required
-            defaultValue={capacityMap?.capacityOutcome}
+            defaultValue={capacityMap?.capacityOutcome || handover?.desiredPractice}
           />
         </label>
         <label>
@@ -190,7 +187,9 @@ export default async function CapacityMapPage({
           <textarea
             name="diagnosisLink"
             required
-            defaultValue={capacityMap?.diagnosisLink}
+            defaultValue={
+              capacityMap?.diagnosisLink || handover?.validatedCapacityGap
+            }
           />
         </label>
         <label>
@@ -198,7 +197,7 @@ export default async function CapacityMapPage({
           <textarea
             name="monitoringRelevance"
             required
-            defaultValue={capacityMap?.monitoringRelevance}
+            defaultValue={capacityMap?.monitoringRelevance || handover?.evaluationAnchor}
           />
         </label>
 

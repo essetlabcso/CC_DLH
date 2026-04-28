@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AnalysisSummaryPanel } from "@/components/studio/AnalysisSummaryPanel";
+import { DesignAnchorPanel } from "@/components/studio/DesignAnchorPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -146,10 +147,16 @@ export default async function ActionMapPage({
       ) : null}
 
       {handover ? (
-        <AnalysisSummaryPanel
-          handover={handover}
-          courseFitDecision={editable.version.diagnosis?.courseFitDecision}
-        />
+        <>
+          <AnalysisSummaryPanel
+            handover={handover}
+            courseFitDecision={editable.version.diagnosis?.courseFitDecision}
+          />
+          <DesignAnchorPanel
+            handover={handover}
+            title="Action Map Analysis anchors"
+          />
+        </>
       ) : null}
 
       <form action={saveAction} className="setup-form">

@@ -238,7 +238,12 @@ export default async function BuildStudioPage({
         </p>
       ) : null}
 
-      {designHandover ? <DesignSummaryPanel handover={designHandover} /> : null}
+      {designHandover ? (
+        <DesignSummaryPanel
+          handover={designHandover}
+          analysisHandover={editable.version.analysisHandover}
+        />
+      ) : null}
 
       <section className="studio-section" aria-labelledby="build-source-title">
         <h2 id="build-source-title">Storyboard source</h2>

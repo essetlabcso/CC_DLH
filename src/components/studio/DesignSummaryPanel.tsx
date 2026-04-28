@@ -1,12 +1,17 @@
-import type { CourseDesignHandover } from "@prisma/client";
+import type { CourseAnalysisHandover, CourseDesignHandover } from "@prisma/client";
 
+import { formatAnchorValue } from "@/lib/studio/design-anchors";
 import { getDesignHandoverStatusLabel } from "@/lib/studio/design-handover";
 
 type DesignSummaryPanelProps = {
   handover: CourseDesignHandover;
+  analysisHandover?: CourseAnalysisHandover | null;
 };
 
-export function DesignSummaryPanel({ handover }: DesignSummaryPanelProps) {
+export function DesignSummaryPanel({
+  handover,
+  analysisHandover,
+}: DesignSummaryPanelProps) {
   return (
     <section className="studio-section" aria-labelledby="design-summary-title">
       <div className="section-heading-row">
@@ -22,6 +27,26 @@ export function DesignSummaryPanel({ handover }: DesignSummaryPanelProps) {
         <article>
           <strong>Status</strong>
           <span>{getDesignHandoverStatusLabel(handover)}</span>
+        </article>
+        <article>
+          <strong>Approved capacity area</strong>
+          <span>{formatAnchorValue(analysisHandover?.capacityArea)}</span>
+        </article>
+        <article>
+          <strong>Approved sub-capacity</strong>
+          <span>{formatAnchorValue(analysisHandover?.subCapacityArea)}</span>
+        </article>
+        <article>
+          <strong>Approved standard</strong>
+          <span>{formatAnchorValue(analysisHandover?.linkedStandard)}</span>
+        </article>
+        <article>
+          <strong>Approved capacity indicator</strong>
+          <span>{formatAnchorValue(analysisHandover?.capacityIndicator)}</span>
+        </article>
+        <article>
+          <strong>Approved K/S/M/E route</strong>
+          <span>{formatAnchorValue(analysisHandover?.ksmeRoute)}</span>
         </article>
         <article>
           <strong>Course purpose</strong>
