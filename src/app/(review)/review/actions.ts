@@ -26,7 +26,12 @@ import {
   summarizeReviewerReturn,
   summarizeSpecialistReview,
 } from "@/lib/review/decisions";
-import { summarizePublication } from "@/lib/review/publishing";
+import {
+  buildPublishReadiness,
+  canPublishVersion,
+  mergePublicationRecordChecklist,
+  summarizePublication,
+} from "@/lib/review/publishing";
 import {
   parseRevisionRequestFormData,
   summarizeRevisionRequest,
@@ -437,6 +442,8 @@ export async function publishApprovedCourseAction(
     },
     include: {
       course: true,
+      setup: true,
+      reviewRecord: true,
     },
   });
 
@@ -445,10 +452,36 @@ export async function publishApprovedCourseAction(
   }
 
   const publishedAt = new Date();
+  const readiness = buildPublishReadiness(version, {
+    generatedAt: publishedAt,
+  });
+
+  if (!canPublishVersion(readiness)) {
+    redirect(
+      `/review/publishing?blocked=1&version=${encodeURIComponent(version.id)}`,
+    );
+  }
+
   const publicationNote = summarizePublication(
     version.course.title,
     version.versionNumber,
     { isRevision: Boolean(version.sourceVersionId) },
+  );
+  const publicationChecklist = mergePublicationRecordChecklist(
+    version.reviewRecord?.checklist,
+    readiness,
+    {
+      publishedAt: publishedAt.toISOString(),
+      publishedById: identity.user.id,
+      courseId: version.courseId,
+      courseVersionId: version.id,
+      versionNumber: version.versionNumber,
+      releaseType: "publish-now",
+      visibility: readiness.learnerVisibilityDefault,
+      enrollment: "Learner sign-in required",
+      certificateRule: readiness.certificateRule,
+      readinessSummary: readiness.summary,
+    },
   );
 
   await prisma.$transaction(async (tx) => {
@@ -517,6 +550,21 @@ export async function publishApprovedCourseAction(
       },
       data: {
         updatedAt: publishedAt,
+      },
+    });
+
+    await tx.courseReviewRecord.upsert({
+      where: {
+        courseVersionId: version.id,
+      },
+      update: {
+        checklist: publicationChecklist,
+      },
+      create: {
+        courseVersionId: version.id,
+        reviewerId: version.reviewRecord?.reviewerId,
+        checklist: publicationChecklist,
+        decisionNotes: version.reviewRecord?.decisionNotes || publicationNote,
       },
     });
   });

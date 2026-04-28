@@ -6,6 +6,7 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import {
+  buildPublishReadiness,
   countPublishableLessons,
   formatPublishedDate,
   getPublishingVersionTypeLabel,
@@ -15,6 +16,8 @@ import {
 type PublishingPageProps = {
   searchParams?: Promise<{
     published?: string;
+    blocked?: string;
+    version?: string;
   }>;
 };
 
@@ -38,6 +41,7 @@ export default async function PublishingPage({
           reviewer: true,
         },
       },
+      setup: true,
       modules: {
         include: {
           lessons: true,
@@ -82,6 +86,12 @@ export default async function PublishingPage({
           discovery and member learning.
         </p>
       ) : null}
+      {resolvedSearchParams?.blocked === "1" ? (
+        <p className="workspace-error">
+          Publishing was blocked because readiness checks did not pass. Review
+          the readiness evidence below before trying again.
+        </p>
+      ) : null}
 
       <section
         className="studio-section"
@@ -90,36 +100,67 @@ export default async function PublishingPage({
         <h2 id="approved-publishing-title">Ready to publish</h2>
         {approvedVersions.length > 0 ? (
           <div className="course-list course-list-spacious">
-            {approvedVersions.map((version) => (
-              <article className="course-row" key={version.id}>
-                <div>
-                  <h3>{version.course.title}</h3>
-                  <p>
-                    {getPublishingStatusLabel(version.status)} ·{" "}
-                    {getPublishingVersionTypeLabel(version)} · Version{" "}
-                    {version.versionNumber} · Creator {version.createdBy.name} ·{" "}
-                    Reviewer{" "}
-                    {version.reviewRecord?.reviewer?.name ||
-                      "reviewer not recorded"}{" "}
-                    · {countPublishableLessons(version)} lessons
-                  </p>
-                  {version.reviewRecord?.decisionNotes ? (
-                    <p>{version.reviewRecord.decisionNotes}</p>
-                  ) : null}
-                </div>
-                <form
-                  action={publishApprovedCourseAction.bind(
-                    null,
-                    version.course.id,
-                    version.id,
-                  )}
-                >
-                  <button className="workspace-button" type="submit">
-                    Publish
-                  </button>
-                </form>
-              </article>
-            ))}
+            {approvedVersions.map((version) => {
+              const readiness = buildPublishReadiness(version);
+
+              return (
+                <article className="course-row" key={version.id}>
+                  <div>
+                    <h3>{version.course.title}</h3>
+                    <p>
+                      {getPublishingStatusLabel(version.status)} ·{" "}
+                      {getPublishingVersionTypeLabel(version)} · Version{" "}
+                      {version.versionNumber} · Creator {version.createdBy.name} ·{" "}
+                      Reviewer{" "}
+                      {version.reviewRecord?.reviewer?.name ||
+                        "reviewer not recorded"}{" "}
+                      · {countPublishableLessons(version)} lessons
+                    </p>
+                    <p>{readiness.summary}</p>
+                    <p>
+                      Learner visibility: {readiness.learnerVisibilityDefault}
+                    </p>
+                    {version.reviewRecord?.decisionNotes ? (
+                      <p>{version.reviewRecord.decisionNotes}</p>
+                    ) : null}
+                    <div className="context-grid">
+                      {readiness.checks.map((check) => (
+                        <article key={check.key}>
+                          <strong>{check.label}</strong>
+                          <span>{check.ready ? "Ready" : "Blocked"}</span>
+                          <p>{check.detail}</p>
+                        </article>
+                      ))}
+                    </div>
+                    {readiness.blockers.length > 0 ? (
+                      <div className="workspace-error">
+                        <strong>Publish blockers</strong>
+                        <ul>
+                          {readiness.blockers.map((blocker) => (
+                            <li key={blocker.key}>{blocker.detail}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                  <form
+                    action={publishApprovedCourseAction.bind(
+                      null,
+                      version.course.id,
+                      version.id,
+                    )}
+                  >
+                    <button
+                      className="workspace-button"
+                      disabled={!readiness.ready}
+                      type="submit"
+                    >
+                      Publish now
+                    </button>
+                  </form>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">
