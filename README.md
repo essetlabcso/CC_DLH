@@ -1,12 +1,15 @@
 # DEC Learning Hub
 
-Foundation scaffold for the DEC Learning Hub Phase 1 product.
+Current DEC Learning Hub Phase 1 codebase.
 
-The current repo state is **Slice 0-1: Scaffolded**. It establishes the route, documentation, environment, middleware, and theme-token foundation only. It does not implement learner, creator, reviewer, admin, AI, course, certificate, or monitoring product behavior yet.
+The repo now includes working learner, Course Creator Studio, review, publishing, certificate, revision, and monitoring foundations. Practical proof, verified achievements, badge workflows, richer AI governance, and several revised-spec upgrades remain future implementation work.
 
 ## Source Of Truth
 
-- Primary spec: [doc/spec_dec_learning_hub.md](doc/spec_dec_learning_hub.md)
+- Current spec package: [docs/specs/core-workflow](docs/specs/core-workflow)
+- Source-of-truth and override note: [Annex 1](docs/specs/core-workflow/Annex_1_Source_of_Truth_and_Override_Note.md)
+- Evidence pack template: [Annex 13](docs/specs/core-workflow/Annex_13_Codex_Implementation_Evidence_Pack_Template.md)
+- Legacy baseline spec: [doc/spec_dec_learning_hub.md](doc/spec_dec_learning_hub.md)
 - Brand note: [doc/dec_brand_colors_style.md](doc/dec_brand_colors_style.md)
 
 ## Local Setup
@@ -26,17 +29,17 @@ npm run test
 npm run build
 ```
 
-## Foundation Shape
+## Project Shape
 
 - App Router source lives under `src/app`.
-- Route groups separate public/auth/learner/studio/review/admin foundations.
-- `src/middleware.ts` defines the first signed-session, role-aware route boundary policy.
+- Route groups separate public/auth/learner/studio/review/admin areas.
+- `src/middleware.ts` defines signed-session, role-aware route boundary policy.
 - DEC theme tokens live in `src/styles/dec-theme.css` and `src/theme/dec-tokens.ts`.
 - Project documentation lives under `docs/`.
 
 ## Status Language
 
-Use DEC status labels truthfully:
+Use DEC status labels truthfully in reports:
 
 - `Not Started`
 - `Scaffolded`
@@ -44,4 +47,4 @@ Use DEC status labels truthfully:
 - `Verified`
 - `Accepted`
 
-For the current slice, route presence and signed-session workspace boundaries are scaffolded only. They are not proof of complete Phase 1 workflows.
+Route presence alone is not proof of complete Phase 1 workflows. Use the run reports and Annex 13 evidence pack expectations when reporting implementation status.
