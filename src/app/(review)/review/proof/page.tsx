@@ -38,8 +38,10 @@ export default async function ProofReviewQueuePage() {
     <WorkspaceShell eyebrow="Proof Review" title="Private proof submissions">
       <p>
         Review private learner proof submissions separately from course
-        certificates. Accepted proof does not issue a badge or verified
-        achievement in this release.
+        certificates. Accepted proof does not automatically issue a verified
+        achievement; eligible proof can be recognized separately by
+        reviewer/admin action. Badge or public credential issuance is still not
+        active.
       </p>
 
       {submissions.length > 0 ? (

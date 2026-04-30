@@ -84,7 +84,7 @@ describe("proof review workflow", () => {
         redactionRequired: false,
         specialistReviewRequired: false,
       }),
-    ).toContain("badge issuance are not active");
+    ).toContain("not issued automatically");
     expect(
       summarizeProofReviewForLearner({
         status: "UNDER_REVIEW",

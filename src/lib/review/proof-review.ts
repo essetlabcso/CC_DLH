@@ -151,7 +151,7 @@ export function getProofReviewLearnerGuidance(
     case "ESCALATED":
       return "This proof needs specialist review. DEC will review the safety or technical concern before any recognition decision.";
     case "ACCEPTED":
-      return "Your practical proof was accepted. Verified achievement and badge issuance are not active in this release.";
+      return "Your practical proof was accepted. A verified achievement is not issued automatically; eligible proof may be recognized separately by DEC review. Badge or public credential issuance is not active in this release.";
     case "UNDER_REVIEW":
       return "Your practical proof is being reviewed. This does not affect your course certificate.";
     default:
