@@ -4,6 +4,11 @@ import {
   practicalProofVisibilityDefault,
   type PracticalProofConfigLike,
 } from "@/lib/studio/practical-proof";
+import {
+  getProofReviewLearnerGuidance,
+  getProofReviewStatusLabel,
+  summarizeProofReviewForLearner,
+} from "@/lib/review/proof-review";
 
 export const learnerProofSubmissionStatus = {
   submitted: "SUBMITTED",
@@ -19,6 +24,11 @@ export type LearnerPracticalProofInput = {
 export type LearnerPracticalProofSubmissionLike = {
   status: string;
   visibilityDefault: string;
+  learnerFeedback?: string | null;
+  requiredAction?: string | null;
+  redactionRequired?: boolean | null;
+  specialistReviewRequired?: boolean | null;
+  reviewedAt?: Date | null;
   submittedAt: Date;
 };
 
@@ -105,13 +115,13 @@ export function buildPrivatePracticalProofSubmissionData(
 export function summarizeLearnerPracticalProofSubmission(
   submission: LearnerPracticalProofSubmissionLike | null | undefined,
 ) {
-  if (!submission) {
-    return "No practical proof submitted yet.";
-  }
+  return summarizeProofReviewForLearner(submission);
+}
 
-  return `Private proof submitted. Status: ${formatLearnerProofStatus(
-    submission.status,
-  )}. Raw proof visibility: ${submission.visibilityDefault}.`;
+export function getLearnerProofReviewGuidance(
+  submission: LearnerPracticalProofSubmissionLike | null | undefined,
+) {
+  return getProofReviewLearnerGuidance(submission);
 }
 
 export function getPracticalProofCertificateSeparationCopy() {
@@ -119,9 +129,7 @@ export function getPracticalProofCertificateSeparationCopy() {
 }
 
 export function formatLearnerProofStatus(status: string) {
-  return status === learnerProofSubmissionStatus.submitted
-    ? "Submitted"
-    : status;
+  return getProofReviewStatusLabel(status);
 }
 
 function normalizeOptionalUrl(value: string) {

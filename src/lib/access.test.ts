@@ -24,10 +24,16 @@ describe("DEC workspace access policy", () => {
   it("keeps reviewers in the review workspace instead of Studio", () => {
     const studio = findProtectedWorkspace("/studio");
     const review = findProtectedWorkspace("/review");
+    const proofReview = findProtectedWorkspace("/review/proof");
 
     expect(studio).toBeDefined();
     expect(review).toBeDefined();
+    expect(proofReview).toBeDefined();
     expect(canAccessWorkspace("reviewer", studio!)).toBe(false);
     expect(canAccessWorkspace("reviewer", review!)).toBe(true);
+    expect(canAccessWorkspace("admin", proofReview!)).toBe(true);
+    expect(canAccessWorkspace("reviewer", proofReview!)).toBe(true);
+    expect(canAccessWorkspace("learner", proofReview!)).toBe(false);
+    expect(canAccessWorkspace("creator", proofReview!)).toBe(false);
   });
 });

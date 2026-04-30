@@ -26,6 +26,8 @@ import {
   parseFinalTestContent,
 } from "@/lib/learner/final-test";
 import {
+  formatLearnerProofStatus,
+  getLearnerProofReviewGuidance,
   getPracticalProofCertificateSeparationCopy,
   learnerProofSubmissionFieldLabels,
   summarizeLearnerPracticalProofSubmission,
@@ -156,6 +158,7 @@ export default async function LearnerCoursePage({
     version.practicalProofConfig,
   );
   const proofSubmission = version.practicalProofSubmissions[0];
+  const proofReviewGuidance = getLearnerProofReviewGuidance(proofSubmission);
   const proofMissingFields = resolvedSearchParams?.fields
     ? resolvedSearchParams.fields
         .split(",")
@@ -396,24 +399,44 @@ export default async function LearnerCoursePage({
               {summarizeLearnerPracticalProofSubmission(proofSubmission)}
             </p>
             {proofSubmission ? (
-              <div className="context-grid">
-                <article>
-                  <strong>Status</strong>
-                  <span>{proofSubmission.status}</span>
-                </article>
-                <article>
-                  <strong>Raw proof visibility</strong>
-                  <span>{proofSubmission.visibilityDefault}</span>
-                </article>
-                <article>
-                  <strong>Submitted</strong>
-                  <span>
-                    {proofSubmission.submittedAt.toLocaleDateString("en-US", {
-                      dateStyle: "medium",
-                    })}
-                  </span>
-                </article>
-              </div>
+              <>
+                <div className="context-grid">
+                  <article>
+                    <strong>Status</strong>
+                    <span>{formatLearnerProofStatus(proofSubmission.status)}</span>
+                  </article>
+                  <article>
+                    <strong>Raw proof visibility</strong>
+                    <span>{proofSubmission.visibilityDefault}</span>
+                  </article>
+                  <article>
+                    <strong>Submitted</strong>
+                    <span>
+                      {proofSubmission.submittedAt.toLocaleDateString(
+                        "en-US",
+                        {
+                          dateStyle: "medium",
+                        },
+                      )}
+                    </span>
+                  </article>
+                </div>
+                {proofReviewGuidance ? (
+                  <p className="workspace-note">{proofReviewGuidance}</p>
+                ) : null}
+                {proofSubmission.learnerFeedback ? (
+                  <div className="block-content">
+                    <strong>Reviewer feedback</strong>
+                    <p>{proofSubmission.learnerFeedback}</p>
+                  </div>
+                ) : null}
+                {proofSubmission.requiredAction ? (
+                  <div className="block-content">
+                    <strong>Requested action</strong>
+                    <p>{proofSubmission.requiredAction}</p>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <form
                 action={submitLearnerPracticalProofAction.bind(null, courseId)}

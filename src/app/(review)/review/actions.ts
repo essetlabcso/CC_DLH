@@ -33,6 +33,10 @@ import {
   summarizePublication,
 } from "@/lib/review/publishing";
 import {
+  buildProofReviewUpdateData,
+  parseProofReviewDecisionFormData,
+} from "@/lib/review/proof-review";
+import {
   parseRevisionRequestFormData,
   summarizeRevisionRequest,
 } from "@/lib/review/revisions";
@@ -663,6 +667,63 @@ export async function requestPublishedCourseRevisionAction(
   revalidatePath("/studio");
   revalidatePath("/studio/courses");
   redirect("/review/revisions?requested=1");
+}
+
+export async function recordPracticalProofReviewAction(
+  submissionId: string,
+  formData: FormData,
+) {
+  const reviewPath = `/review/proof/${submissionId}`;
+  const identity = await requireWorkspaceIdentity(reviewPath);
+  const result = parseProofReviewDecisionFormData(formData);
+
+  if (!result.ok) {
+    redirect(
+      `${reviewPath}?error=proof-review&fields=${encodeURIComponent(
+        result.missingFields.join(","),
+      )}`,
+    );
+  }
+
+  const submission = await prisma.learnerPracticalProofSubmission.findFirst({
+    where: {
+      id: submissionId,
+      courseVersion: {
+        course: {
+          organizationId: identity.user.organizationId,
+        },
+      },
+      visibilityDefault: "PRIVATE",
+      donorVisibilityConsent: false,
+      aiVerificationUsed: false,
+    },
+    include: {
+      courseVersion: {
+        include: {
+          course: true,
+        },
+      },
+    },
+  });
+
+  if (!submission) {
+    notFound();
+  }
+
+  await prisma.learnerPracticalProofSubmission.update({
+    where: {
+      id: submission.id,
+    },
+    data: {
+      reviewerId: identity.user.id,
+      ...buildProofReviewUpdateData(result.value),
+    },
+  });
+
+  revalidatePath("/review/proof");
+  revalidatePath(reviewPath);
+  revalidatePath(`/learn/courses/${submission.courseVersion.courseId}`);
+  redirect(`${reviewPath}?reviewed=1`);
 }
 
 export async function createRevisionDraftAction(
