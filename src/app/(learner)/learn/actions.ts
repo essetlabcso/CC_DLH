@@ -14,6 +14,11 @@ import {
   parseFinalTestContent,
   scoreFinalTestAnswer,
 } from "@/lib/learner/final-test";
+import {
+  buildPrivatePracticalProofSubmissionData,
+  canSubmitPrivatePracticalProof,
+  parseLearnerPracticalProofFormData,
+} from "@/lib/learner/practical-proof";
 
 export async function completeLearnerLessonAction(
   courseId: string,
@@ -212,6 +217,68 @@ export async function submitLearnerFinalTestAction(
   revalidatePath("/learn/certificates");
   revalidatePath(coursePath);
   redirect(`${coursePath}?finalTest=1`);
+}
+
+export async function submitLearnerPracticalProofAction(
+  courseId: string,
+  formData: FormData,
+) {
+  const coursePath = `/learn/courses/${courseId}`;
+  const identity = await requireWorkspaceIdentity(coursePath);
+  const result = parseLearnerPracticalProofFormData(formData);
+
+  if (!result.ok) {
+    redirect(
+      `${coursePath}?error=proof&fields=${encodeURIComponent(
+        result.missingFields.join(","),
+      )}`,
+    );
+  }
+
+  const version = await prisma.courseVersion.findFirst({
+    where: {
+      courseId,
+      status: CourseVersionStatus.PUBLISHED,
+      course: {
+        organizationId: identity.user.organizationId,
+        status: "ACTIVE",
+      },
+    },
+    include: {
+      practicalProofConfig: true,
+      practicalProofSubmissions: {
+        where: {
+          userId: identity.user.id,
+        },
+        take: 1,
+      },
+    },
+  });
+
+  if (!version || !version.practicalProofConfig) {
+    notFound();
+  }
+
+  if (!canSubmitPrivatePracticalProof(version.practicalProofConfig)) {
+    redirect(`${coursePath}?error=proof-config`);
+  }
+
+  if (version.practicalProofSubmissions.length > 0) {
+    redirect(`${coursePath}?error=proof-exists`);
+  }
+
+  await prisma.learnerPracticalProofSubmission.create({
+    data: {
+      userId: identity.user.id,
+      courseVersionId: version.id,
+      practicalProofConfigId: version.practicalProofConfig.id,
+      ...buildPrivatePracticalProofSubmissionData(result.value),
+    },
+  });
+
+  revalidatePath("/learn");
+  revalidatePath(coursePath);
+  redirect(`${coursePath}?proof=1`);
 }
 
 function hasCertificateIntent(value: string | null | undefined) {

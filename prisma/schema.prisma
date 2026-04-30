@@ -113,6 +113,7 @@ model User {
   finalTestAttempts LearnerFinalTestAttempt[]
   certificates  LearnerCertificate[]
   certificateEvents LearnerCertificateStatusEvent[] @relation("CertificateStatusActor")
+  practicalProofSubmissions LearnerPracticalProofSubmission[]
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -205,6 +206,7 @@ model CourseVersion {
   lessonProgress    LearnerLessonProgress[]
   finalTestAttempts LearnerFinalTestAttempt[]
   certificates       LearnerCertificate[]
+  practicalProofSubmissions LearnerPracticalProofSubmission[]
 
   @@unique([courseId, versionNumber])
   @@index([courseId, status])
@@ -405,8 +407,38 @@ model CoursePracticalProofConfig {
   updatedAt                       DateTime @updatedAt
 
   courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  submissions   LearnerPracticalProofSubmission[]
 
   @@index([enabled])
+  @@index([visibilityDefault])
+}
+
+model LearnerPracticalProofSubmission {
+  id                                  String   @id @default(cuid())
+  userId                              String
+  courseVersionId                     String
+  practicalProofConfigId              String
+  status                              String   @default("SUBMITTED")
+  visibilityDefault                   String   @default("PRIVATE")
+  proofText                           String   @default("")
+  evidenceLink                        String   @default("")
+  safetyAcknowledged                  Boolean  @default(false)
+  certificateSeparationAcknowledged   Boolean  @default(false)
+  donorVisibilityConsent              Boolean  @default(false)
+  aiVerificationUsed                  Boolean  @default(false)
+  submittedAt                         DateTime @default(now())
+  createdAt                           DateTime @default(now())
+  updatedAt                           DateTime @updatedAt
+
+  user                 User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseVersion        CourseVersion              @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  practicalProofConfig CoursePracticalProofConfig @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseVersionId, practicalProofConfigId])
+  @@index([userId])
+  @@index([courseVersionId])
+  @@index([practicalProofConfigId])
+  @@index([status])
   @@index([visibilityDefault])
 }
 

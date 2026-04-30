@@ -2,7 +2,10 @@ import { CourseVersionStatus } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { submitLearnerFinalTestAction } from "@/app/(learner)/learn/actions";
+import {
+  submitLearnerFinalTestAction,
+  submitLearnerPracticalProofAction,
+} from "@/app/(learner)/learn/actions";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -22,6 +25,11 @@ import {
   getLatestFinalTestAttempt,
   parseFinalTestContent,
 } from "@/lib/learner/final-test";
+import {
+  getPracticalProofCertificateSeparationCopy,
+  learnerProofSubmissionFieldLabels,
+  summarizeLearnerPracticalProofSubmission,
+} from "@/lib/learner/practical-proof";
 import { buildLearnerProgressSummary } from "@/lib/learner/progress";
 import { formatPublishedDate } from "@/lib/review/publishing";
 
@@ -32,6 +40,8 @@ type LearnerCoursePageProps = {
   searchParams?: Promise<{
     error?: string;
     finalTest?: string;
+    fields?: string;
+    proof?: string;
   }>;
 };
 
@@ -77,6 +87,14 @@ export default async function LearnerCoursePage({
         },
       },
       finalTestAttempts: {
+        where: {
+          userId: identity.user.id,
+        },
+        orderBy: {
+          submittedAt: "desc",
+        },
+      },
+      practicalProofSubmissions: {
         where: {
           userId: identity.user.id,
         },
@@ -137,6 +155,13 @@ export default async function LearnerCoursePage({
   const proofReadiness = buildPracticalProofReadiness(
     version.practicalProofConfig,
   );
+  const proofSubmission = version.practicalProofSubmissions[0];
+  const proofMissingFields = resolvedSearchParams?.fields
+    ? resolvedSearchParams.fields
+        .split(",")
+        .filter(Boolean)
+        .map((field) => learnerProofSubmissionFieldLabels[field] || field)
+    : [];
 
   return (
     <WorkspaceShell eyebrow="Course" title={version.course.title}>
@@ -147,9 +172,31 @@ export default async function LearnerCoursePage({
       {resolvedSearchParams?.finalTest === "1" ? (
         <p className="workspace-note">Final test submitted.</p>
       ) : null}
+      {resolvedSearchParams?.proof === "1" ? (
+        <p className="workspace-note">
+          Practical proof submitted privately. Your certificate status is still
+          based on the final test only.
+        </p>
+      ) : null}
       {resolvedSearchParams?.error === "final-test-answer" ? (
         <p className="workspace-error">
           Choose an answer before submitting the final test.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.error === "proof" ? (
+        <p className="workspace-error">
+          Complete the private proof submission fields:{" "}
+          {proofMissingFields.join(", ")}.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.error === "proof-config" ? (
+        <p className="workspace-error">
+          Practical proof is not currently open for this course.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.error === "proof-exists" ? (
+        <p className="workspace-error">
+          A private practical proof submission already exists for this course.
         </p>
       ) : null}
 
@@ -346,10 +393,79 @@ export default async function LearnerCoursePage({
               <p>{version.practicalProofConfig?.safetyGuidance}</p>
             </div>
             <p className="workspace-note">
-              This course currently provides proof guidance only. Do not share
-              sensitive or identifying material unless DEC opens a protected
-              proof submission process for this course.
+              {summarizeLearnerPracticalProofSubmission(proofSubmission)}
             </p>
+            {proofSubmission ? (
+              <div className="context-grid">
+                <article>
+                  <strong>Status</strong>
+                  <span>{proofSubmission.status}</span>
+                </article>
+                <article>
+                  <strong>Raw proof visibility</strong>
+                  <span>{proofSubmission.visibilityDefault}</span>
+                </article>
+                <article>
+                  <strong>Submitted</strong>
+                  <span>
+                    {proofSubmission.submittedAt.toLocaleDateString("en-US", {
+                      dateStyle: "medium",
+                    })}
+                  </span>
+                </article>
+              </div>
+            ) : (
+              <form
+                action={submitLearnerPracticalProofAction.bind(null, courseId)}
+                className="checklist-form"
+              >
+                <div className="block-content">
+                  <strong>Before you submit</strong>
+                  <p>{getPracticalProofCertificateSeparationCopy()}</p>
+                  <p>
+                    Do not include real names, phone numbers, addresses,
+                    beneficiary details, active safeguarding cases, or
+                    politically sensitive information. Use redacted or
+                    anonymized examples only.
+                  </p>
+                </div>
+                <label>
+                  <span>Practical proof text</span>
+                  <textarea
+                    name="proofText"
+                    placeholder="Describe the practical output or application using safe, anonymized details."
+                  />
+                </label>
+                <label>
+                  <span>Optional evidence link</span>
+                  <input
+                    name="evidenceLink"
+                    placeholder="https://example.org/redacted-proof"
+                    type="url"
+                  />
+                </label>
+                <label className="checkbox-row">
+                  <input name="safetyAcknowledged" type="checkbox" />
+                  <span>
+                    I have removed sensitive, identifying, safeguarding,
+                    beneficiary, and politically sensitive details.
+                  </span>
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    name="certificateSeparationAcknowledged"
+                    type="checkbox"
+                  />
+                  <span>
+                    I understand this practical proof is optional and separate
+                    from my course certificate.
+                  </span>
+                </label>
+                <button className="workspace-button" type="submit">
+                  Submit private proof
+                </button>
+              </form>
+            )}
           </div>
         </section>
       ) : null}
