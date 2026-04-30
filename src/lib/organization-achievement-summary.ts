@@ -116,7 +116,7 @@ export function buildOrganizationAchievementCapacityGroups(
 ): OrganizationAchievementGroup[] {
   return buildGroupedAchievements(achievements, (item) => [
     normalizeDimension(item.capacityArea, "Unmapped capacity area"),
-    normalizeDimension(item.subCapacityArea, "No sub-capacity area"),
+    normalizeDimension(item.subCapacityArea, "No Capacity Practice Area"),
     normalizeDimension(item.linkedStandard, "No linked standard"),
     normalizeDimension(item.capacityIndicator, "No capacity indicator"),
     normalizeDimension(item.proofType, "Unspecified proof type"),

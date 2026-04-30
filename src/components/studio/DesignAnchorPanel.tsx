@@ -24,11 +24,11 @@ export function DesignAnchorPanel({
       </div>
       <div className="context-grid">
         <article>
-          <strong>Capacity area</strong>
+          <strong>Core Capacity Area</strong>
           <span>{formatAnchorValue(handover.capacityArea)}</span>
         </article>
         <article>
-          <strong>Sub-capacity</strong>
+          <strong>Capacity Practice Area</strong>
           <span>{formatAnchorValue(handover.subCapacityArea)}</span>
         </article>
         <article>

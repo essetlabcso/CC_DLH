@@ -144,16 +144,16 @@ export default async function CapacityMapPage({
         <section className="studio-section" aria-labelledby="capacity-source">
           <h2 id="capacity-source">Controlled Capacity Map anchors</h2>
           <p className="section-subcopy">
-            Capacity area, sub-capacity, linked standard, and capacity
+            Core Capacity Area, Capacity Practice Area, linked standard, and capacity
             indicator come from the locked Analysis Handover.
           </p>
           <div className="context-grid">
             <article>
-              <strong>Capacity area</strong>
+              <strong>Core Capacity Area</strong>
               <span>{handover?.capacityArea || "Not set"}</span>
             </article>
             <article>
-              <strong>Sub-capacity</strong>
+              <strong>Capacity Practice Area</strong>
               <span>{handover?.subCapacityArea || "Not set"}</span>
             </article>
             <article>

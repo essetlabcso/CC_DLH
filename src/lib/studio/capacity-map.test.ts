@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  capacityMapFieldLabels,
   decCapacityAreas,
   parseCourseCapacityMapFormData,
 } from "./capacity-map";
@@ -88,6 +89,35 @@ describe("capacity map form parsing", () => {
       expect(result.value.linkedStandard).toBe(
         "DEC safeguarding practice standard",
       );
+    }
+  });
+
+  it("keeps subarea as a compatible storage key with Capacity Practice Area labeling", () => {
+    const formData = new FormData();
+
+    formData.set("capacityArea", "Human Resources, Inclusion, and Safeguarding");
+    formData.set("subarea", "Incident reporting");
+    formData.set("capabilityFocus", "Safe referral and reporting pathway use");
+    formData.set("linkedStandard", "DEC safeguarding practice standard");
+    formData.set(
+      "capacityOutcome",
+      "Focal staff can choose and use the correct reporting pathway.",
+    );
+    formData.set(
+      "diagnosisLink",
+      "Diagnosis showed late reporting caused by uncertainty under pressure.",
+    );
+    formData.set(
+      "monitoringRelevance",
+      "Scenario choices and reporting-pathway checks will show improvement.",
+    );
+
+    const result = parseCourseCapacityMapFormData(formData);
+
+    expect(capacityMapFieldLabels.subarea).toBe("Capacity Practice Area");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.subarea).toBe("Incident reporting");
     }
   });
 

@@ -29,11 +29,11 @@ export function DesignSummaryPanel({
           <span>{getDesignHandoverStatusLabel(handover)}</span>
         </article>
         <article>
-          <strong>Approved capacity area</strong>
+          <strong>Approved Core Capacity Area</strong>
           <span>{formatAnchorValue(analysisHandover?.capacityArea)}</span>
         </article>
         <article>
-          <strong>Approved sub-capacity</strong>
+          <strong>Approved Capacity Practice Area</strong>
           <span>{formatAnchorValue(analysisHandover?.subCapacityArea)}</span>
         </article>
         <article>

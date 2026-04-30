@@ -46,11 +46,11 @@ export function AnalysisSummaryPanel({
           </span>
         </article>
         <article>
-          <strong>Capacity area</strong>
+          <strong>Core Capacity Area</strong>
           <span>{handover.capacityArea || "Not set"}</span>
         </article>
         <article>
-          <strong>Sub-capacity area</strong>
+          <strong>Capacity Practice Area</strong>
           <span>{handover.subCapacityArea || "Not set"}</span>
         </article>
         <article>
@@ -86,7 +86,7 @@ export function AnalysisSummaryPanel({
           <span>{handover.rootCauseSummary}</span>
         </article>
         <article>
-          <strong>KSME route</strong>
+          <strong>K/S/M/E route</strong>
           <span>{formatRoute(handover.ksmeRoute)}</span>
         </article>
         <article>

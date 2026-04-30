@@ -1,5 +1,6 @@
 import type { CourseAnalysisHandover } from "@prisma/client";
 
+import { taxonomyLabels } from "@/lib/analysis-import/taxonomy-alignment";
 import { isDecCapacityArea } from "@/lib/studio/capacity-map";
 
 export const analysisHandoverStatuses = ["DRAFT", "LOCKED"] as const;
@@ -60,15 +61,15 @@ const requiredFields: readonly (keyof AnalysisHandoverInput)[] = [
 ];
 
 export const analysisHandoverFieldLabels: Record<string, string> = {
-  capacityArea: "capacity area",
-  subCapacityArea: "sub-capacity area",
+  capacityArea: taxonomyLabels.coreCapacityArea,
+  subCapacityArea: taxonomyLabels.capacityPracticeArea,
   linkedStandard: "linked standard or framework",
   capacityIndicator: "capacity indicator or evidence marker",
   validatedCapacityGap: "validated capacity gap",
   baseline: "baseline",
   desiredPractice: "desired practice",
   rootCauseSummary: "root cause summary",
-  ksmeRoute: "KSME route",
+  ksmeRoute: taxonomyLabels.ksmeRoute,
   separableKnowledgeSkillComponent: "separable Knowledge or Skill component",
   interventionDecision: "intervention decision",
   analysisGateDecision: "Analysis Gate decision",

@@ -21,6 +21,12 @@ describe("design analysis anchors", () => {
     });
   });
 
+  it("keeps subCapacityArea available as a compatibility alias for Design anchors", () => {
+    expect(getAnalysisDesignAnchors(buildAnalysisHandover()).subCapacityArea).toBe(
+      "Safeguarding referral pathway",
+    );
+  });
+
   it("keeps legacy blank locked handovers safe for rendering", () => {
     expect(getMissingAnalysisDesignAnchorFields(null)).toContain(
       "capacityArea",

@@ -136,7 +136,7 @@ export default async function DiagnosisPage({
   return (
     <WorkspaceShell eyebrow="Diagnosis" title={editable.course.title}>
       <p>
-        Confirm the practical CSO challenge, evidence, KSME route, safeguards,
+        Confirm the practical CSO challenge, evidence, K/S/M/E route, safeguards,
         and evaluation anchor before Design opens.
       </p>
       {resolvedSearchParams?.saved === "1" ? (
@@ -321,7 +321,7 @@ export default async function DiagnosisPage({
               </select>
             </label>
             <label>
-              <span>Sub-capacity area</span>
+              <span>Capacity Practice Area</span>
               <input
                 name="subCapacityArea"
                 required

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  analysisHandoverFieldLabels,
   canAnalysisProceedToDesign,
   isAnalysisHandoverLocked,
   parseAnalysisHandoverFormData,
@@ -93,6 +94,21 @@ describe("analysis handover gate", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.missingFields).toContain("capacityArea");
+    }
+  });
+
+  it("keeps subCapacityArea as a compatible storage key with Capacity Practice Area labeling", () => {
+    const formData = buildValidHandoverFormData();
+    const result = parseAnalysisHandoverFormData(formData);
+
+    expect(analysisHandoverFieldLabels.subCapacityArea).toBe(
+      "Capacity Practice Area",
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.subCapacityArea).toBe(
+        "Safeguarding referral practice",
+      );
     }
   });
 

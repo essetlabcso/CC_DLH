@@ -1,3 +1,5 @@
+import { taxonomyLabels } from "@/lib/analysis-import/taxonomy-alignment";
+
 export type CourseCapacityMapInput = {
   capacityArea: string;
   subarea: string;
@@ -34,9 +36,9 @@ const requiredFields: readonly (keyof CourseCapacityMapInput)[] = [
 ];
 
 export const capacityMapFieldLabels: Record<string, string> = {
-  capacityArea: "capacity area",
-  subarea: "subarea",
-  subCapacityArea: "sub-capacity area",
+  capacityArea: taxonomyLabels.coreCapacityArea,
+  subarea: taxonomyLabels.capacityPracticeArea,
+  subCapacityArea: taxonomyLabels.capacityPracticeArea,
   capabilityFocus: "capability focus",
   linkedStandard: "linked standard",
   capacityIndicator: "capacity indicator",
