@@ -14,6 +14,11 @@ import {
   hasBuildContent,
   hasFinalTestContent,
 } from "@/lib/studio/build-checks";
+import {
+  buildPracticalProofReadiness,
+  type PracticalProofConfigLike,
+  type PracticalProofReadiness,
+} from "@/lib/studio/practical-proof";
 
 export const buildToReviewCertificateRule =
   "80%+ final test score = pass and automated course certificate";
@@ -80,6 +85,7 @@ export type BuildToReviewHandover = {
     completed: boolean;
     status: string;
   };
+  practicalProof: PracticalProofReadiness;
   blockingWarnings: BuildToReviewHandoverWarning[];
   reviewerAttentionItems: string[];
 };
@@ -93,6 +99,7 @@ export type BuildToReviewVersion = {
   setup?: {
     certificateIntent?: string | null;
   } | null;
+  practicalProofConfig?: PracticalProofConfigLike;
   workflowSteps: readonly BuildToReviewWorkflowStep[];
   modules: readonly {
     title: string;
@@ -185,6 +192,9 @@ export function buildBuildToReviewHandover(
     (block) => !block.safeguardingNote,
   );
   const governanceIssues = getBuildGovernanceIssues(input.version.modules);
+  const practicalProofReadiness = buildPracticalProofReadiness(
+    input.version.practicalProofConfig,
+  );
   const blockingWarnings: BuildToReviewHandoverWarning[] = [];
   const reviewerAttentionItems: string[] = [];
 
@@ -224,6 +234,13 @@ export function buildBuildToReviewHandover(
     });
   }
 
+  practicalProofReadiness.blockers.forEach((blocker) => {
+    blockingWarnings.push({
+      code: `practical-proof-${blocker.key}`,
+      message: blocker.message,
+    });
+  });
+
   if (creatorReviewStatus !== WorkflowStepStatus.COMPLETE) {
     blockingWarnings.push({
       code: "creator-review-not-complete",
@@ -253,6 +270,18 @@ export function buildBuildToReviewHandover(
     reviewerAttentionItems.push(
       `Final test is configured. Confirm it uses only taught content and preserves: ${buildToReviewCertificateRule}.`,
     );
+  }
+
+  if (practicalProofReadiness.enabled) {
+    reviewerAttentionItems.push(
+      `Optional practical proof is ${practicalProofReadiness.status.toLowerCase()} and remains separate from the course certificate.`,
+    );
+
+    if (practicalProofReadiness.specialistReviewRequired) {
+      reviewerAttentionItems.push(
+        "Practical proof configuration recommends specialist review before publishing.",
+      );
+    }
   }
 
   return {
@@ -316,6 +345,7 @@ export function buildBuildToReviewHandover(
       completed: creatorReviewStatus === WorkflowStepStatus.COMPLETE,
       status: formatWorkflowStatus(creatorReviewStatus),
     },
+    practicalProof: practicalProofReadiness,
     blockingWarnings,
     reviewerAttentionItems,
   };
@@ -355,7 +385,7 @@ export function summarizeBuildToReviewHandover(
     return `${handover.blockingWarnings.length} blocking readiness issue(s) need attention.`;
   }
 
-  return `${handover.summary.requiredBlockCount} required block(s), ${handover.summary.creatorAddedBlockCount} creator-added block(s), final test ${handover.finalTest.ready ? "ready" : "not ready"}.`;
+  return `${handover.summary.requiredBlockCount} required block(s), ${handover.summary.creatorAddedBlockCount} creator-added block(s), final test ${handover.finalTest.ready ? "ready" : "not ready"}, practical proof ${handover.practicalProof?.status?.toLowerCase() || "not recorded"}.`;
 }
 
 export function canSubmitBuildToReviewHandover(

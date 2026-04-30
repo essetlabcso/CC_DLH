@@ -80,6 +80,10 @@ import {
   summarizePreviewCompletionChecks,
 } from "@/lib/studio/preview-checks";
 import {
+  buildPracticalProofReadiness,
+  parsePracticalProofConfigFormData,
+} from "@/lib/studio/practical-proof";
+import {
   buildStoryboardLessonPlan,
   parseCourseStoryboardFormData,
   parseStoryboardLessonPlan,
@@ -1916,6 +1920,207 @@ export async function saveFinalTestBlockAction(
   redirect(`/studio/courses/${courseId}/build?finalTest=1`);
 }
 
+export async function savePracticalProofConfigAction(
+  courseId: string,
+  formData: FormData,
+) {
+  const identity = await requireWorkspaceIdentity(
+    `/studio/courses/${courseId}/build`,
+  );
+  const editable = await getEditableCourseVersion(
+    prisma,
+    {
+      userId: identity.user.id,
+      organizationId: identity.user.organizationId,
+      role: identity.session.role,
+    },
+    courseId,
+  );
+
+  if (!editable) {
+    notFound();
+  }
+
+  const storyboardStatus =
+    editable.version.workflowSteps.find(
+      (step) => step.step === CourseWorkflowStep.STORYBOARD,
+    )?.status ?? WorkflowStepStatus.LOCKED;
+
+  if (
+    storyboardStatus !== WorkflowStepStatus.COMPLETE ||
+    !isDesignHandoverLocked(editable.version.designHandover)
+  ) {
+    redirect(`/studio/courses/${courseId}/storyboard`);
+  }
+
+  const analysis = editable.version.analysisHandover;
+  const result = parsePracticalProofConfigFormData(formData, {
+    capacityArea: analysis?.capacityArea,
+    subCapacityArea: analysis?.subCapacityArea,
+    linkedStandard: analysis?.linkedStandard,
+    capacityIndicator: analysis?.capacityIndicator,
+  });
+
+  if (!result.ok) {
+    redirect(
+      `/studio/courses/${courseId}/build?error=proof&fields=${encodeURIComponent(
+        result.missingFields.join(","),
+      )}`,
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.coursePracticalProofConfig.upsert({
+      where: {
+        courseVersionId: editable.version.id,
+      },
+      update: {
+        enabled: result.value.enabled,
+        proofTitle: result.value.proofTitle,
+        proofPurpose: result.value.proofPurpose,
+        acceptedProofType: result.value.acceptedProofType,
+        submissionFormat: result.value.submissionFormat,
+        instructions: result.value.instructions,
+        safetyGuidance: result.value.safetyGuidance,
+        reviewCriteria: result.value.reviewCriteria,
+        capacityArea: result.value.capacityArea,
+        subCapacityArea: result.value.subCapacityArea,
+        linkedStandard: result.value.linkedStandard,
+        capacityIndicator: result.value.capacityIndicator,
+        visibilityDefault: result.value.visibilityDefault,
+        donorVisibilityEnabled: result.value.donorVisibilityEnabled,
+        certificateSeparationConfirmed:
+          result.value.certificateSeparationConfirmed,
+        specialistReviewRequired: result.value.specialistReviewRequired,
+      },
+      create: {
+        courseVersionId: editable.version.id,
+        enabled: result.value.enabled,
+        proofTitle: result.value.proofTitle,
+        proofPurpose: result.value.proofPurpose,
+        acceptedProofType: result.value.acceptedProofType,
+        submissionFormat: result.value.submissionFormat,
+        instructions: result.value.instructions,
+        safetyGuidance: result.value.safetyGuidance,
+        reviewCriteria: result.value.reviewCriteria,
+        capacityArea: result.value.capacityArea,
+        subCapacityArea: result.value.subCapacityArea,
+        linkedStandard: result.value.linkedStandard,
+        capacityIndicator: result.value.capacityIndicator,
+        visibilityDefault: result.value.visibilityDefault,
+        donorVisibilityEnabled: result.value.donorVisibilityEnabled,
+        certificateSeparationConfirmed:
+          result.value.certificateSeparationConfirmed,
+        specialistReviewRequired: result.value.specialistReviewRequired,
+      },
+    });
+
+    await tx.courseWorkflowStepRecord.upsert({
+      where: {
+        courseVersionId_step: {
+          courseVersionId: editable.version.id,
+          step: CourseWorkflowStep.BUILD,
+        },
+      },
+      update: {
+        status: WorkflowStepStatus.IN_PROGRESS,
+        completedAt: null,
+        lockedReason: null,
+        updatedById: identity.user.id,
+      },
+      create: {
+        courseVersionId: editable.version.id,
+        step: CourseWorkflowStep.BUILD,
+        status: WorkflowStepStatus.IN_PROGRESS,
+        updatedById: identity.user.id,
+      },
+    });
+    await tx.courseWorkflowStepRecord.upsert({
+      where: {
+        courseVersionId_step: {
+          courseVersionId: editable.version.id,
+          step: CourseWorkflowStep.PREVIEW,
+        },
+      },
+      update: {
+        status: WorkflowStepStatus.LOCKED,
+        completedAt: null,
+        lockedReason:
+          "Complete Build Studio checks after updating practical proof configuration.",
+        updatedById: identity.user.id,
+      },
+      create: {
+        courseVersionId: editable.version.id,
+        step: CourseWorkflowStep.PREVIEW,
+        status: WorkflowStepStatus.LOCKED,
+        lockedReason:
+          "Complete Build Studio checks after updating practical proof configuration.",
+        updatedById: identity.user.id,
+      },
+    });
+    await tx.courseWorkflowStepRecord.upsert({
+      where: {
+        courseVersionId_step: {
+          courseVersionId: editable.version.id,
+          step: CourseWorkflowStep.CREATOR_REVIEW,
+        },
+      },
+      update: {
+        status: WorkflowStepStatus.LOCKED,
+        completedAt: null,
+        lockedReason:
+          "Complete Preview again after updating practical proof configuration.",
+        updatedById: identity.user.id,
+      },
+      create: {
+        courseVersionId: editable.version.id,
+        step: CourseWorkflowStep.CREATOR_REVIEW,
+        status: WorkflowStepStatus.LOCKED,
+        lockedReason:
+          "Complete Preview again after updating practical proof configuration.",
+        updatedById: identity.user.id,
+      },
+    });
+
+    const reopenedStatus = editable.version.sourceVersionId
+      ? CourseVersionStatus.REVISION_DRAFT
+      : CourseVersionStatus.DRAFT;
+
+    if (editable.version.status === CourseVersionStatus.CREATOR_REVIEW) {
+      await tx.courseVersion.update({
+        where: {
+          id: editable.version.id,
+        },
+        data: {
+          status: reopenedStatus,
+        },
+      });
+    }
+
+    await tx.courseLifecycleEvent.create({
+      data: {
+        courseVersionId: editable.version.id,
+        actorId: identity.user.id,
+        fromStatus: editable.version.status,
+        toStatus:
+          editable.version.status === CourseVersionStatus.CREATOR_REVIEW
+            ? reopenedStatus
+            : editable.version.status,
+        note: result.value.enabled
+          ? "Optional practical proof configuration updated."
+          : "Optional practical proof disabled.",
+      },
+    });
+  });
+
+  revalidatePath("/studio");
+  revalidatePath("/studio/courses");
+  revalidatePath(`/studio/courses/${courseId}/build`);
+  revalidatePath(`/studio/courses/${courseId}/preview`);
+  revalidatePath(`/studio/courses/${courseId}/creator-review`);
+  redirect(`/studio/courses/${courseId}/build?proof=1`);
+}
+
 export async function completeBuildChecksAction(
   courseId: string,
   formData: FormData,
@@ -1951,6 +2156,9 @@ export async function completeBuildChecksAction(
 
   const hasGeneratedContent = hasBuildContent(editable.version.modules);
   const governanceIssues = getBuildGovernanceIssues(editable.version.modules);
+  const proofReadiness = buildPracticalProofReadiness(
+    editable.version.practicalProofConfig,
+  );
   const finalTestRequired = hasCertificateIntent(
     editable.version.setup?.certificateIntent,
   );
@@ -1971,6 +2179,10 @@ export async function completeBuildChecksAction(
 
   if (governanceIssues.length > 0) {
     redirect(`/studio/courses/${courseId}/build?error=checks&fields=blockGovernanceReady`);
+  }
+
+  if (!proofReadiness.ready) {
+    redirect(`/studio/courses/${courseId}/build?error=checks&fields=practicalProofReady`);
   }
 
   await prisma.$transaction([

@@ -204,6 +204,11 @@ export default async function CreatorReviewPage({
             <strong>Preview</strong>
             <span>{handover.preview.status}</span>
           </article>
+          <article>
+            <strong>Practical proof</strong>
+            <span>{handover.practicalProof.status}</span>
+            <p>{handover.practicalProof.summary}</p>
+          </article>
         </div>
         {handover.blockingWarnings.length > 0 ? (
           <div className="workspace-error">

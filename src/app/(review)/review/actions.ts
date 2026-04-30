@@ -444,6 +444,7 @@ export async function publishApprovedCourseAction(
       course: true,
       setup: true,
       reviewRecord: true,
+      practicalProofConfig: true,
     },
   });
 
@@ -688,6 +689,7 @@ export async function createRevisionDraftAction(
       capacityMap: true,
       actionMap: true,
       storyboard: true,
+      practicalProofConfig: true,
       revisionRecord: true,
       modules: {
         orderBy: {
@@ -821,6 +823,40 @@ export async function createRevisionDraftAction(
                 lessonPlan: publishedVersion.storyboard.lessonPlan,
                 aiHandoffNotes: publishedVersion.storyboard.aiHandoffNotes,
                 approvedForBuild: publishedVersion.storyboard.approvedForBuild,
+              },
+            }
+          : undefined,
+        practicalProofConfig: publishedVersion.practicalProofConfig
+          ? {
+              create: {
+                enabled: publishedVersion.practicalProofConfig.enabled,
+                proofTitle: publishedVersion.practicalProofConfig.proofTitle,
+                proofPurpose: publishedVersion.practicalProofConfig.proofPurpose,
+                acceptedProofType:
+                  publishedVersion.practicalProofConfig.acceptedProofType,
+                submissionFormat:
+                  publishedVersion.practicalProofConfig.submissionFormat,
+                instructions: publishedVersion.practicalProofConfig.instructions,
+                safetyGuidance:
+                  publishedVersion.practicalProofConfig.safetyGuidance,
+                reviewCriteria:
+                  publishedVersion.practicalProofConfig.reviewCriteria,
+                capacityArea: publishedVersion.practicalProofConfig.capacityArea,
+                subCapacityArea:
+                  publishedVersion.practicalProofConfig.subCapacityArea,
+                linkedStandard:
+                  publishedVersion.practicalProofConfig.linkedStandard,
+                capacityIndicator:
+                  publishedVersion.practicalProofConfig.capacityIndicator,
+                visibilityDefault:
+                  publishedVersion.practicalProofConfig.visibilityDefault,
+                donorVisibilityEnabled:
+                  publishedVersion.practicalProofConfig.donorVisibilityEnabled,
+                certificateSeparationConfirmed:
+                  publishedVersion.practicalProofConfig
+                    .certificateSeparationConfirmed,
+                specialistReviewRequired:
+                  publishedVersion.practicalProofConfig.specialistReviewRequired,
               },
             }
           : undefined,

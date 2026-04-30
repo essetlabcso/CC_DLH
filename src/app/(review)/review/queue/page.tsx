@@ -112,7 +112,9 @@ export default async function ReviewQueuePage({
                     <p>
                       Final test{" "}
                       {handover.finalTest.ready ? "ready" : "not ready"} · AI{" "}
-                      {handover.aiReview.status} · {handover.certificateRule}
+                      {handover.aiReview.status} · Practical proof{" "}
+                      {handover.practicalProof?.status || "not recorded"} ·{" "}
+                      {handover.certificateRule}
                     </p>
                   ) : null}
                   {version.reviewRecord?.decisionNotes ? (

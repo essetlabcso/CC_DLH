@@ -162,6 +162,64 @@ describe("publishing helpers", () => {
     );
   });
 
+  it("passes publish readiness when practical proof is disabled", () => {
+    const readiness = buildPublishReadiness({
+      ...buildReadyVersion(),
+      practicalProofConfig: {
+        enabled: false,
+        proofTitle: "",
+        proofPurpose: "",
+        acceptedProofType: "",
+        submissionFormat: "",
+        instructions: "",
+        safetyGuidance: "",
+        reviewCriteria: "",
+        capacityArea: "",
+        subCapacityArea: "",
+        linkedStandard: "",
+        capacityIndicator: "",
+        visibilityDefault: "PRIVATE",
+        donorVisibilityEnabled: false,
+        certificateSeparationConfirmed: false,
+        specialistReviewRequired: false,
+      },
+    });
+
+    expect(readiness.ready).toBe(true);
+    expect(readiness.checks.find((check) => check.key === "practical-proof")).toMatchObject({
+      ready: true,
+    });
+  });
+
+  it("blocks publish readiness when enabled practical proof is unsafe", () => {
+    const readiness = buildPublishReadiness({
+      ...buildReadyVersion(),
+      practicalProofConfig: {
+        enabled: true,
+        proofTitle: "Apply the reporting checklist",
+        proofPurpose: "Show safe use of the checklist.",
+        acceptedProofType: "work-sample",
+        submissionFormat: "text-response",
+        instructions: "Describe the safe reporting steps.",
+        safetyGuidance: "",
+        reviewCriteria: "Uses the correct sequence.",
+        capacityArea: "Safeguarding",
+        subCapacityArea: "Reporting",
+        linkedStandard: "DEC safeguarding practice",
+        capacityIndicator: "Uses safe referral steps.",
+        visibilityDefault: "PRIVATE",
+        donorVisibilityEnabled: false,
+        certificateSeparationConfirmed: true,
+        specialistReviewRequired: false,
+      },
+    });
+
+    expect(readiness.ready).toBe(false);
+    expect(readiness.blockers.map((blocker) => blocker.key)).toContain(
+      "practical-proof",
+    );
+  });
+
   it("records publish readiness and publication evidence in checklist JSON", () => {
     const readiness = buildPublishReadiness(buildReadyVersion());
     const readinessChecklist = mergePublishReadinessChecklist("{}", readiness);

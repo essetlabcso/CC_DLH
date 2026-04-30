@@ -26,6 +26,15 @@ import {
   hasFinalTestContent,
 } from "@/lib/studio/build-checks";
 import {
+  buildPracticalProofReadiness,
+  getProofTypeLabel,
+  getSubmissionFormatLabel,
+  practicalProofFieldLabels,
+  practicalProofSubmissionFormats,
+  practicalProofTypes,
+  practicalProofVisibilityDefault,
+} from "@/lib/studio/practical-proof";
+import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
@@ -39,6 +48,7 @@ import {
   moveBuildBlockAction,
   saveBuildBlockContentAction,
   saveFinalTestBlockAction,
+  savePracticalProofConfigAction,
 } from "../../../actions";
 
 type BuildStudioPageProps = {
@@ -55,6 +65,7 @@ type BuildStudioPageProps = {
     edited?: string;
     moved?: string;
     finalTest?: string;
+    proof?: string;
   }>;
 };
 
@@ -158,6 +169,10 @@ export default async function BuildStudioPage({
   );
   const finalTestReady = hasFinalTestContent(modules);
   const governanceIssues = getBuildGovernanceIssues(modules);
+  const proofConfig = editable.version.practicalProofConfig;
+  const proofReadiness = buildPracticalProofReadiness(proofConfig);
+  const proofAction = savePracticalProofConfigAction.bind(null, courseId);
+  const analysisHandover = editable.version.analysisHandover;
 
   return (
     <WorkspaceShell eyebrow="Build Studio" title={editable.course.title}>
@@ -200,6 +215,12 @@ export default async function BuildStudioPage({
           Final test saved. Complete Build checks again before Preview.
         </p>
       ) : null}
+      {resolvedSearchParams?.proof === "1" ? (
+        <p className="workspace-note">
+          Practical proof configuration saved. Complete Build checks again
+          before Preview.
+        </p>
+      ) : null}
       {resolvedSearchParams?.checked === "1" ? (
         <p className="workspace-note">Build checks completed.</p>
       ) : null}
@@ -237,6 +258,15 @@ export default async function BuildStudioPage({
           Complete the required final test fields:{" "}
           {rawMissingFields
             .map((field) => finalTestAuthoringFieldLabels[field] || field)
+            .join(", ")}
+          .
+        </p>
+      ) : null}
+      {resolvedSearchParams?.error === "proof" ? (
+        <p className="workspace-error">
+          Complete the practical proof safety fields:{" "}
+          {rawMissingFields
+            .map((field) => practicalProofFieldLabels[field] || field)
             .join(", ")}
           .
         </p>
@@ -533,6 +563,244 @@ export default async function BuildStudioPage({
                   </form>
                 </section>
               ) : null}
+              <section
+                className="final-test-panel"
+                aria-labelledby="practical-proof-title"
+              >
+                <div>
+                  <p className="block-kicker">Optional recognition</p>
+                  <h3 id="practical-proof-title">Practical proof</h3>
+                  <p>
+                    Practical proof is optional and separate from the course
+                    certificate. The course certificate remains based only on
+                    the final test score.
+                  </p>
+                </div>
+                <div className="context-grid">
+                  <article>
+                    <strong>Status</strong>
+                    <span>{proofReadiness.status}</span>
+                    <p>{proofReadiness.summary}</p>
+                  </article>
+                  <article>
+                    <strong>Raw proof visibility</strong>
+                    <span>{proofReadiness.visibilityDefault}</span>
+                    <p>Raw proof stays private by default.</p>
+                  </article>
+                  <article>
+                    <strong>Donor visibility</strong>
+                    <span>
+                      {proofReadiness.donorVisibilityEnabled
+                        ? "Enabled"
+                        : "Disabled"}
+                    </span>
+                    <p>No donor-facing proof visibility is available here.</p>
+                  </article>
+                  <article>
+                    <strong>Certificate rule</strong>
+                    <span>{proofReadiness.certificateSeparation}</span>
+                  </article>
+                </div>
+                {proofReadiness.blockers.length > 0 ? (
+                  <div className="workspace-error">
+                    <strong>Practical proof blockers</strong>
+                    <ul>
+                      {proofReadiness.blockers.map((blocker) => (
+                        <li key={`${blocker.key}-${blocker.message}`}>
+                          {blocker.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <form action={proofAction} className="block-edit-form">
+                  <input
+                    name="capacityArea"
+                    type="hidden"
+                    value={
+                      proofConfig?.capacityArea ||
+                      analysisHandover?.capacityArea ||
+                      ""
+                    }
+                  />
+                  <input
+                    name="subCapacityArea"
+                    type="hidden"
+                    value={
+                      proofConfig?.subCapacityArea ||
+                      analysisHandover?.subCapacityArea ||
+                      ""
+                    }
+                  />
+                  <input
+                    name="linkedStandard"
+                    type="hidden"
+                    value={
+                      proofConfig?.linkedStandard ||
+                      analysisHandover?.linkedStandard ||
+                      ""
+                    }
+                  />
+                  <input
+                    name="capacityIndicator"
+                    type="hidden"
+                    value={
+                      proofConfig?.capacityIndicator ||
+                      analysisHandover?.capacityIndicator ||
+                      ""
+                    }
+                  />
+                  <label className="checkbox-row">
+                    <input
+                      name="proofEnabled"
+                      type="checkbox"
+                      defaultChecked={proofConfig?.enabled || false}
+                    />
+                    <span>
+                      Enable optional practical proof instructions for this
+                      course version
+                    </span>
+                  </label>
+                  <label>
+                    <span>Proof title</span>
+                    <input
+                      name="proofTitle"
+                      defaultValue={proofConfig?.proofTitle || ""}
+                    />
+                  </label>
+                  <label>
+                    <span>Proof purpose</span>
+                    <textarea
+                      name="proofPurpose"
+                      defaultValue={proofConfig?.proofPurpose || ""}
+                    />
+                  </label>
+                  <div className="form-grid">
+                    <label>
+                      <span>Accepted proof type</span>
+                      <select
+                        name="acceptedProofType"
+                        defaultValue={proofConfig?.acceptedProofType || ""}
+                      >
+                        <option value="">Choose proof type</option>
+                        {practicalProofTypes.map((type) => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Submission format</span>
+                      <select
+                        name="submissionFormat"
+                        defaultValue={proofConfig?.submissionFormat || ""}
+                      >
+                        <option value="">Choose format</option>
+                        {practicalProofSubmissionFormats.map((format) => (
+                          <option key={format.value} value={format.value}>
+                            {format.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <label>
+                    <span>Learner instructions</span>
+                    <textarea
+                      name="instructions"
+                      defaultValue={proofConfig?.instructions || ""}
+                    />
+                  </label>
+                  <label>
+                    <span>Safety and anonymization guidance</span>
+                    <textarea
+                      name="safetyGuidance"
+                      defaultValue={proofConfig?.safetyGuidance || ""}
+                    />
+                  </label>
+                  <label>
+                    <span>Review criteria</span>
+                    <textarea
+                      name="reviewCriteria"
+                      defaultValue={proofConfig?.reviewCriteria || ""}
+                    />
+                  </label>
+                  <div className="context-grid">
+                    <article>
+                      <strong>Capacity area</strong>
+                      <span>
+                        {proofConfig?.capacityArea ||
+                          analysisHandover?.capacityArea ||
+                          "Not set"}
+                      </span>
+                    </article>
+                    <article>
+                      <strong>Capacity indicator</strong>
+                      <span>
+                        {proofConfig?.capacityIndicator ||
+                          analysisHandover?.capacityIndicator ||
+                          "Not set"}
+                      </span>
+                    </article>
+                    <article>
+                      <strong>Proof type</strong>
+                      <span>
+                        {getProofTypeLabel(proofConfig?.acceptedProofType || "")}
+                      </span>
+                    </article>
+                    <article>
+                      <strong>Format</strong>
+                      <span>
+                        {getSubmissionFormatLabel(
+                          proofConfig?.submissionFormat || "",
+                        )}
+                      </span>
+                    </article>
+                  </div>
+                  <label className="checkbox-row">
+                    <input
+                      checked
+                      disabled
+                      name="visibilityDefaultDisplay"
+                      type="checkbox"
+                    />
+                    <span>
+                      Raw proof visibility defaults to{" "}
+                      {practicalProofVisibilityDefault}
+                    </span>
+                  </label>
+                  <label className="checkbox-row">
+                    <input
+                      name="certificateSeparationConfirmed"
+                      type="checkbox"
+                      defaultChecked={
+                        proofConfig?.certificateSeparationConfirmed || false
+                      }
+                    />
+                    <span>
+                      I confirm practical proof is optional and does not affect
+                      course certificate eligibility
+                    </span>
+                  </label>
+                  <label className="checkbox-row">
+                    <input
+                      name="specialistReviewRequired"
+                      type="checkbox"
+                      defaultChecked={
+                        proofConfig?.specialistReviewRequired || false
+                      }
+                    />
+                    <span>
+                      Specialist review is recommended for this practical proof
+                      configuration
+                    </span>
+                  </label>
+                  <button className="workspace-button" type="submit">
+                    Save practical proof settings
+                  </button>
+                </form>
+              </section>
               {modules.flatMap((module) =>
                 module.lessons.flatMap((lesson) =>
                   lesson.blocks.map((block, blockIndex) => {

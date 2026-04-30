@@ -272,6 +272,14 @@ export default async function SubmittedVersionReviewPage({
                 <strong>Preview</strong>
                 <span>{handover.preview.status}</span>
               </article>
+              <article>
+                <strong>Practical proof</strong>
+                <span>{handover.practicalProof?.status || "Not recorded"}</span>
+                <p>
+                  {handover.practicalProof?.summary ||
+                    "No practical proof configuration evidence was recorded."}
+                </p>
+              </article>
             </div>
             {handover.blockingWarnings.length > 0 ? (
               <div className="workspace-error">
@@ -328,6 +336,40 @@ export default async function SubmittedVersionReviewPage({
                   </ul>
                 ) : (
                   <p>No creator-added blocks recorded.</p>
+                )}
+              </article>
+              <article>
+                <h3>Practical proof configuration</h3>
+                {handover.practicalProof?.enabled ? (
+                  <ul>
+                    <li>Title: {handover.practicalProof.proofTitle}</li>
+                    <li>
+                      Accepted proof:{" "}
+                      {handover.practicalProof.acceptedProofTypeLabel}
+                    </li>
+                    <li>
+                      Format: {handover.practicalProof.submissionFormatLabel}
+                    </li>
+                    <li>
+                      Raw proof visibility:{" "}
+                      {handover.practicalProof.visibilityDefault}
+                    </li>
+                    <li>
+                      Certificate remains separate:{" "}
+                      {handover.practicalProof.certificateSeparation}
+                    </li>
+                    <li>
+                      Donor visibility:{" "}
+                      {handover.practicalProof.donorVisibilityEnabled
+                        ? "Enabled"
+                        : "Disabled"}
+                    </li>
+                  </ul>
+                ) : (
+                  <p>
+                    Practical proof is not enabled. Course certificates remain
+                    based on the final test only.
+                  </p>
                 )}
               </article>
             </div>

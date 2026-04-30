@@ -1,6 +1,10 @@
 import { CourseVersionStatus } from "@prisma/client";
 
 import type { BuildToReviewHandover } from "@/lib/studio/build-review-handover";
+import {
+  buildPracticalProofReadiness,
+  type PracticalProofConfigLike,
+} from "@/lib/studio/practical-proof";
 
 export const publishCertificateRule =
   "80%+ final test score = pass and automated course certificate";
@@ -63,6 +67,7 @@ export type PublishReadinessVersion = {
   reviewRecord?: {
     checklist: string | null;
   } | null;
+  practicalProofConfig?: PracticalProofConfigLike;
 };
 
 export function getPublishingStatusLabel(status: CourseVersionStatus) {
@@ -127,6 +132,12 @@ export function buildPublishReadiness(
   const handover = getObject(
     checklist.buildToReviewHandover,
   ) as BuildToReviewHandover | null;
+  const handoverProof = getObject(handover?.practicalProof);
+  const proofReadiness = buildPracticalProofReadiness(
+    version.practicalProofConfig ||
+      (handoverProof as PracticalProofConfigLike) ||
+      null,
+  );
   const certificateIntentActive = hasCertificateIntent(
     version.setup?.certificateIntent,
   );
@@ -266,6 +277,14 @@ export function buildPublishReadiness(
           : `Missing metadata: ${metadataMissing
               .map((field) => field.label)
               .join(", ")}.`,
+    },
+    {
+      key: "practical-proof",
+      label: "Practical proof",
+      ready: proofReadiness.ready,
+      detail: proofReadiness.enabled
+        ? proofReadiness.summary
+        : "Practical proof is not enabled and does not affect course certification.",
     },
   ];
   const blockers = checks.filter((check) => !check.ready);

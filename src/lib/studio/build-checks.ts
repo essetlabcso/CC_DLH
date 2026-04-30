@@ -31,6 +31,7 @@ export const buildCompletionFieldLabels: Record<string, string> = {
   safetyConfirmed: "safety and local realism review",
   finalTestConfirmed: "final test readiness",
   blockGovernanceReady: "block governance readiness",
+  practicalProofReady: "practical proof safety configuration",
 };
 
 export function parseBuildCompletionChecksFormData(

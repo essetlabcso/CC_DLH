@@ -13,6 +13,11 @@ import {
   getFirstLearnerLesson,
 } from "@/lib/learner/course-access";
 import {
+  buildPracticalProofReadiness,
+  getProofTypeLabel,
+  getSubmissionFormatLabel,
+} from "@/lib/studio/practical-proof";
+import {
   getBestFinalTestAttempt,
   getLatestFinalTestAttempt,
   parseFinalTestContent,
@@ -55,6 +60,7 @@ export default async function LearnerCoursePage({
     include: {
       course: true,
       setup: true,
+      practicalProofConfig: true,
       modules: {
         orderBy: {
           sortOrder: "asc",
@@ -128,6 +134,9 @@ export default async function LearnerCoursePage({
     .flatMap((lesson) => lesson.blocks)
     .find((block) => block.type === "FINAL_TEST");
   const finalTest = parseFinalTestContent(finalTestBlock?.content);
+  const proofReadiness = buildPracticalProofReadiness(
+    version.practicalProofConfig,
+  );
 
   return (
     <WorkspaceShell eyebrow="Course" title={version.course.title}>
@@ -285,6 +294,62 @@ export default async function LearnerCoursePage({
                 </article>
               </div>
             ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {proofReadiness.enabled && proofReadiness.ready ? (
+        <section className="studio-section" aria-labelledby="proof-title">
+          <h2 id="proof-title">Optional practical proof</h2>
+          <div className="final-test-panel">
+            <div>
+              <p className="block-kicker">Separate from certification</p>
+              <h3>{version.practicalProofConfig?.proofTitle}</h3>
+              <p>
+                Your course certificate is based on the final test. Practical
+                proof is a separate optional pathway for showing how you apply
+                the learning in real CSO work.
+              </p>
+            </div>
+            <div className="context-grid">
+              <article>
+                <strong>Accepted proof</strong>
+                <span>
+                  {getProofTypeLabel(
+                    version.practicalProofConfig?.acceptedProofType || "",
+                  )}
+                </span>
+              </article>
+              <article>
+                <strong>Format</strong>
+                <span>
+                  {getSubmissionFormatLabel(
+                    version.practicalProofConfig?.submissionFormat || "",
+                  )}
+                </span>
+              </article>
+              <article>
+                <strong>Privacy</strong>
+                <span>{proofReadiness.visibilityDefault}</span>
+              </article>
+              <article>
+                <strong>Capacity indicator</strong>
+                <span>{proofReadiness.capacityIndicator}</span>
+              </article>
+            </div>
+            <div className="block-content">
+              <strong>Instructions</strong>
+              <p>{version.practicalProofConfig?.instructions}</p>
+            </div>
+            <div className="block-content">
+              <strong>Safety guidance</strong>
+              <p>{version.practicalProofConfig?.safetyGuidance}</p>
+            </div>
+            <p className="workspace-note">
+              This course currently provides proof guidance only. Do not share
+              sensitive or identifying material unless DEC opens a protected
+              proof submission process for this course.
+            </p>
           </div>
         </section>
       ) : null}

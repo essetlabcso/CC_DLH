@@ -199,6 +199,7 @@ model CourseVersion {
   reviewRecord      CourseReviewRecord?
   monitoringRecord  CourseMonitoringRecord?
   revisionRecord    CourseRevisionRecord?
+  practicalProofConfig CoursePracticalProofConfig?
   modules           CourseModule[]
   events            CourseLifecycleEvent[]
   lessonProgress    LearnerLessonProgress[]
@@ -379,6 +380,34 @@ model CourseReviewRecord {
   reviewer      User?         @relation("CourseReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
 
   @@index([reviewerId])
+}
+
+model CoursePracticalProofConfig {
+  id                              String   @id @default(cuid())
+  courseVersionId                 String   @unique
+  enabled                         Boolean  @default(false)
+  proofTitle                      String   @default("")
+  proofPurpose                    String   @default("")
+  acceptedProofType               String   @default("")
+  submissionFormat                String   @default("")
+  instructions                    String   @default("")
+  safetyGuidance                  String   @default("")
+  reviewCriteria                  String   @default("")
+  capacityArea                    String   @default("")
+  subCapacityArea                 String   @default("")
+  linkedStandard                  String   @default("")
+  capacityIndicator               String   @default("")
+  visibilityDefault               String   @default("PRIVATE")
+  donorVisibilityEnabled          Boolean  @default(false)
+  certificateSeparationConfirmed  Boolean  @default(false)
+  specialistReviewRequired        Boolean  @default(false)
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
+
+  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+
+  @@index([enabled])
+  @@index([visibilityDefault])
 }
 
 model CourseMonitoringRecord {

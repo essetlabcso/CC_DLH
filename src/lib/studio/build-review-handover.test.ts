@@ -12,6 +12,7 @@ import {
   getBuildToReviewHandoverFromChecklist,
   mergeBuildToReviewHandoverChecklist,
 } from "./build-review-handover";
+import type { PracticalProofConfigInput } from "./practical-proof";
 
 describe("Build-to-Review handover", () => {
   it("includes the required Storyboard block register", () => {
@@ -101,6 +102,88 @@ describe("Build-to-Review handover", () => {
     expect(handover.certificateRule).not.toContain("90%");
   });
 
+  it("shows practical proof status in the handover", () => {
+    const handover = buildBuildToReviewHandover({
+      courseTitle: "Safe reporting basics",
+      version: buildVersion({
+        practicalProofConfig: {
+          enabled: true,
+          proofTitle: "Apply the reporting checklist",
+          proofPurpose: "Show safe use of the checklist.",
+          acceptedProofType: "work-sample",
+          submissionFormat: "text-response",
+          instructions: "Describe the safe reporting steps.",
+          safetyGuidance: "Do not include names or identifying details.",
+          reviewCriteria: "Uses the correct sequence and escalation point.",
+          capacityArea: "Safeguarding",
+          subCapacityArea: "Reporting",
+          linkedStandard: "DEC safeguarding practice",
+          capacityIndicator: "Uses safe referral steps.",
+          visibilityDefault: "PRIVATE",
+          donorVisibilityEnabled: false,
+          certificateSeparationConfirmed: true,
+          specialistReviewRequired: false,
+        },
+      }),
+    });
+
+    expect(handover.practicalProof).toMatchObject({
+      enabled: true,
+      ready: true,
+      status: "Safely configured",
+    });
+    expect(handover.blockingWarnings).toHaveLength(0);
+  });
+
+  it("blocks review submission when enabled practical proof is unsafe", () => {
+    const handover = buildBuildToReviewHandover({
+      courseTitle: "Safe reporting basics",
+      version: buildVersion({
+        practicalProofConfig: {
+          enabled: true,
+          proofTitle: "Apply the reporting checklist",
+          proofPurpose: "Show safe use of the checklist.",
+          acceptedProofType: "work-sample",
+          submissionFormat: "text-response",
+          instructions: "Describe the safe reporting steps.",
+          safetyGuidance: "",
+          reviewCriteria: "",
+          capacityArea: "Safeguarding",
+          subCapacityArea: "Reporting",
+          linkedStandard: "DEC safeguarding practice",
+          capacityIndicator: "Uses safe referral steps.",
+          visibilityDefault: "PRIVATE",
+          donorVisibilityEnabled: false,
+          certificateSeparationConfirmed: false,
+          specialistReviewRequired: false,
+        },
+      }),
+    });
+
+    expect(handover.practicalProof.ready).toBe(false);
+    expect(handover.blockingWarnings.map((warning) => warning.code)).toEqual(
+      expect.arrayContaining([
+        "practical-proof-safetyGuidance",
+        "practical-proof-reviewCriteria",
+        "practical-proof-certificateSeparationConfirmed",
+      ]),
+    );
+    expect(canSubmitBuildToReviewHandover(handover)).toBe(false);
+  });
+
+  it("keeps practical proof disabled without affecting review submission", () => {
+    const handover = buildBuildToReviewHandover({
+      courseTitle: "Safe reporting basics",
+      version: buildVersion(),
+    });
+
+    expect(handover.practicalProof).toMatchObject({
+      enabled: false,
+      ready: true,
+    });
+    expect(canSubmitBuildToReviewHandover(handover)).toBe(true);
+  });
+
   it("serializes the handover inside the review checklist", () => {
     const handover = buildBuildToReviewHandover({
       courseTitle: "Safe reporting basics",
@@ -127,6 +210,7 @@ function buildVersion(
   options: {
     includeFinalTest?: boolean;
     requiredContent?: Record<string, unknown>;
+    practicalProofConfig?: PracticalProofConfigInput;
     extraBlocks?: {
       id: string;
       type: LessonBlockType;
@@ -153,6 +237,7 @@ function buildVersion(
     setup: {
       certificateIntent: "Certificate",
     },
+    practicalProofConfig: options.practicalProofConfig,
     workflowSteps: [
       {
         step: CourseWorkflowStep.BUILD,

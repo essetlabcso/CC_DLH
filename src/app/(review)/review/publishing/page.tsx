@@ -42,6 +42,7 @@ export default async function PublishingPage({
         },
       },
       setup: true,
+      practicalProofConfig: true,
       modules: {
         include: {
           lessons: true,
