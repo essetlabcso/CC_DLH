@@ -1,0 +1,24 @@
+indicator_standard_id,indicator_standard_code,indicator_standard_title,source_framework,source_objective_or_commitment,indicator_description,most_relevant_core_capacity_area_id,applicable_capacity_practice_areas,indicator_strength_rating,course_relevance,notes,active_status
+DGNEAR_SO3_1,DGNEAR SO 3.1,CSOs’ internal governance structures follow principles of good governance,DG NEAR,SO 3.1,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_01_GOV,,Strong,Direct,,Active
+DGNEAR_SO3_2,DGNEAR SO 3.2,CSOs communicate results of activities to the public,DG NEAR,SO 3.2,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_02_ACC,,Strong,Direct,,Active
+DGNEAR_SO3_3,DGNEAR SO 3.3,CSOs are transparent about programme activities and sources of funding,DG NEAR,SO 3.3,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_02_ACC,,Strong,Direct,,Active
+DGNEAR_SO3_4,DGNEAR SO 3.4,CSOs monitor and evaluate results and impact,DG NEAR,SO 3.4,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_07_MEAL,,Strong,Direct,,Active
+DGNEAR_SO3_5,DGNEAR SO 3.5,CSOs use research and evidence to underpin their work,DG NEAR,SO 3.5,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_06_ADV,,Strong,Direct,,Active
+DGNEAR_SO3_6,DGNEAR SO 3.6,CSOs work in fair and respectful partnerships,DG NEAR,SO 3.6,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_09_NET,,Strong,Direct,,Active
+DGNEAR_SO3_7,DGNEAR SO 3.7,CSOs have diversified funding base,DG NEAR,SO 3.7,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_04_FIN,,Strong,Direct,,Active
+DGNEAR_SO3_8,DGNEAR SO 3.8,"CSOs have effective, empowered and developed human resources",DG NEAR,SO 3.8,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_05_HR,,Strong,Direct,,Active
+DGNEAR_SO2_1,DGNEAR SO 2.1,Public authorities include CSOs in decision- and policy-making,DG NEAR,SO 2.1,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_06_ADV,,Non-course / context,Context only,,Active
+DGNEAR_SO1_6,DGNEAR SO 1.6,CSOs are free to solicit and receive funding,DG NEAR,SO 1.6,Indicator/standard link for CSO capacity diagnosis and course-fit analysis.,CCA_04_FIN,,Non-course / context,Context only,,Active
+GS_C01,GS Commitment 1,Justice and Equality,Global Standard,Commitment 1,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C02,GS Commitment 2,Women’s Rights and Gender Equality,Global Standard,Commitment 2,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C03,GS Commitment 3,Healthy Planet,Global Standard,Commitment 3,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C04,GS Commitment 4,Lasting Positive Change,Global Standard,Commitment 4,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C05,GS Commitment 5,People-Driven Work,Global Standard,Commitment 5,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C06,GS Commitment 6,Strong Partnerships,Global Standard,Commitment 6,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C07,GS Commitment 7,Advocating for Fundamental Change,Global Standard,Commitment 7,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C08,GS Commitment 8,Open Organisations,Global Standard,Commitment 8,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C09,GS Commitment 9,Empowered and Effective Staff and Volunteers,Global Standard,Commitment 9,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C10,GS Commitment 10,Well-Handled Resources,Global Standard,Commitment 10,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C11,GS Commitment 11,Responsive Decision-Making,Global Standard,Commitment 11,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+GS_C12,GS Commitment 12,Responsible Leadership,Global Standard,Commitment 12,Global Standard accountability commitment used as quality lens.,,,Moderate,Indirect,,Active
+DEC_DIGITAL_DATA_RESP,DEC Internal,Digital Skills and Responsible Data Use,DEC Internal,Digital/Data Responsibility,"Practical digital tools, data responsibility, safe AI use, and low-bandwidth reporting.",CCA_08_DIG,,Internal,Direct,,Active

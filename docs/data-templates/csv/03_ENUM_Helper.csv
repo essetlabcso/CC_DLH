@@ -1,0 +1,193 @@
+enum_group,enum_value,enum_label,enum_definition,applies_to_sheet,applies_to_column,sort_order,active_status
+assessment_type,Baseline,Baseline,,,,1,Active
+assessment_type,Follow-up,Follow-up,,,,2,Active
+assessment_type,Endline,Endline,,,,3,Active
+assessment_type,Special diagnosis,Special diagnosis,,,,4,Active
+assessment_status,Draft,Draft,,,,1,Active
+assessment_status,Completed offline,Completed offline,,,,2,Active
+assessment_status,Validated,Validated,,,,3,Active
+assessment_status,Ready for upload,Ready for upload,,,,4,Active
+data_collection_round,Baseline,Baseline,,,,1,Active
+data_collection_round,Follow-up,Follow-up,,,,2,Active
+data_collection_round,Endline,Endline,,,,3,Active
+data_collection_round,Special diagnosis,Special diagnosis,,,,4,Active
+active_status,Active,Active,,,,1,Active
+active_status,Inactive,Inactive,,,,2,Active
+cso_type,Local NGO,Local NGO,,,,1,Active
+cso_type,Grassroots CBO,Grassroots CBO,,,,2,Active
+cso_type,Network,Network,,,,3,Active
+cso_type,Association,Association,,,,4,Active
+cso_type,Women-led,Women-led,,,,5,Active
+cso_type,Youth-led,Youth-led,,,,6,Active
+cso_type,Disability organization,Disability organization,,,,7,Active
+cso_type,Faith-based,Faith-based,,,,8,Active
+cso_type,Other,Other,,,,9,Active
+cso_size_category,Small,Small,,,,1,Active
+cso_size_category,Medium,Medium,,,,2,Active
+cso_size_category,Large,Large,,,,3,Active
+cso_size_category,Unknown,Unknown,,,,4,Active
+cso_maturity_level,Emerging,Emerging,,,,1,Active
+cso_maturity_level,Developing,Developing,,,,2,Active
+cso_maturity_level,Established,Established,,,,3,Active
+cso_maturity_level,Advanced,Advanced,,,,4,Active
+cso_maturity_level,Not assessed,Not assessed,,,,5,Active
+region,Addis Ababa,Addis Ababa,,,,1,Active
+region,Amhara,Amhara,,,,2,Active
+region,Oromia,Oromia,,,,3,Active
+region,Sidama,Sidama,,,,4,Active
+region,SNNPR,SNNPR,,,,5,Active
+region,Somali,Somali,,,,6,Active
+region,Tigray,Tigray,,,,7,Active
+region,Afar,Afar,,,,8,Active
+region,Benishangul-Gumuz,Benishangul-Gumuz,,,,9,Active
+region,Gambella,Gambella,,,,10,Active
+region,Harari,Harari,,,,11,Active
+region,Dire Dawa,Dire Dawa,,,,12,Active
+region,South Ethiopia,South Ethiopia,,,,13,Active
+region,Central Ethiopia,Central Ethiopia,,,,14,Active
+region,Other,Other,,,,15,Active
+sector_primary,Human rights,Human rights,,,,1,Active
+sector_primary,Gender equality,Gender equality,,,,2,Active
+sector_primary,Women and girls,Women and girls,,,,3,Active
+sector_primary,Youth,Youth,,,,4,Active
+sector_primary,Child protection,Child protection,,,,5,Active
+sector_primary,Disability inclusion,Disability inclusion,,,,6,Active
+sector_primary,Health,Health,,,,7,Active
+sector_primary,Education,Education,,,,8,Active
+sector_primary,Livelihoods,Livelihoods,,,,9,Active
+sector_primary,Peacebuilding,Peacebuilding,,,,10,Active
+sector_primary,Environment/climate,Environment/climate,,,,11,Active
+sector_primary,Governance,Governance,,,,12,Active
+sector_primary,Humanitarian,Humanitarian,,,,13,Active
+sector_primary,Other,Other,,,,14,Active
+evidence_source_type,DEC capacity assessment,DEC capacity assessment,,,,1,Active
+evidence_source_type,CSO self-assessment,CSO self-assessment,,,,2,Active
+evidence_source_type,Participatory scoping workshop,Participatory scoping workshop,,,,3,Active
+evidence_source_type,Focus group discussion,Focus group discussion,,,,4,Active
+evidence_source_type,Key informant interview,Key informant interview,,,,5,Active
+evidence_source_type,Community feedback,Community feedback,,,,6,Active
+evidence_source_type,Donor or partner feedback,Donor or partner feedback,,,,7,Active
+evidence_source_type,Project monitoring data,Project monitoring data,,,,8,Active
+evidence_source_type,Training evaluation,Training evaluation,,,,9,Active
+evidence_source_type,Organizational document review,Organizational document review,,,,10,Active
+evidence_source_type,Previous course monitoring data,Previous course monitoring data,,,,11,Active
+evidence_source_type,External assessment or report,External assessment or report,,,,12,Active
+evidence_source_type,Reviewer or admin observation,Reviewer or admin observation,,,,13,Active
+evidence_source_type,Other documented source,Other documented source,,,,14,Active
+evidence_confidence,High,High,,,,1,Active
+evidence_confidence,Moderate,Moderate,,,,2,Active
+evidence_confidence,Low,Low,,,,3,Active
+evidence_confidence,Insufficient,Insufficient,,,,4,Active
+indicator_strength_rating,Strong,Strong,,,,1,Active
+indicator_strength_rating,Moderate,Moderate,,,,2,Active
+indicator_strength_rating,Emerging,Emerging,,,,3,Active
+indicator_strength_rating,Internal,Internal,,,,4,Active
+indicator_strength_rating,Non-course / context,Non-course / context,,,,5,Active
+course_relevance,Direct,Direct,,,,1,Active
+course_relevance,Indirect,Indirect,,,,2,Active
+course_relevance,Context only,Context only,,,,3,Active
+course_relevance,Non-course,Non-course,,,,4,Active
+ksme_diagnosis,Knowledge,Knowledge,,,,1,Active
+ksme_diagnosis,Skill,Skill,,,,2,Active
+ksme_diagnosis,Motivation,Motivation,,,,3,Active
+ksme_diagnosis,Environment,Environment,,,,4,Active
+ksme_diagnosis,Mixed,Mixed,,,,5,Active
+ksme_diagnosis,Unclear / needs further diagnosis,Unclear / needs further diagnosis,,,,6,Active
+course_fit_decision,Course-addressable,Course-addressable,,,,1,Active
+course_fit_decision,Partly course-addressable,Partly course-addressable,,,,2,Active
+course_fit_decision,Blended support recommended,Blended support recommended,,,,3,Active
+course_fit_decision,Non-course support required,Non-course support required,,,,4,Active
+course_fit_decision,Further diagnosis needed,Further diagnosis needed,,,,5,Active
+course_fit_decision,Not prioritized for Phase 1,Not prioritized for Phase 1,,,,6,Active
+recommended_intervention_route,Digital course,Digital course,,,,1,Active
+recommended_intervention_route,Micro-course,Micro-course,,,,2,Active
+recommended_intervention_route,Scenario-based practice,Scenario-based practice,,,,3,Active
+recommended_intervention_route,Template / job aid,Template / job aid,,,,4,Active
+recommended_intervention_route,Coaching,Coaching,,,,5,Active
+recommended_intervention_route,Mentoring,Mentoring,,,,6,Active
+recommended_intervention_route,Peer learning,Peer learning,,,,7,Active
+recommended_intervention_route,Technical assistance,Technical assistance,,,,8,Active
+recommended_intervention_route,Leadership engagement,Leadership engagement,,,,9,Active
+recommended_intervention_route,Systems strengthening,Systems strengthening,,,,10,Active
+recommended_intervention_route,Resource support,Resource support,,,,11,Active
+recommended_intervention_route,Safeguarding referral,Safeguarding referral,,,,12,Active
+recommended_intervention_route,Enabling-environment action,Enabling-environment action,,,,13,Active
+recommended_intervention_route,Further diagnosis,Further diagnosis,,,,14,Active
+recommended_intervention_route,No action for now,No action for now,,,,15,Active
+safeguarding_data_sensitivity,Low,Low,,,,1,Active
+safeguarding_data_sensitivity,Moderate,Moderate,,,,2,Active
+safeguarding_data_sensitivity,High,High,,,,3,Active
+safeguarding_data_sensitivity,Critical,Critical,,,,4,Active
+safe_for_dashboard,Yes,Yes,,,,1,Active
+safe_for_dashboard,No,No,,,,2,Active
+priority_flag,Yes,Yes,,,,1,Active
+priority_flag,No,No,,,,2,Active
+priority_flag,Maybe,Maybe,,,,3,Active
+priority_level,High,High,,,,1,Active
+priority_level,Medium,Medium,,,,2,Active
+priority_level,Low,Low,,,,3,Active
+document_available_status,Available,Available,,,,1,Active
+document_available_status,Not available,Not available,,,,2,Active
+document_available_status,Unknown,Unknown,,,,3,Active
+document_available_status,Not applicable,Not applicable,,,,4,Active
+document_review_status,Reviewed,Reviewed,,,,1,Active
+document_review_status,Not reviewed,Not reviewed,,,,2,Active
+document_review_status,Partly reviewed,Partly reviewed,,,,3,Active
+document_review_status,Not applicable,Not applicable,,,,4,Active
+document_category,Annual plan,Annual plan,,,,1,Active
+document_category,Program strategy,Program strategy,,,,2,Active
+document_category,M&E plan,M&E plan,,,,3,Active
+document_category,Data protection policy,Data protection policy,,,,4,Active
+document_category,External communications plan,External communications plan,,,,5,Active
+document_category,Organogram,Organogram,,,,6,Active
+document_category,HR policy,HR policy,,,,7,Active
+document_category,Safeguarding policy,Safeguarding policy,,,,8,Active
+document_category,Financial policy,Financial policy,,,,9,Active
+document_category,Board minutes,Board minutes,,,,10,Active
+document_category,Fundraising strategy,Fundraising strategy,,,,11,Active
+document_category,Donor database,Donor database,,,,12,Active
+document_category,Network membership list,Network membership list,,,,13,Active
+document_category,Other,Other,,,,14,Active
+action_type,Course,Course,,,,1,Active
+action_type,Coaching,Coaching,,,,2,Active
+action_type,Technical assistance,Technical assistance,,,,3,Active
+action_type,Policy/system,Policy/system,,,,4,Active
+action_type,Resource support,Resource support,,,,5,Active
+action_type,Peer learning,Peer learning,,,,6,Active
+action_type,Leadership engagement,Leadership engagement,,,,7,Active
+action_type,Safeguarding referral,Safeguarding referral,,,,8,Active
+action_type,Other,Other,,,,9,Active
+timeframe_category,0–3 months,0–3 months,,,,1,Active
+timeframe_category,4–6 months,4–6 months,,,,2,Active
+timeframe_category,7–12 months,7–12 months,,,,3,Active
+timeframe_category,13–18 months,13–18 months,,,,4,Active
+action_status,Proposed,Proposed,,,,1,Active
+action_status,Agreed,Agreed,,,,2,Active
+action_status,In progress,In progress,,,,3,Active
+action_status,Completed,Completed,,,,4,Active
+action_status,Deferred,Deferred,,,,5,Active
+data_quality_check,Complete,Complete,,,,1,Active
+data_quality_check,Needs review,Needs review,,,,2,Active
+data_quality_check,Missing key field,Missing key field,,,,3,Active
+practical_proof_possibility,Not relevant,Not relevant,,,,1,Active
+practical_proof_possibility,Possible,Possible,,,,2,Active
+practical_proof_possibility,Recommended,Recommended,,,,3,Active
+practical_proof_possibility,Unsafe,Unsafe,,,,4,Active
+practical_proof_possibility,Needs review,Needs review,,,,5,Active
+recommended_learning_product_type,Micro-course,Micro-course,,,,1,Active
+recommended_learning_product_type,Scenario-based practice,Scenario-based practice,,,,2,Active
+recommended_learning_product_type,Template / job aid,Template / job aid,,,,3,Active
+recommended_learning_product_type,Blended learning,Blended learning,,,,4,Active
+recommended_learning_product_type,Peer learning,Peer learning,,,,5,Active
+recommended_learning_product_type,Not applicable,Not applicable,,,,6,Active
+boolean_true_false,TRUE,TRUE,,,,1,Active
+boolean_true_false,FALSE,FALSE,,,,2,Active
+assessment_round,Baseline,Baseline,,,,1,Active
+assessment_round,Follow-up 1,Follow-up 1,,,,2,Active
+assessment_round,Follow-up 2,Follow-up 2,,,,3,Active
+assessment_round,Endline,Endline,,,,4,Active
+current_practice_score,1,1,,,,1,Active
+current_practice_score,2,2,,,,2,Active
+current_practice_score,3,3,,,,3,Active
+current_practice_score,4,4,,,,4,Active
+current_practice_score,5,5,,,,5,Active

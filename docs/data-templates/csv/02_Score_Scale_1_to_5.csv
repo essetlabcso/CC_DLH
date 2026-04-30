@@ -1,0 +1,6 @@
+score_value,score_label,score_definition,dashboard_gap_severity,capacity_level_band,recommended_interpretation,typical_capacity_response,dashboard_sort_order
+1,Nascent,"Practice is absent, informal, undocumented, or rarely followed.",Critical gap,Level 1 — Nascent,Priority capacity support needed,Priority capacity support needed,1
+2,Emerging,"Some practice exists but is inconsistent, partial, person-dependent, or weakly documented.",High gap,Level 2 — Emerging,Capacity strengthening recommended,Capacity strengthening recommended,2
+3,Developing,"Core practice exists and is used in some teams/projects, but not yet consistent or institutionalized.",Moderate gap,Level 3 — Developing,Targeted improvement useful,Targeted improvement useful,3
+4,Established,"Practice is documented, regularly used, understood by relevant staff, and mostly consistent.",Low gap,Level 4 — Established,Maintain and refine,Maintain and refine,4
+5,Advanced / Adaptive,"Practice is institutionalized, reviewed, improved using evidence/feedback, and may support peer learning.",Strength,Level 5 — Advanced / Adaptive,Document as strength / peer learning example,Document as strength / peer learning example,5

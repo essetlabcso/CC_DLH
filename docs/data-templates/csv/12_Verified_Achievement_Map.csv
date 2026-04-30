@@ -1,0 +1,10 @@
+achievement_map_id,core_capacity_area_id,capacity_practice_area_id,verified_achievement_name,practical_proof_type,evidence_required,safety_note,dashboard_category,active_status
+VAM_001,CCA_01_GOV,,Conflict-of-Interest Practice Badge,Worksheet/checklist/redacted work sample,Evidence required for Conflict-of-Interest Practice Badge.,Use safe or redacted evidence only.,CCA_01_GOV,Active
+VAM_002,CCA_02_ACC,,Community Feedback Use Badge,Worksheet/checklist/redacted work sample,Evidence required for Community Feedback Use Badge.,Use safe or redacted evidence only.,CCA_02_ACC,Active
+VAM_003,CCA_03_STR,,Strategy-to-Action Badge,Worksheet/checklist/redacted work sample,Evidence required for Strategy-to-Action Badge.,Use safe or redacted evidence only.,CCA_03_STR,Active
+VAM_004,CCA_04_FIN,,Budget Justification Readiness Badge,Worksheet/checklist/redacted work sample,Evidence required for Budget Justification Readiness Badge.,Use safe or redacted evidence only.,CCA_04_FIN,Active
+VAM_005,CCA_05_HR,,Safeguarding Referral Practice Badge,Worksheet/checklist/redacted work sample,Evidence required for Safeguarding Referral Practice Badge.,Use safe or redacted evidence only.,CCA_05_HR,Active
+VAM_006,CCA_06_ADV,,Evidence-Based Advocacy Message Badge,Worksheet/checklist/redacted work sample,Evidence required for Evidence-Based Advocacy Message Badge.,Use safe or redacted evidence only.,CCA_06_ADV,Active
+VAM_007,CCA_07_MEAL,,Outcome Evidence Practice Badge,Worksheet/checklist/redacted work sample,Evidence required for Outcome Evidence Practice Badge.,Use safe or redacted evidence only.,CCA_07_MEAL,Active
+VAM_008,CCA_08_DIG,,Safe Data Handling Badge,Worksheet/checklist/redacted work sample,Evidence required for Safe Data Handling Badge.,Use safe or redacted evidence only.,CCA_08_DIG,Active
+VAM_009,CCA_09_NET,,Partnership Role Clarity Badge,Worksheet/checklist/redacted work sample,Evidence required for Partnership Role Clarity Badge.,Use safe or redacted evidence only.,CCA_09_NET,Active
