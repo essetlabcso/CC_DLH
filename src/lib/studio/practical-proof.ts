@@ -35,10 +35,6 @@ export const practicalProofSubmissionFormats = [
     value: "document-link",
     label: "Document link",
   },
-  {
-    value: "document-upload-future",
-    label: "Document upload in a future release",
-  },
 ] as const;
 
 export type PracticalProofConfigInput = {

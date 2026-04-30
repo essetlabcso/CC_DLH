@@ -4,6 +4,7 @@ import {
   buildPracticalProofReadiness,
   parsePracticalProofConfigFormData,
   practicalProofCertificateRule,
+  practicalProofSubmissionFormats,
   practicalProofVisibilityDefault,
 } from "./practical-proof";
 
@@ -22,6 +23,15 @@ describe("practical proof configuration", () => {
     expect(result.ok).toBe(true);
     expect(result.value.visibilityDefault).toBe(practicalProofVisibilityDefault);
     expect(result.value.donorVisibilityEnabled).toBe(false);
+  });
+
+  it("keeps active submission formats aligned to text and link intake only", () => {
+    expect(
+      practicalProofSubmissionFormats.map((format) => format.value),
+    ).toEqual(["text-response", "document-link"]);
+    expect(
+      practicalProofSubmissionFormats.map((format) => format.label).join(" "),
+    ).not.toContain("upload");
   });
 
   it("requires safe configuration fields when proof is enabled", () => {
