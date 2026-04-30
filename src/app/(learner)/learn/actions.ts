@@ -16,6 +16,8 @@ import {
 } from "@/lib/learner/final-test";
 import {
   buildPrivatePracticalProofSubmissionData,
+  buildPrivatePracticalProofResubmissionData,
+  canRevisePrivatePracticalProof,
   canSubmitPrivatePracticalProof,
   parseLearnerPracticalProofFormData,
 } from "@/lib/learner/practical-proof";
@@ -263,8 +265,27 @@ export async function submitLearnerPracticalProofAction(
     redirect(`${coursePath}?error=proof-config`);
   }
 
-  if (version.practicalProofSubmissions.length > 0) {
-    redirect(`${coursePath}?error=proof-exists`);
+  const existingSubmission = version.practicalProofSubmissions[0];
+
+  if (existingSubmission) {
+    if (!canRevisePrivatePracticalProof(existingSubmission.status)) {
+      redirect(
+        `${coursePath}?error=proof&fields=${encodeURIComponent(
+          "resubmissionNotAllowed",
+        )}`,
+      );
+    }
+
+    await prisma.learnerPracticalProofSubmission.update({
+      where: {
+        id: existingSubmission.id,
+      },
+      data: buildPrivatePracticalProofResubmissionData(result.value),
+    });
+
+    revalidatePath("/learn");
+    revalidatePath(coursePath);
+    redirect(`${coursePath}?proof=resubmitted`);
   }
 
   await prisma.learnerPracticalProofSubmission.create({

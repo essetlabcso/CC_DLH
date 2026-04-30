@@ -26,6 +26,7 @@ import {
   parseFinalTestContent,
 } from "@/lib/learner/final-test";
 import {
+  canRevisePrivatePracticalProof,
   formatLearnerProofStatus,
   getLearnerProofReviewGuidance,
   getPracticalProofCertificateSeparationCopy,
@@ -158,6 +159,9 @@ export default async function LearnerCoursePage({
     version.practicalProofConfig,
   );
   const proofSubmission = version.practicalProofSubmissions[0];
+  const canReviseProof = canRevisePrivatePracticalProof(
+    proofSubmission?.status || "",
+  );
   const proofReviewGuidance = getLearnerProofReviewGuidance(proofSubmission);
   const proofMissingFields = resolvedSearchParams?.fields
     ? resolvedSearchParams.fields
@@ -179,6 +183,12 @@ export default async function LearnerCoursePage({
         <p className="workspace-note">
           Practical proof submitted privately. Your certificate status is still
           based on the final test only.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.proof === "resubmitted" ? (
+        <p className="workspace-note">
+          Revised practical proof submitted privately. It is back with DEC
+          review and remains separate from your course certificate.
         </p>
       ) : null}
       {resolvedSearchParams?.error === "final-test-answer" ? (
@@ -420,6 +430,14 @@ export default async function LearnerCoursePage({
                       )}
                     </span>
                   </article>
+                  <article>
+                    <strong>Last updated</strong>
+                    <span>
+                      {proofSubmission.updatedAt.toLocaleDateString("en-US", {
+                        dateStyle: "medium",
+                      })}
+                    </span>
+                  </article>
                 </div>
                 {proofReviewGuidance ? (
                   <p className="workspace-note">{proofReviewGuidance}</p>
@@ -435,6 +453,63 @@ export default async function LearnerCoursePage({
                     <strong>Requested action</strong>
                     <p>{proofSubmission.requiredAction}</p>
                   </div>
+                ) : null}
+                {canReviseProof ? (
+                  <form
+                    action={submitLearnerPracticalProofAction.bind(
+                      null,
+                      courseId,
+                    )}
+                    className="checklist-form"
+                  >
+                    <div className="block-content">
+                      <strong>Revise private proof</strong>
+                      <p>{getPracticalProofCertificateSeparationCopy()}</p>
+                      <p>
+                        Update only safe, anonymized text or a safe link. Do
+                        not include real names, contact details, exact
+                        locations, active case details, confidential documents,
+                        or politically sensitive information.
+                      </p>
+                    </div>
+                    <label>
+                      <span>Practical proof text</span>
+                      <textarea
+                        defaultValue={proofSubmission.proofText}
+                        name="proofText"
+                        placeholder="Describe the revised practical output or application using safe, anonymized details."
+                      />
+                    </label>
+                    <label>
+                      <span>Optional evidence link</span>
+                      <input
+                        defaultValue={proofSubmission.evidenceLink}
+                        name="evidenceLink"
+                        placeholder="https://example.org/redacted-proof"
+                        type="url"
+                      />
+                    </label>
+                    <label className="checkbox-row">
+                      <input name="safetyAcknowledged" type="checkbox" />
+                      <span>
+                        I have removed sensitive, identifying, safeguarding,
+                        beneficiary, and politically sensitive details.
+                      </span>
+                    </label>
+                    <label className="checkbox-row">
+                      <input
+                        name="certificateSeparationAcknowledged"
+                        type="checkbox"
+                      />
+                      <span>
+                        I understand this practical proof is optional and
+                        separate from my course certificate.
+                      </span>
+                    </label>
+                    <button className="workspace-button" type="submit">
+                      Resubmit private proof
+                    </button>
+                  </form>
                 ) : null}
               </>
             ) : (

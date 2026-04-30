@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildPrivatePracticalProofResubmissionData,
   buildPrivatePracticalProofSubmissionData,
+  canRevisePrivatePracticalProof,
   canSubmitPrivatePracticalProof,
   getPracticalProofCertificateSeparationCopy,
   parseLearnerPracticalProofFormData,
@@ -44,7 +46,10 @@ describe("learner practical proof intake", () => {
 
   it("builds private-by-default proof submission data", () => {
     const formData = new FormData();
-    formData.set("proofText", "A redacted example of how we applied the checklist.");
+    formData.set(
+      "proofText",
+      "A redacted example of how we applied the checklist.",
+    );
     formData.set("evidenceLink", "https://example.org/redacted-proof");
     formData.set("safetyAcknowledged", "on");
     formData.set("certificateSeparationAcknowledged", "on");
@@ -54,13 +59,57 @@ describe("learner practical proof intake", () => {
     expect(result.ok).toBe(true);
 
     if (result.ok) {
-      expect(buildPrivatePracticalProofSubmissionData(result.value)).toMatchObject({
+      expect(
+        buildPrivatePracticalProofSubmissionData(result.value),
+      ).toMatchObject({
         status: "SUBMITTED",
         visibilityDefault: "PRIVATE",
         donorVisibilityConsent: false,
         aiVerificationUsed: false,
         safetyAcknowledged: true,
         certificateSeparationAcknowledged: true,
+      });
+    }
+  });
+
+  it("allows learner revision only for returned proof statuses", () => {
+    expect(canRevisePrivatePracticalProof("REVISION_REQUESTED")).toBe(true);
+    expect(canRevisePrivatePracticalProof("UNSAFE_REDACTION_REQUIRED")).toBe(
+      true,
+    );
+
+    for (const status of [
+      "SUBMITTED",
+      "UNDER_REVIEW",
+      "ACCEPTED",
+      "REJECTED",
+      "ESCALATED",
+    ]) {
+      expect(canRevisePrivatePracticalProof(status)).toBe(false);
+    }
+  });
+
+  it("resubmits private proof without changing certificate or visibility rules", () => {
+    const formData = new FormData();
+    formData.set("proofText", "A safer redacted proof update.");
+    formData.set("evidenceLink", "https://example.org/revised-proof");
+    formData.set("safetyAcknowledged", "on");
+    formData.set("certificateSeparationAcknowledged", "on");
+
+    const result = parseLearnerPracticalProofFormData(formData);
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) {
+      expect(buildPrivatePracticalProofResubmissionData(result.value)).toMatchObject({
+        status: "SUBMITTED",
+        visibilityDefault: "PRIVATE",
+        donorVisibilityConsent: false,
+        aiVerificationUsed: false,
+        reviewerId: null,
+        reviewedAt: null,
+        redactionRequired: false,
+        specialistReviewRequired: false,
       });
     }
   });

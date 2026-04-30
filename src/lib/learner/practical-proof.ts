@@ -14,6 +14,11 @@ export const learnerProofSubmissionStatus = {
   submitted: "SUBMITTED",
 } as const;
 
+export const learnerProofRevisionAllowedStatuses = [
+  "REVISION_REQUESTED",
+  "UNSAFE_REDACTION_REQUIRED",
+] as const;
+
 export type LearnerPracticalProofInput = {
   proofText: string;
   evidenceLink: string;
@@ -39,6 +44,7 @@ export const learnerProofSubmissionFieldLabels: Record<string, string> = {
   certificateSeparationAcknowledged: "certificate separation acknowledgement",
   proofConfig: "safe practical proof configuration",
   duplicateSubmission: "existing private proof submission",
+  resubmissionNotAllowed: "proof status that allows revision",
 };
 
 export function parseLearnerPracticalProofFormData(formData: FormData):
@@ -109,6 +115,24 @@ export function buildPrivatePracticalProofSubmissionData(
       input.certificateSeparationAcknowledged,
     donorVisibilityConsent: false,
     aiVerificationUsed: false,
+  };
+}
+
+export function canRevisePrivatePracticalProof(status: string) {
+  return learnerProofRevisionAllowedStatuses.includes(
+    status as (typeof learnerProofRevisionAllowedStatuses)[number],
+  );
+}
+
+export function buildPrivatePracticalProofResubmissionData(
+  input: LearnerPracticalProofInput,
+) {
+  return {
+    ...buildPrivatePracticalProofSubmissionData(input),
+    reviewerId: null,
+    reviewedAt: null,
+    redactionRequired: false,
+    specialistReviewRequired: false,
   };
 }
 
