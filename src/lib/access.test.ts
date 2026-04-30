@@ -25,14 +25,20 @@ describe("DEC workspace access policy", () => {
     const studio = findProtectedWorkspace("/studio");
     const review = findProtectedWorkspace("/review");
     const proofReview = findProtectedWorkspace("/review/proof");
+    const achievementSummary = findProtectedWorkspace("/review/achievements");
 
     expect(studio).toBeDefined();
     expect(review).toBeDefined();
     expect(proofReview).toBeDefined();
+    expect(achievementSummary).toBeDefined();
     expect(canAccessWorkspace("reviewer", studio!)).toBe(false);
     expect(canAccessWorkspace("reviewer", review!)).toBe(true);
     expect(canAccessWorkspace("admin", proofReview!)).toBe(true);
     expect(canAccessWorkspace("reviewer", proofReview!)).toBe(true);
+    expect(canAccessWorkspace("admin", achievementSummary!)).toBe(true);
+    expect(canAccessWorkspace("reviewer", achievementSummary!)).toBe(true);
+    expect(canAccessWorkspace("learner", achievementSummary!)).toBe(false);
+    expect(canAccessWorkspace("creator", achievementSummary!)).toBe(false);
     expect(canAccessWorkspace("learner", proofReview!)).toBe(false);
     expect(canAccessWorkspace("creator", proofReview!)).toBe(false);
   });

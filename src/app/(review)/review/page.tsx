@@ -98,6 +98,9 @@ export default async function ReviewWorkspacePage() {
         <Link className="workspace-link" href="/review/proof">
           Open proof review
         </Link>
+        <Link className="workspace-link" href="/review/achievements">
+          Open achievement summary
+        </Link>
         <Link className="workspace-link" href="/review/monitoring">
           Open monitoring
         </Link>
