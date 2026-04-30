@@ -74,6 +74,23 @@ describe("practical proof audit history", () => {
     expect(metadata.noBadgeOrVerifiedAchievementIssued).toBe(true);
   });
 
+  it("marks verified achievement events without issuing a public badge", () => {
+    const event = buildPracticalProofAuditEventData({
+      actorId: "reviewer-1",
+      eventType: practicalProofAuditEventTypes.verifiedAchievementIssued,
+      fromStatus: "ACCEPTED",
+      toStatus: "ACCEPTED",
+      learnerVisibleNote: "Verified achievement issued.",
+    });
+    const metadata = JSON.parse(event.metadata) as Record<string, unknown>;
+
+    expect(event.eventType).toBe("VERIFIED_ACHIEVEMENT_ISSUED");
+    expect(metadata.noBadgeOrVerifiedAchievementIssued).toBe(false);
+    expect(metadata.noPublicBadgeIssued).toBe(true);
+    expect(metadata.donorVisibilityEnabled).toBe(false);
+    expect(metadata.aiVerificationUsed).toBe(false);
+  });
+
   it("summarizes learner-safe events without internal notes", () => {
     const summary = summarizeLearnerProofAuditEvent({
       eventType: "REVIEW_DECISION",

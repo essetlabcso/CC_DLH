@@ -4,6 +4,7 @@ export const practicalProofAuditEventTypes = {
   submitted: "SUBMITTED",
   resubmitted: "RESUBMITTED",
   reviewDecision: "REVIEW_DECISION",
+  verifiedAchievementIssued: "VERIFIED_ACHIEVEMENT_ISSUED",
 } as const;
 
 export type PracticalProofAuditEventType =
@@ -82,7 +83,10 @@ export function buildPracticalProofAuditEventData(
     aiVerificationUsed: false,
     metadata: JSON.stringify({
       proofSeparateFromCertificate: true,
-      noBadgeOrVerifiedAchievementIssued: true,
+      noBadgeOrVerifiedAchievementIssued:
+        input.eventType !==
+        practicalProofAuditEventTypes.verifiedAchievementIssued,
+      noPublicBadgeIssued: true,
       donorVisibilityEnabled: false,
       aiVerificationUsed: false,
       ...(input.metadata || {}),
@@ -118,6 +122,8 @@ export function formatProofAuditEventType(eventType: string) {
       return "Resubmitted";
     case practicalProofAuditEventTypes.reviewDecision:
       return "Review decision";
+    case practicalProofAuditEventTypes.verifiedAchievementIssued:
+      return "Verified achievement issued";
     default:
       return eventType || "Proof update";
   }

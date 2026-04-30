@@ -44,6 +44,11 @@ import {
   parseRevisionRequestFormData,
   summarizeRevisionRequest,
 } from "@/lib/review/revisions";
+import {
+  buildVerifiedAchievementCreateData,
+  getVerifiedAchievementEligibility,
+  verifiedAchievementAuditEventType,
+} from "@/lib/verified-achievement";
 
 export async function approveSubmittedCourseAction(
   courseId: string,
@@ -748,6 +753,86 @@ export async function recordPracticalProofReviewAction(
   revalidatePath(reviewPath);
   revalidatePath(`/learn/courses/${submission.courseVersion.courseId}`);
   redirect(`${reviewPath}?reviewed=1`);
+}
+
+export async function issueVerifiedAchievementAction(submissionId: string) {
+  const reviewPath = `/review/proof/${submissionId}`;
+  const identity = await requireWorkspaceIdentity(reviewPath);
+  const submission = await prisma.learnerPracticalProofSubmission.findFirst({
+    where: {
+      id: submissionId,
+      courseVersion: {
+        course: {
+          organizationId: identity.user.organizationId,
+        },
+      },
+      visibilityDefault: "PRIVATE",
+      donorVisibilityConsent: false,
+      aiVerificationUsed: false,
+    },
+    include: {
+      practicalProofConfig: true,
+      verifiedAchievement: true,
+      courseVersion: {
+        include: {
+          course: true,
+        },
+      },
+    },
+  });
+
+  if (!submission) {
+    notFound();
+  }
+
+  const eligibility = getVerifiedAchievementEligibility(submission);
+
+  if (!eligibility.allowed) {
+    redirect(
+      `${reviewPath}?error=achievement&fields=${encodeURIComponent(
+        eligibility.blockers.join(","),
+      )}`,
+    );
+  }
+
+  const issuedAt = new Date();
+  const achievementData = buildVerifiedAchievementCreateData(submission, {
+    issuedById: identity.user.id,
+    verificationNote:
+      submission.learnerFeedback ||
+      "Verified achievement issued after accepted practical proof review.",
+  });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.learnerVerifiedAchievement.create({
+      data: achievementData,
+    });
+    await tx.learnerPracticalProofSubmissionEvent.create({
+      data: {
+        submissionId: submission.id,
+        ...buildPracticalProofAuditEventData({
+          actorId: identity.user.id,
+          eventType: verifiedAchievementAuditEventType,
+          fromStatus: submission.status,
+          toStatus: submission.status,
+          learnerVisibleNote:
+            "Verified achievement issued for accepted practical proof.",
+          internalNote: "Private verified achievement record created.",
+          metadata: {
+            achievementTitle: achievementData.title,
+            issuedAt: issuedAt.toISOString(),
+            publicBadgeEnabled: false,
+            badgeVisualIssued: false,
+          },
+        }),
+      },
+    });
+  });
+
+  revalidatePath("/review/proof");
+  revalidatePath(reviewPath);
+  revalidatePath(`/learn/courses/${submission.courseVersion.courseId}`);
+  redirect(`${reviewPath}?achievement=issued`);
 }
 
 export async function createRevisionDraftAction(

@@ -113,6 +113,17 @@ export default async function LearnerCoursePage({
           submittedAt: "desc",
         },
       },
+      verifiedAchievements: {
+        where: {
+          userId: identity.user.id,
+          visibilityDefault: "PRIVATE",
+          donorVisibilityEnabled: false,
+          aiIssued: false,
+        },
+        orderBy: {
+          issuedAt: "desc",
+        },
+      },
     },
     orderBy: {
       publishedAt: "desc",
@@ -167,6 +178,7 @@ export default async function LearnerCoursePage({
     version.practicalProofConfig,
   );
   const proofSubmission = version.practicalProofSubmissions[0];
+  const verifiedAchievement = version.verifiedAchievements[0];
   const canReviseProof = canRevisePrivatePracticalProof(
     proofSubmission?.status || "",
   );
@@ -460,6 +472,25 @@ export default async function LearnerCoursePage({
                   <div className="block-content">
                     <strong>Requested action</strong>
                     <p>{proofSubmission.requiredAction}</p>
+                  </div>
+                ) : null}
+                {verifiedAchievement ? (
+                  <div className="block-content">
+                    <strong>Private verified achievement</strong>
+                    <p>{verifiedAchievement.title}</p>
+                    <p>{verifiedAchievement.description}</p>
+                    <p className="workspace-note">
+                      Issued{" "}
+                      {verifiedAchievement.issuedAt.toLocaleDateString(
+                        "en-US",
+                        {
+                          dateStyle: "medium",
+                        },
+                      )}{" "}
+                      for {verifiedAchievement.capacityIndicator}. This is
+                      separate from your course certificate. No public badge or
+                      donor-facing display is active.
+                    </p>
                   </div>
                 ) : null}
                 <div className="block-content">

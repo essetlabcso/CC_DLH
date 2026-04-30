@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { recordPracticalProofReviewAction } from "@/app/(review)/review/actions";
+import {
+  issueVerifiedAchievementAction,
+  recordPracticalProofReviewAction,
+} from "@/app/(review)/review/actions";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -19,6 +22,10 @@ import {
   getProofTypeLabel,
   getSubmissionFormatLabel,
 } from "@/lib/studio/practical-proof";
+import {
+  getVerifiedAchievementBlockerMessage,
+  getVerifiedAchievementEligibility,
+} from "@/lib/verified-achievement";
 
 type ProofReviewDetailPageProps = {
   params?: Promise<{
@@ -27,6 +34,7 @@ type ProofReviewDetailPageProps = {
   searchParams?: Promise<{
     error?: string;
     fields?: string;
+    achievement?: string;
     reviewed?: string;
   }>;
 };
@@ -75,6 +83,11 @@ export default async function ProofReviewDetailPage({
           actor: true,
         },
       },
+      verifiedAchievement: {
+        include: {
+          issuedBy: true,
+        },
+      },
     },
   });
 
@@ -88,6 +101,13 @@ export default async function ProofReviewDetailPage({
         .filter(Boolean)
         .map((field) => proofReviewFieldLabels[field] || field)
     : [];
+  const achievementBlockers = resolvedSearchParams?.fields
+    ? resolvedSearchParams.fields
+        .split(",")
+        .filter(Boolean)
+        .map(getVerifiedAchievementBlockerMessage)
+    : [];
+  const achievementEligibility = getVerifiedAchievementEligibility(submission);
 
   return (
     <WorkspaceShell
@@ -105,6 +125,15 @@ export default async function ProofReviewDetailPage({
       {resolvedSearchParams?.error === "proof-review" ? (
         <p className="workspace-error">
           Complete the proof review fields: {missingFields.join(", ")}.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.achievement === "issued" ? (
+        <p className="workspace-note">Verified achievement issued privately.</p>
+      ) : null}
+      {resolvedSearchParams?.error === "achievement" ? (
+        <p className="workspace-error">
+          Verified achievement cannot be issued yet:{" "}
+          {achievementBlockers.join(", ")}.
         </p>
       ) : null}
 
@@ -198,6 +227,87 @@ export default async function ProofReviewDetailPage({
           {submission.certificateSeparationAcknowledged ? "yes" : "no"} · Donor
           visibility disabled · AI verification not used
         </p>
+      </section>
+
+      <section
+        className="studio-section"
+        aria-labelledby="verified-achievement-title"
+      >
+        <h2 id="verified-achievement-title">Verified achievement</h2>
+        <p>
+          Accepting practical proof and issuing a verified achievement are
+          separate actions. This private recognition does not create a course
+          certificate, public badge, donor summary, or public credential.
+        </p>
+        {submission.verifiedAchievement ? (
+          <div className="context-grid">
+            <article>
+              <strong>Title</strong>
+              <span>{submission.verifiedAchievement.title}</span>
+            </article>
+            <article>
+              <strong>Issued</strong>
+              <span>
+                {formatPublishedDate(submission.verifiedAchievement.issuedAt)}
+              </span>
+            </article>
+            <article>
+              <strong>Issuer</strong>
+              <span>
+                {submission.verifiedAchievement.issuedBy?.name ||
+                  "Not recorded"}
+              </span>
+            </article>
+            <article>
+              <strong>Visibility</strong>
+              <span>{submission.verifiedAchievement.visibilityDefault}</span>
+            </article>
+            <article>
+              <strong>Capacity indicator</strong>
+              <span>{submission.verifiedAchievement.capacityIndicator}</span>
+            </article>
+            <article>
+              <strong>Public badge</strong>
+              <span>
+                {submission.verifiedAchievement.publicBadgeEnabled
+                  ? "Enabled"
+                  : "Not active"}
+              </span>
+            </article>
+          </div>
+        ) : (
+          <>
+            {achievementEligibility.allowed ? (
+              <form
+                action={issueVerifiedAchievementAction.bind(
+                  null,
+                  submission.id,
+                )}
+                className="checklist-form"
+              >
+                <p className="workspace-note">
+                  This accepted proof is eligible for a private verified
+                  achievement. Raw proof stays private and donor visibility
+                  remains disabled.
+                </p>
+                <button className="workspace-button" type="submit">
+                  Issue verified achievement
+                </button>
+              </form>
+            ) : (
+              <div className="block-content">
+                <strong>Not ready to issue</strong>
+                <ul>
+                  {achievementEligibility.blockers.map((blocker) => (
+                    <li key={blocker}>
+                      {getVerifiedAchievementBlockerMessage(blocker)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       <section className="studio-section" aria-labelledby="proof-history-title">

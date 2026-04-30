@@ -91,6 +91,7 @@ model Organization {
   users       User[]
   memberships OrganizationMembership[]
   courses     Course[]
+  verifiedAchievements LearnerVerifiedAchievement[]
 }
 
 model User {
@@ -116,6 +117,8 @@ model User {
   practicalProofSubmissions LearnerPracticalProofSubmission[]
   practicalProofReviews LearnerPracticalProofSubmission[] @relation("PracticalProofReviewer")
   practicalProofSubmissionEvents LearnerPracticalProofSubmissionEvent[] @relation("PracticalProofEventActor")
+  verifiedAchievements LearnerVerifiedAchievement[] @relation("VerifiedAchievementLearner")
+  issuedVerifiedAchievements LearnerVerifiedAchievement[] @relation("VerifiedAchievementIssuer")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -209,6 +212,7 @@ model CourseVersion {
   finalTestAttempts LearnerFinalTestAttempt[]
   certificates       LearnerCertificate[]
   practicalProofSubmissions LearnerPracticalProofSubmission[]
+  verifiedAchievements LearnerVerifiedAchievement[]
 
   @@unique([courseId, versionNumber])
   @@index([courseId, status])
@@ -410,6 +414,7 @@ model CoursePracticalProofConfig {
 
   courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
   submissions   LearnerPracticalProofSubmission[]
+  verifiedAchievements LearnerVerifiedAchievement[]
 
   @@index([enabled])
   @@index([visibilityDefault])
@@ -445,6 +450,7 @@ model LearnerPracticalProofSubmission {
   courseVersion        CourseVersion              @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
   practicalProofConfig CoursePracticalProofConfig @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
   events               LearnerPracticalProofSubmissionEvent[]
+  verifiedAchievement  LearnerVerifiedAchievement?
 
   @@unique([userId, courseVersionId, practicalProofConfigId])
   @@index([userId])
@@ -482,6 +488,48 @@ model LearnerPracticalProofSubmissionEvent {
   @@index([submissionId, createdAt])
   @@index([actorId])
   @@index([eventType, createdAt])
+}
+
+model LearnerVerifiedAchievement {
+  id                     String   @id @default(cuid())
+  organizationId         String
+  userId                 String
+  courseVersionId        String
+  practicalProofConfigId String
+  proofSubmissionId      String   @unique
+  issuedById             String?
+  title                  String
+  description            String   @default("")
+  capacityArea           String   @default("")
+  subCapacityArea        String   @default("")
+  linkedStandard         String   @default("")
+  capacityIndicator      String   @default("")
+  proofType              String   @default("")
+  verificationDecision   String   @default("ACCEPTED")
+  verificationNote       String   @default("")
+  visibilityDefault      String   @default("PRIVATE")
+  donorVisibilityEnabled Boolean  @default(false)
+  publicBadgeEnabled     Boolean  @default(false)
+  badgeVisualIssued      Boolean  @default(false)
+  aiIssued               Boolean  @default(false)
+  issuedAt               DateTime @default(now())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  organization         Organization                    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                 User                            @relation("VerifiedAchievementLearner", fields: [userId], references: [id], onDelete: Cascade)
+  courseVersion        CourseVersion                   @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  practicalProofConfig CoursePracticalProofConfig      @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
+  proofSubmission      LearnerPracticalProofSubmission @relation(fields: [proofSubmissionId], references: [id], onDelete: Cascade)
+  issuedBy             User?                           @relation("VerifiedAchievementIssuer", fields: [issuedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([userId, issuedAt])
+  @@index([courseVersionId])
+  @@index([practicalProofConfigId])
+  @@index([issuedById])
+  @@index([capacityArea])
+  @@index([visibilityDefault])
 }
 
 model CourseMonitoringRecord {
