@@ -6,12 +6,19 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import {
+  formatProofAuditEventType,
+  formatProofAuditStatus,
+} from "@/lib/proof-audit";
+import {
   getProofReviewStatusLabel,
   proofReviewFieldLabels,
   proofReviewStatuses,
 } from "@/lib/review/proof-review";
 import { formatPublishedDate } from "@/lib/review/publishing";
-import { getProofTypeLabel, getSubmissionFormatLabel } from "@/lib/studio/practical-proof";
+import {
+  getProofTypeLabel,
+  getSubmissionFormatLabel,
+} from "@/lib/studio/practical-proof";
 
 type ProofReviewDetailPageProps = {
   params?: Promise<{
@@ -58,6 +65,14 @@ export default async function ProofReviewDetailPage({
       courseVersion: {
         include: {
           course: true,
+        },
+      },
+      events: {
+        orderBy: {
+          createdAt: "asc",
+        },
+        include: {
+          actor: true,
         },
       },
     },
@@ -183,6 +198,81 @@ export default async function ProofReviewDetailPage({
           {submission.certificateSeparationAcknowledged ? "yes" : "no"} · Donor
           visibility disabled · AI verification not used
         </p>
+      </section>
+
+      <section className="studio-section" aria-labelledby="proof-history-title">
+        <h2 id="proof-history-title">Private proof audit history</h2>
+        <p>
+          This timeline is visible only in the protected proof review space.
+          Raw proof snapshots and internal notes must stay private.
+        </p>
+        {submission.events.length > 0 ? (
+          <div className="course-list course-list-spacious">
+            {submission.events.map((event) => (
+              <article className="course-row" key={event.id}>
+                <div>
+                  <h3>{formatProofAuditEventType(event.eventType)}</h3>
+                  <p>
+                    {formatPublishedDate(event.createdAt)} · Actor{" "}
+                    {event.actor?.name || "Not recorded"} · Status{" "}
+                    {event.fromStatus
+                      ? `${formatProofAuditStatus(
+                          event.fromStatus,
+                        )} to ${formatProofAuditStatus(event.toStatus)}`
+                      : formatProofAuditStatus(event.toStatus)}
+                    {event.revisionNumber
+                      ? ` · Revision ${event.revisionNumber}`
+                      : ""}
+                  </p>
+                  {event.proofTextSnapshot || event.evidenceLinkSnapshot ? (
+                    <div className="block-content">
+                      <strong>Private snapshot</strong>
+                      <p>{event.proofTextSnapshot || "No text snapshot."}</p>
+                      {event.evidenceLinkSnapshot ? (
+                        <p>
+                          <a href={event.evidenceLinkSnapshot}>
+                            {event.evidenceLinkSnapshot}
+                          </a>
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {event.learnerVisibleNote ? (
+                    <div className="block-content">
+                      <strong>Learner-visible note</strong>
+                      <p>{event.learnerVisibleNote}</p>
+                    </div>
+                  ) : null}
+                  {event.requiredAction ? (
+                    <div className="block-content">
+                      <strong>Required action</strong>
+                      <p>{event.requiredAction}</p>
+                    </div>
+                  ) : null}
+                  {event.internalNote ? (
+                    <div className="block-content">
+                      <strong>Internal note</strong>
+                      <p>{event.internalNote}</p>
+                    </div>
+                  ) : null}
+                  <p className="workspace-note">
+                    Raw proof visibility {event.visibilityDefault} · Donor
+                    visibility disabled · AI verification not used
+                    {event.redactionRequired ? " · Redaction required" : ""}
+                    {event.specialistReviewRequired
+                      ? " · Specialist review required"
+                      : ""}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="workspace-note">
+            History will appear for new proof actions. Existing submissions may
+            not have earlier events.
+          </p>
+        )}
       </section>
 
       <section className="studio-section" aria-labelledby="decision-title">

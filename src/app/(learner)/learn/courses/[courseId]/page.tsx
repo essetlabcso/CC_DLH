@@ -33,6 +33,7 @@ import {
   learnerProofSubmissionFieldLabels,
   summarizeLearnerPracticalProofSubmission,
 } from "@/lib/learner/practical-proof";
+import { summarizeLearnerProofAuditEvent } from "@/lib/proof-audit";
 import { buildLearnerProgressSummary } from "@/lib/learner/progress";
 import { formatPublishedDate } from "@/lib/review/publishing";
 
@@ -100,6 +101,13 @@ export default async function LearnerCoursePage({
       practicalProofSubmissions: {
         where: {
           userId: identity.user.id,
+        },
+        include: {
+          events: {
+            orderBy: {
+              createdAt: "asc",
+            },
+          },
         },
         orderBy: {
           submittedAt: "desc",
@@ -454,6 +462,26 @@ export default async function LearnerCoursePage({
                     <p>{proofSubmission.requiredAction}</p>
                   </div>
                 ) : null}
+                <div className="block-content">
+                  <strong>Private proof history</strong>
+                  {proofSubmission.events.length > 0 ? (
+                    <ol className="lesson-list">
+                      {proofSubmission.events.map((event) => (
+                        <li key={event.id}>
+                          {event.createdAt.toLocaleDateString("en-US", {
+                            dateStyle: "medium",
+                          })}{" "}
+                          · {summarizeLearnerProofAuditEvent(event)}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p>
+                      History will appear for new proof actions. Internal
+                      reviewer notes are not shown here.
+                    </p>
+                  )}
+                </div>
                 {canReviseProof ? (
                   <form
                     action={submitLearnerPracticalProofAction.bind(

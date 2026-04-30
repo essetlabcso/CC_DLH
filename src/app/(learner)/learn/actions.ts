@@ -21,6 +21,11 @@ import {
   canSubmitPrivatePracticalProof,
   parseLearnerPracticalProofFormData,
 } from "@/lib/learner/practical-proof";
+import {
+  buildPracticalProofAuditEventData,
+  getNextPracticalProofRevisionNumber,
+  practicalProofAuditEventTypes,
+} from "@/lib/proof-audit";
 
 export async function completeLearnerLessonAction(
   courseId: string,
@@ -252,6 +257,16 @@ export async function submitLearnerPracticalProofAction(
         where: {
           userId: identity.user.id,
         },
+        include: {
+          events: {
+            select: {
+              revisionNumber: true,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+          },
+        },
         take: 1,
       },
     },
@@ -265,6 +280,7 @@ export async function submitLearnerPracticalProofAction(
     redirect(`${coursePath}?error=proof-config`);
   }
 
+  const practicalProofConfig = version.practicalProofConfig;
   const existingSubmission = version.practicalProofSubmissions[0];
 
   if (existingSubmission) {
@@ -276,11 +292,37 @@ export async function submitLearnerPracticalProofAction(
       );
     }
 
-    await prisma.learnerPracticalProofSubmission.update({
-      where: {
-        id: existingSubmission.id,
+    const resubmissionData = buildPrivatePracticalProofResubmissionData(
+      result.value,
+    );
+    const revisionNumber = getNextPracticalProofRevisionNumber(
+      existingSubmission.events,
+      {
+        hasExistingSubmission: true,
       },
-      data: buildPrivatePracticalProofResubmissionData(result.value),
+    );
+
+    await prisma.$transaction(async (tx) => {
+      await tx.learnerPracticalProofSubmission.update({
+        where: {
+          id: existingSubmission.id,
+        },
+        data: resubmissionData,
+      });
+      await tx.learnerPracticalProofSubmissionEvent.create({
+        data: {
+          submissionId: existingSubmission.id,
+          ...buildPracticalProofAuditEventData({
+            actorId: identity.user.id,
+            eventType: practicalProofAuditEventTypes.resubmitted,
+            fromStatus: existingSubmission.status,
+            toStatus: resubmissionData.status,
+            revisionNumber,
+            proofTextSnapshot: resubmissionData.proofText,
+            evidenceLinkSnapshot: resubmissionData.evidenceLink,
+          }),
+        },
+      });
     });
 
     revalidatePath("/learn");
@@ -288,13 +330,31 @@ export async function submitLearnerPracticalProofAction(
     redirect(`${coursePath}?proof=resubmitted`);
   }
 
-  await prisma.learnerPracticalProofSubmission.create({
-    data: {
-      userId: identity.user.id,
-      courseVersionId: version.id,
-      practicalProofConfigId: version.practicalProofConfig.id,
-      ...buildPrivatePracticalProofSubmissionData(result.value),
-    },
+  const submissionData = buildPrivatePracticalProofSubmissionData(result.value);
+
+  await prisma.$transaction(async (tx) => {
+    const submission = await tx.learnerPracticalProofSubmission.create({
+      data: {
+        userId: identity.user.id,
+        courseVersionId: version.id,
+        practicalProofConfigId: practicalProofConfig.id,
+        ...submissionData,
+      },
+    });
+
+    await tx.learnerPracticalProofSubmissionEvent.create({
+      data: {
+        submissionId: submission.id,
+        ...buildPracticalProofAuditEventData({
+          actorId: identity.user.id,
+          eventType: practicalProofAuditEventTypes.submitted,
+          toStatus: submissionData.status,
+          revisionNumber: 1,
+          proofTextSnapshot: submissionData.proofText,
+          evidenceLinkSnapshot: submissionData.evidenceLink,
+        }),
+      },
+    });
   });
 
   revalidatePath("/learn");

@@ -33,6 +33,10 @@ import {
   summarizePublication,
 } from "@/lib/review/publishing";
 import {
+  buildPracticalProofAuditEventData,
+  practicalProofAuditEventTypes,
+} from "@/lib/proof-audit";
+import {
   buildProofReviewUpdateData,
   parseProofReviewDecisionFormData,
 } from "@/lib/review/proof-review";
@@ -710,14 +714,34 @@ export async function recordPracticalProofReviewAction(
     notFound();
   }
 
-  await prisma.learnerPracticalProofSubmission.update({
-    where: {
-      id: submission.id,
-    },
-    data: {
-      reviewerId: identity.user.id,
-      ...buildProofReviewUpdateData(result.value),
-    },
+  const reviewUpdateData = buildProofReviewUpdateData(result.value);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.learnerPracticalProofSubmission.update({
+      where: {
+        id: submission.id,
+      },
+      data: {
+        reviewerId: identity.user.id,
+        ...reviewUpdateData,
+      },
+    });
+    await tx.learnerPracticalProofSubmissionEvent.create({
+      data: {
+        submissionId: submission.id,
+        ...buildPracticalProofAuditEventData({
+          actorId: identity.user.id,
+          eventType: practicalProofAuditEventTypes.reviewDecision,
+          fromStatus: submission.status,
+          toStatus: result.value.status,
+          learnerVisibleNote: result.value.learnerFeedback,
+          internalNote: result.value.internalReviewNote,
+          requiredAction: result.value.requiredAction,
+          redactionRequired: reviewUpdateData.redactionRequired,
+          specialistReviewRequired: reviewUpdateData.specialistReviewRequired,
+        }),
+      },
+    });
   });
 
   revalidatePath("/review/proof");

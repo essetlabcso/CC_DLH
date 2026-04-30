@@ -115,6 +115,7 @@ model User {
   certificateEvents LearnerCertificateStatusEvent[] @relation("CertificateStatusActor")
   practicalProofSubmissions LearnerPracticalProofSubmission[]
   practicalProofReviews LearnerPracticalProofSubmission[] @relation("PracticalProofReviewer")
+  practicalProofSubmissionEvents LearnerPracticalProofSubmissionEvent[] @relation("PracticalProofEventActor")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -443,6 +444,7 @@ model LearnerPracticalProofSubmission {
   reviewer             User?                      @relation("PracticalProofReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
   courseVersion        CourseVersion              @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
   practicalProofConfig CoursePracticalProofConfig @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
+  events               LearnerPracticalProofSubmissionEvent[]
 
   @@unique([userId, courseVersionId, practicalProofConfigId])
   @@index([userId])
@@ -451,6 +453,35 @@ model LearnerPracticalProofSubmission {
   @@index([practicalProofConfigId])
   @@index([status])
   @@index([visibilityDefault])
+}
+
+model LearnerPracticalProofSubmissionEvent {
+  id                       String   @id @default(cuid())
+  submissionId             String
+  actorId                  String?
+  eventType                String
+  fromStatus               String   @default("")
+  toStatus                 String   @default("")
+  revisionNumber           Int?
+  proofTextSnapshot        String   @default("")
+  evidenceLinkSnapshot     String   @default("")
+  learnerVisibleNote       String   @default("")
+  internalNote             String   @default("")
+  requiredAction           String   @default("")
+  redactionRequired        Boolean  @default(false)
+  specialistReviewRequired Boolean  @default(false)
+  visibilityDefault        String   @default("PRIVATE")
+  donorVisibilityConsent   Boolean  @default(false)
+  aiVerificationUsed       Boolean  @default(false)
+  metadata                 String   @default("{}")
+  createdAt                DateTime @default(now())
+
+  submission LearnerPracticalProofSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  actor      User? @relation("PracticalProofEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([submissionId, createdAt])
+  @@index([actorId])
+  @@index([eventType, createdAt])
 }
 
 model CourseMonitoringRecord {
