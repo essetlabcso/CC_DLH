@@ -81,6 +81,24 @@ export default async function PublishingPage({
         Publish only course versions that have completed reviewer approval.
         Publishing makes the course visible in learner discovery.
       </p>
+      <div
+        className={
+          canPublishApprovedVersions
+            ? "role-banner role-banner-admin"
+            : "role-banner role-banner-readonly"
+        }
+      >
+        <strong>
+          {canPublishApprovedVersions
+            ? "You can publish approved courses."
+            : "Approved courses must be published by a DEC Admin."}
+        </strong>
+        <span>
+          {canPublishApprovedVersions
+            ? "Publish actions appear only when all readiness checks pass."
+            : "You can review readiness evidence here, but this view is read-only for reviewers."}
+        </span>
+      </div>
 
       {resolvedSearchParams?.published === "1" ? (
         <p className="workspace-note">
@@ -104,38 +122,73 @@ export default async function PublishingPage({
           <div className="course-list course-list-spacious">
             {approvedVersions.map((version) => {
               const readiness = buildPublishReadiness(version);
+              const readinessLabel = readiness.ready ? "Ready" : "Blocked";
 
               return (
-                <article className="course-row" key={version.id}>
-                  <div>
-                    <h3>{version.course.title}</h3>
-                    <p>
-                      {getPublishingStatusLabel(version.status)} ·{" "}
-                      {getPublishingVersionTypeLabel(version)} · Version{" "}
-                      {version.versionNumber} · Creator {version.createdBy.name} ·{" "}
-                      Reviewer{" "}
-                      {version.reviewRecord?.reviewer?.name ||
-                        "reviewer not recorded"}{" "}
-                      · {countPublishableLessons(version)} lessons
-                    </p>
+                <article className="publishing-card" key={version.id}>
+                  <div className="publishing-card-header">
+                    <div>
+                      <p className="block-kicker">
+                        {getPublishingVersionTypeLabel(version)} · Version{" "}
+                        {version.versionNumber}
+                      </p>
+                      <h3>{version.course.title}</h3>
+                    </div>
+                    <span
+                      className={
+                        readiness.ready
+                          ? "status-badge status-badge-ready"
+                          : "status-badge status-badge-blocked"
+                      }
+                    >
+                      {readinessLabel}
+                    </span>
+                  </div>
+
+                  <div className="publishing-card-body">
                     <p>{readiness.summary}</p>
-                    <p>
-                      Learner visibility: {readiness.learnerVisibilityDefault}
-                    </p>
+                    <div className="publishing-meta">
+                      <span>{getPublishingStatusLabel(version.status)}</span>
+                      <span>Creator {version.createdBy.name}</span>
+                      <span>
+                        Reviewer{" "}
+                        {version.reviewRecord?.reviewer?.name ||
+                          "reviewer not recorded"}
+                      </span>
+                      <span>{countPublishableLessons(version)} lessons</span>
+                    </div>
+                    <p>Learner visibility: {readiness.learnerVisibilityDefault}</p>
                     {version.reviewRecord?.decisionNotes ? (
                       <p>{version.reviewRecord.decisionNotes}</p>
                     ) : null}
-                    <div className="context-grid">
+                    <div className="readiness-grid">
                       {readiness.checks.map((check) => (
-                        <article key={check.key}>
-                          <strong>{check.label}</strong>
-                          <span>{check.ready ? "Ready" : "Blocked"}</span>
+                        <article
+                          className={
+                            check.ready
+                              ? "readiness-check readiness-check-ready"
+                              : "readiness-check readiness-check-blocked"
+                          }
+                          key={check.key}
+                        >
+                          <div className="readiness-check-heading">
+                            <strong>{check.label}</strong>
+                            <span
+                              className={
+                                check.ready
+                                  ? "status-badge status-badge-ready"
+                                  : "status-badge status-badge-blocked"
+                              }
+                            >
+                              {check.ready ? "Ready" : "Blocked"}
+                            </span>
+                          </div>
                           <p>{check.detail}</p>
                         </article>
                       ))}
                     </div>
                     {readiness.blockers.length > 0 ? (
-                      <div className="workspace-error">
+                      <div className="blocker-panel">
                         <strong>Publish blockers</strong>
                         <ul>
                           {readiness.blockers.map((blocker) => (
@@ -145,7 +198,9 @@ export default async function PublishingPage({
                       </div>
                     ) : null}
                   </div>
-                  {canPublishApprovedVersions ? (
+
+                  <div className="publishing-card-actions">
+                  {canPublishApprovedVersions && readiness.ready ? (
                     <form
                       action={publishApprovedCourseAction.bind(
                         null,
@@ -155,17 +210,21 @@ export default async function PublishingPage({
                     >
                       <button
                         className="workspace-button"
-                        disabled={!readiness.ready}
                         type="submit"
                       >
                         Publish now
                       </button>
                     </form>
+                  ) : canPublishApprovedVersions ? (
+                    <p className="workspace-note">
+                      Resolve blockers before publishing.
+                    </p>
                   ) : (
                     <p className="workspace-note">
                       Approved courses must be published by a DEC Admin.
                     </p>
                   )}
+                  </div>
                 </article>
               );
             })}
@@ -192,9 +251,14 @@ export default async function PublishingPage({
         {recentlyPublished.length > 0 ? (
           <div className="course-list">
             {recentlyPublished.map((version) => (
-              <article className="course-row" key={version.id}>
+              <article className="course-row published-row" key={version.id}>
                 <div>
-                  <h3>{version.course.title}</h3>
+                  <div className="published-heading">
+                    <h3>{version.course.title}</h3>
+                    <span className="status-badge status-badge-published">
+                      Published
+                    </span>
+                  </div>
                   <p>
                     {getPublishingStatusLabel(version.status)} · Version{" "}
                     {version.versionNumber} · Published{" "}
