@@ -280,6 +280,41 @@ select {
   color: var(--dec-color-muted-text);
 }
 
+.build-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.38fr);
+  gap: var(--dec-space-4);
+  align-items: start;
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-left: 4px solid var(--dec-color-secondary);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.build-hero p {
+  margin: 0 0 var(--dec-space-3);
+  color: var(--dec-color-muted-text);
+}
+
+.build-hero-next {
+  display: grid;
+  gap: var(--dec-space-2);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-surface);
+}
+
+.build-hero-next strong {
+  color: var(--dec-color-text);
+}
+
+.build-hero-next span {
+  color: var(--dec-color-muted-text);
+}
+
 .public-page {
   min-height: 100vh;
   background: var(--dec-color-background);
@@ -1363,6 +1398,7 @@ select {
   .context-grid,
   .readiness-grid,
   .decision-grid,
+  .build-hero,
   .build-studio-layout,
   .form-grid {
     grid-template-columns: 1fr;

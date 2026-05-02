@@ -173,13 +173,63 @@ export default async function BuildStudioPage({
   const proofReadiness = buildPracticalProofReadiness(proofConfig);
   const proofAction = savePracticalProofConfigAction.bind(null, courseId);
   const analysisHandover = editable.version.analysisHandover;
+  const lessonCount = modules.reduce(
+    (total, module) => total + module.lessons.length,
+    0,
+  );
+  const blockCount = modules
+    .flatMap((module) => module.lessons)
+    .reduce((total, lesson) => total + lesson.blocks.length, 0);
+  const requiredBlockCount = modules
+    .flatMap((module) => module.lessons)
+    .flatMap((lesson) => lesson.blocks)
+    .filter((block) => block.origin !== "CREATOR_ADDED").length;
+  const creatorAddedBlockCount = blockCount - requiredBlockCount;
+  const buildReadyForPreview =
+    hasGeneratedContent &&
+    finalTestReady &&
+    governanceIssues.length === 0 &&
+    proofReadiness.blockers.length === 0;
 
   return (
     <WorkspaceShell eyebrow="Build Studio" title={editable.course.title}>
-      <p>
-        Build Studio turns the approved Storyboard into governed lesson blocks
-        that can later be previewed in the learner experience.
-      </p>
+      <div className="build-hero">
+        <div>
+          <p>
+            Build Studio turns the approved Storyboard into governed lesson
+            blocks that can later be previewed in the learner experience.
+          </p>
+          <div className="review-hero-status" aria-label="Build summary">
+            <span className="status-badge">
+              Build {formatStepStatus(buildStatus)}
+            </span>
+            <span
+              className={`status-badge ${
+                previewStatus === WorkflowStepStatus.LOCKED
+                  ? "status-badge-blocked"
+                  : "status-badge-ready"
+              }`}
+            >
+              Preview {formatStepStatus(previewStatus)}
+            </span>
+            <span
+              className={`status-badge ${
+                hasGeneratedContent ? "status-badge-ready" : "status-badge-blocked"
+              }`}
+            >
+              {hasGeneratedContent ? `${blockCount} blocks` : "No blocks yet"}
+            </span>
+          </div>
+        </div>
+        <div className="build-hero-next">
+          <strong>{buildReadyForPreview ? "Ready for checks" : "Next action"}</strong>
+          <span>
+            {hasGeneratedContent
+              ? "Review the block evidence, final test, and practical proof settings before opening Preview."
+              : "Generate lesson blocks from the approved Storyboard."}
+          </span>
+        </div>
+      </div>
       {resolvedSearchParams?.designLocked === "1" ? (
         <p className="workspace-note">
           Design Handover locked for Build. Build Studio is now open.
@@ -280,7 +330,15 @@ export default async function BuildStudioPage({
       ) : null}
 
       <section className="studio-section" aria-labelledby="build-source-title">
-        <h2 id="build-source-title">Storyboard source</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="build-source-title">Storyboard source</h2>
+            <p className="section-subcopy">
+              The approved learner action and lesson plan feeding this build.
+            </p>
+          </div>
+          <span className="status-badge status-badge-ready">Handover locked</span>
+        </div>
         <div className="context-grid">
           <article>
             <strong>Module</strong>
@@ -302,7 +360,14 @@ export default async function BuildStudioPage({
       </section>
 
       <section className="studio-section" aria-labelledby="build-actions-title">
-        <h2 id="build-actions-title">Authoring actions</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="build-actions-title">Authoring actions</h2>
+            <p className="section-subcopy">
+              Generate or revisit source planning without leaving this workflow.
+            </p>
+          </div>
+        </div>
         <div className="studio-actions">
           <form action={generateAction}>
             <button className="workspace-button" type="submit">
@@ -332,6 +397,16 @@ export default async function BuildStudioPage({
                 Build is {formatStepStatus(buildStatus)}. Preview is{" "}
                 {formatStepStatus(previewStatus)}.
               </p>
+            </div>
+            <div className="review-hero-status" aria-label="Lesson build summary">
+              <span className="status-badge">{modules.length} modules</span>
+              <span className="status-badge">{lessonCount} lessons</span>
+              <span className="status-badge status-badge-ready">
+                {requiredBlockCount} required
+              </span>
+              <span className="status-badge">
+                {creatorAddedBlockCount} creator-added
+              </span>
             </div>
           </div>
           <div className="build-studio-layout">
@@ -447,7 +522,7 @@ export default async function BuildStudioPage({
                   </p>
                 </div>
                 {governanceIssues.length > 0 ? (
-                  <div className="workspace-error">
+                  <div className="blocker-panel">
                     <strong>Needs attention before Preview</strong>
                     <ul>
                       {governanceIssues.map((issue) => (
@@ -456,7 +531,7 @@ export default async function BuildStudioPage({
                     </ul>
                   </div>
                 ) : (
-                  <p className="workspace-note">
+                  <p className="review-success-note">
                     Required block metadata and creator-added governance are
                     ready for Preview checks.
                   </p>
@@ -602,7 +677,7 @@ export default async function BuildStudioPage({
                   </article>
                 </div>
                 {proofReadiness.blockers.length > 0 ? (
-                  <div className="workspace-error">
+                  <div className="blocker-panel">
                     <strong>Practical proof blockers</strong>
                     <ul>
                       {proofReadiness.blockers.map((blocker) => (
@@ -1044,7 +1119,26 @@ export default async function BuildStudioPage({
 
       {hasGeneratedContent ? (
         <section className="studio-section" aria-labelledby="build-checks-title">
-          <h2 id="build-checks-title">Completion checks</h2>
+          <div className="section-heading-row">
+            <div>
+              <h2 id="build-checks-title">Completion checks</h2>
+              <p className="section-subcopy">
+                Complete these confirmations when the build is ready for
+                learner preview.
+              </p>
+            </div>
+            <span
+              className={`status-badge ${
+                buildStatus === WorkflowStepStatus.COMPLETE
+                  ? "status-badge-ready"
+                  : "status-badge-blocked"
+              }`}
+            >
+              {buildStatus === WorkflowStepStatus.COMPLETE
+                ? "Checks complete"
+                : "Checks open"}
+            </span>
+          </div>
           {buildStatus === WorkflowStepStatus.COMPLETE ? (
             <div className="next-step-panel">
               <h3>Preview is ready</h3>
