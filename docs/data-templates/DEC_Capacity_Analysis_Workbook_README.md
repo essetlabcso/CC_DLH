@@ -218,7 +218,11 @@ docs/data-templates/csv/
   10_Indicator_Standards.csv
   11_Course_Fit_Rules.csv
   12_Verified_Achievement_Map.csv
+  13_CSO_Assessment_Header.csv
+  14_CSO_Practice_Assessment.csv
 ```
+
+These CSV files are template and inspection assets only. Their presence in the repository does not enable database import, automatic course creation, or automatic Analysis Handover creation.
 
 ## Short Codex prompt
 

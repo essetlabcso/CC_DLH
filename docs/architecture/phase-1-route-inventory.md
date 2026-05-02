@@ -1,6 +1,6 @@
 # Phase 1 Route Inventory
 
-Status: Planned route structure, with current route boundaries implemented.
+Status: Current Phase 1 route inventory with implemented foundations and remaining planned gaps.
 
 ## Public and Auth
 
@@ -51,6 +51,9 @@ Status: Planned route structure, with current route boundaries implemented.
 | `/review/monitoring` | Published course monitoring | Implemented course-level learner progress, aggregate final test score signals, capacity-area filters, linked-standard filters, and capacity indicator grouping |
 | `/review/monitoring/snapshot` | Monitoring evidence snapshot | Implemented printable aggregate evidence snapshot with optional capacity-area and linked-standard scope |
 | `/review/revisions` | Revision queue | Implemented revision requests and controlled revision draft creation while published courses remain live |
+| `/review/proof` | Practical proof review queue | Implemented private proof submission queue |
+| `/review/proof/:submissionId` | Practical proof review detail | Implemented private proof context, raw proof review, review decision recording, and verified achievement issue action |
+| `/review/achievements` | Verified achievement summary | Implemented internal aggregate recognition summary with capacity, standard, and proof-type grouping |
 | `/review/courses/:courseId/versions/:versionId` | Submitted version review | Implemented runtime preview, reviewer checklist, revision version labeling, return-for-changes comments, and approval path |
 
 ## Admin

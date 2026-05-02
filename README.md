@@ -2,7 +2,7 @@
 
 Current DEC Learning Hub Phase 1 codebase.
 
-The repo now includes working learner, Course Creator Studio, review, publishing, certificate, revision, and monitoring foundations. Practical proof, verified achievements, badge workflows, richer AI governance, and several revised-spec upgrades remain future implementation work.
+The repo now includes working foundations for learner runtime, Course Creator Studio, review, publishing, certificates, revision, monitoring, practical proof, and verified achievements. Badge visuals/public badge workflows, richer AI governance, production auth/storage, and several revised-spec upgrades remain future implementation work.
 
 ## Source Of Truth
 

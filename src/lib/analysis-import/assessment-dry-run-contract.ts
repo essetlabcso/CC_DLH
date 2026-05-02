@@ -1,7 +1,12 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { analysisCsvDirectory, fixedCurrentPracticeScoreValues } from "./workbook-contract";
+import {
+  analysisCsvDirectory,
+  fixedCurrentPracticeScoreValues,
+  parseCsvHeader,
+  validateCsvHeader,
+} from "./workbook-contract";
 
 export const csoAssessmentHeaderSheetName = "13_CSO_Assessment_Header" as const;
 export const csoPracticeAssessmentSheetName =
@@ -251,22 +256,41 @@ export function buildAssessmentCsvReadinessReport(
   ].map((sheet) => {
     const csvPath = join(csvDirectory, sheet.csvFileName);
     const csvExportPresent = existsSync(csvPath);
+    const headerValidation = csvExportPresent
+      ? validateCsvHeader(
+          parseCsvHeader(readFileSync(csvPath, "utf8")),
+          sheet.expectedHeaders,
+        )
+      : null;
+    const csvTemplateAvailable =
+      csvExportPresent && headerValidation?.matches === true;
 
     return {
       ...sheet,
       headerContractDefined: sheet.expectedHeaders.length > 0,
       csvExportPresent,
-      importReady: csvExportPresent,
-      readiness:
-        csvExportPresent
-          ? "import-ready"
-          : "not import-ready: missing required CSV export",
+      headerValidation,
+      csvTemplateAvailable,
+      databaseImportReady: false,
+      importReady: false,
+      readiness: csvTemplateAvailable
+        ? "template available: database import disabled"
+        : csvExportPresent
+          ? "not template-ready: CSV header does not match contract"
+          : "not template-ready: missing CSV template export",
     };
   });
 
   return {
     sheets,
-    importReady: sheets.every((sheet) => sheet.importReady),
+    csvTemplatesAvailable: sheets.every((sheet) => sheet.csvTemplateAvailable),
+    databaseImportReady:
+      csoAssessmentDryRunBehavior.importsToDatabase &&
+      sheets.every((sheet) => sheet.csvTemplateAvailable),
+    importReady: false,
+    missingCsvTemplates: sheets
+      .filter((sheet) => !sheet.csvExportPresent)
+      .map((sheet) => sheet.csvFileName),
     missingCsvExportsRequiredBeforeRealImport: sheets
       .filter((sheet) => !sheet.csvExportPresent)
       .map((sheet) => sheet.csvFileName),

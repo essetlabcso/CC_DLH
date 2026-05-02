@@ -85,8 +85,6 @@ describe("DEC Capacity Analysis workbook/import contract", () => {
       "05_Cohorts",
       "06_CSO_Registry",
       "07_Target_Learner_Groups",
-      "13_CSO_Assessment_Header",
-      "14_CSO_Practice_Assessment",
       "15_Priority_Capacity_Gaps",
       "16_Evidence_Sources",
       "17_Document_Evidence",

@@ -67,28 +67,42 @@ describe("assessment dry-run contract", () => {
     expect(csoPracticeAssessmentExpectedHeaders).toContain("priority_flag");
   });
 
-  it("reports missing assessment CSV exports as intentionally not import-ready", () => {
+  it("reports assessment CSV templates as available while database import remains disabled", () => {
     const readiness = buildAssessmentCsvReadinessReport();
 
+    expect(readiness.csvTemplatesAvailable).toBe(true);
+    expect(readiness.databaseImportReady).toBe(false);
     expect(readiness.importReady).toBe(false);
-    expect(readiness.missingCsvExportsRequiredBeforeRealImport).toEqual([
-      "13_CSO_Assessment_Header.csv",
-      "14_CSO_Practice_Assessment.csv",
-    ]);
+    expect(readiness.missingCsvTemplates).toEqual([]);
+    expect(readiness.missingCsvExportsRequiredBeforeRealImport).toEqual([]);
     expect(readiness.sheets).toEqual([
       expect.objectContaining({
         sheetName: "13_CSO_Assessment_Header",
         headerContractDefined: true,
-        csvExportPresent: false,
+        csvExportPresent: true,
+        csvTemplateAvailable: true,
+        databaseImportReady: false,
         importReady: false,
-        readiness: "not import-ready: missing required CSV export",
+        readiness: "template available: database import disabled",
+        headerValidation: {
+          matches: true,
+          missingHeaders: [],
+          unexpectedHeaders: [],
+        },
       }),
       expect.objectContaining({
         sheetName: "14_CSO_Practice_Assessment",
         headerContractDefined: true,
-        csvExportPresent: false,
+        csvExportPresent: true,
+        csvTemplateAvailable: true,
+        databaseImportReady: false,
         importReady: false,
-        readiness: "not import-ready: missing required CSV export",
+        readiness: "template available: database import disabled",
+        headerValidation: {
+          matches: true,
+          missingHeaders: [],
+          unexpectedHeaders: [],
+        },
       }),
     ]);
   });

@@ -10,12 +10,12 @@ The App Router is split by workspace responsibility:
 
 | Group | URL prefix | Purpose | Status |
 | --- | --- | --- | --- |
-| `(public)` | `/` | Public landing and basic orientation | Scaffolded |
-| `(auth)` | `/sign-in` | Authentication entry point placeholder | Scaffolded |
-| `(learner)` | `/learn` | Learner workspace boundary | Scaffolded |
-| `(creator)` | `/studio` | Course Creator Studio boundary | Scaffolded |
-| `(review)` | `/review` | Reviewer / publisher workspace boundary | Scaffolded |
-| `(admin)` | `/admin` | Admin governance boundary | Scaffolded |
+| `(public)` | `/` | Public landing, course discovery, and certificate verification | Partial foundation |
+| `(auth)` | `/sign-in` | Local development authentication entry points | Local-dev foundation |
+| `(learner)` | `/learn` | Learner workspace, published course access, progress, final test, certificates, and proof submission | Implemented foundation |
+| `(creator)` | `/studio` | Course Creator Studio production workflow from setup through creator review submission | Implemented foundation |
+| `(review)` | `/review` | Review, publishing, monitoring, revisions, proof review, and verified achievement summary | Implemented foundation |
+| `(admin)` | `/admin` | Admin governance boundary with certificate oversight and planned management areas | Partial foundation |
 
 ## Access Boundary
 
@@ -36,11 +36,10 @@ The initial tokens come from the spec and brand note:
 - Background: `#F9FAFB`, `#FFFFFF`
 - Primary text: `#111827`
 
-## Current Non-Goals
+## Current Remaining Non-Goals / Gaps
 
-- No full creator form workflow yet.
-- No learner runtime yet.
-- No AI authoring yet.
-- No certificate or completion logic yet.
-- No monitoring analytics UI yet.
-- No Supabase database schema push/pull/reset has been run.
+- Production identity provider integration is not implemented; current sign-in remains local development only.
+- Full governed AI authoring is not implemented, though limited AI-review metadata and status foundations exist in Build Studio logic.
+- Badge visuals/public badge workflows are not implemented.
+- Admin user, course, and system management routes remain planned.
+- Supabase database schema push/pull/reset has not been run.
