@@ -204,6 +204,82 @@ select {
   color: var(--dec-color-text);
 }
 
+.review-hero {
+  display: grid;
+  gap: var(--dec-space-4);
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-left: 4px solid var(--dec-color-primary);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.review-hero p {
+  margin: 0;
+  color: var(--dec-color-muted-text);
+}
+
+.review-hero-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dec-space-2);
+}
+
+.review-routing-panel {
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.review-readiness-grid article {
+  display: grid;
+  align-content: start;
+  gap: var(--dec-space-2);
+}
+
+.review-success-note {
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-3) var(--dec-space-4);
+  border: 1px solid var(--dec-color-secondary);
+  border-left: 4px solid var(--dec-color-secondary);
+  border-radius: var(--dec-radius-sm);
+  background: #f3f9ec;
+  color: var(--dec-color-text);
+  font-weight: 700;
+}
+
+.review-evidence-grid {
+  margin-top: var(--dec-space-4);
+}
+
+.review-evidence-card {
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.review-evidence-card h3 {
+  margin: 0 0 var(--dec-space-3);
+  color: var(--dec-color-text);
+  font-size: 1rem;
+}
+
+.review-evidence-card p {
+  margin: 0;
+  color: var(--dec-color-muted-text);
+}
+
+.review-evidence-card ul {
+  display: grid;
+  gap: var(--dec-space-2);
+  margin: 0;
+  padding-left: var(--dec-space-4);
+  color: var(--dec-color-muted-text);
+}
+
 .public-page {
   min-height: 100vh;
   background: var(--dec-color-background);
@@ -532,6 +608,15 @@ select {
   color: var(--dec-color-muted-text);
 }
 
+.context-grid .status-badge {
+  display: inline-flex;
+  color: var(--dec-color-text);
+}
+
+.context-grid .status-badge-blocked {
+  color: var(--dec-color-danger);
+}
+
 .section-heading-row,
 .course-row {
   display: flex;
@@ -741,6 +826,15 @@ select {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--dec-space-4);
+}
+
+.review-decision-form {
+  margin-top: 0;
+  background: var(--dec-color-surface);
+}
+
+.review-decision-form-primary {
+  border-left: 4px solid var(--dec-color-secondary);
 }
 
 .checklist-form h3,
@@ -1074,7 +1168,7 @@ select {
 .learner-preview-shell {
   display: grid;
   gap: var(--dec-space-5);
-  max-width: 48rem;
+  width: 100%;
   padding: var(--dec-space-5);
   border: 1px solid var(--dec-color-border);
   border-radius: var(--dec-radius-md);

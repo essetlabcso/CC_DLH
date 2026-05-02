@@ -124,24 +124,60 @@ export default async function SubmittedVersionReviewPage({
   );
   const approvalBlockedBySpecialist =
     resolvedSearchParams?.error === "specialist";
+  const lessonCount = version.modules.reduce(
+    (total, module) => total + module.lessons.length,
+    0,
+  );
+  const blockCount = countReviewBlocks(version.modules);
+  const blockingWarningCount = handover?.blockingWarnings.length || 0;
 
   return (
     <WorkspaceShell
       eyebrow={version.sourceVersionId ? "Submitted Revision" : "Submitted Version"}
       title={version.course.title}
     >
-      <p>
-        Review the learner experience, record checklist evidence, and either
-        approve the course for publishing handoff or return it to the creator
-        for changes.
-      </p>
+      <div className="review-hero">
+        <p>
+          Review the learner experience, record checklist evidence, and either
+          approve the course for publishing handoff or return it to the creator
+          for changes.
+        </p>
+        <div className="review-hero-status" aria-label="Review summary">
+          <span className="status-badge status-badge-published">
+            {getReviewQueueStatusLabel(version.status)}
+          </span>
+          <span className="status-badge">{getReviewVersionTypeLabel(version)}</span>
+          <span
+            className={`status-badge ${
+              blockingWarningCount > 0
+                ? "status-badge-blocked"
+                : "status-badge-ready"
+            }`}
+          >
+            {blockingWarningCount > 0
+              ? `${blockingWarningCount} blocker${
+                  blockingWarningCount === 1 ? "" : "s"
+                }`
+              : "No blockers recorded"}
+          </span>
+        </div>
+      </div>
 
       <section className="studio-section" aria-labelledby="review-meta-title">
-        <h2 id="review-meta-title">Submission details</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="review-meta-title">Submission details</h2>
+            <p className="section-subcopy">
+              Core review context for this submitted course version.
+            </p>
+          </div>
+        </div>
         <div className="context-grid">
           <article>
             <strong>Status</strong>
-            <span>{getReviewQueueStatusLabel(version.status)}</span>
+            <span className="status-badge status-badge-published">
+              {getReviewQueueStatusLabel(version.status)}
+            </span>
           </article>
           <article>
             <strong>Version type</strong>
@@ -157,7 +193,10 @@ export default async function SubmittedVersionReviewPage({
           </article>
           <article>
             <strong>Review size</strong>
-            <span>{countReviewBlocks(version.modules)} lesson blocks</span>
+            <span>
+              {version.modules.length} modules · {lessonCount} lessons ·{" "}
+              {blockCount} lesson blocks
+            </span>
           </article>
         </div>
       </section>
@@ -197,8 +236,19 @@ export default async function SubmittedVersionReviewPage({
         </p>
       ) : null}
       {reviewerReview ? (
-        <section className="studio-section" aria-labelledby="routing-title">
-          <h2 id="routing-title">Current review routing</h2>
+        <section
+          className="studio-section review-routing-panel"
+          aria-labelledby="routing-title"
+        >
+          <div className="section-heading-row">
+            <div>
+              <h2 id="routing-title">Current review routing</h2>
+              <p className="section-subcopy">
+                Any recorded review decision or routing note on this submitted
+                version.
+              </p>
+            </div>
+          </div>
           <div className="context-grid">
             <article>
               <strong>Decision</strong>
@@ -236,10 +286,28 @@ export default async function SubmittedVersionReviewPage({
       ) : null}
 
       <section className="studio-section" aria-labelledby="handover-title">
-        <h2 id="handover-title">Build-to-Review Handover</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="handover-title">Build-to-Review Handover</h2>
+            <p className="section-subcopy">
+              Evidence submitted by the creator before this review step.
+            </p>
+          </div>
+          {handover ? (
+            <span
+              className={`status-badge ${
+                blockingWarningCount > 0
+                  ? "status-badge-blocked"
+                  : "status-badge-ready"
+              }`}
+            >
+              {blockingWarningCount > 0 ? "Needs attention" : "Ready to review"}
+            </span>
+          ) : null}
+        </div>
         {handover ? (
           <>
-            <div className="context-grid">
+            <div className="context-grid review-readiness-grid">
               <article>
                 <strong>Required blocks</strong>
                 <span>{handover.summary.requiredBlockCount}</span>
@@ -250,7 +318,15 @@ export default async function SubmittedVersionReviewPage({
               </article>
               <article>
                 <strong>Final test</strong>
-                <span>{handover.finalTest.ready ? "Ready" : "Not ready"}</span>
+                <span
+                  className={`status-badge ${
+                    handover.finalTest.ready
+                      ? "status-badge-ready"
+                      : "status-badge-blocked"
+                  }`}
+                >
+                  {handover.finalTest.ready ? "Ready" : "Not ready"}
+                </span>
               </article>
               <article>
                 <strong>Certificate rule</strong>
@@ -258,23 +334,45 @@ export default async function SubmittedVersionReviewPage({
               </article>
               <article>
                 <strong>AI review</strong>
-                <span>{handover.aiReview.status}</span>
+                <span className={getEvidenceBadgeClass(handover.aiReview.status)}>
+                  {handover.aiReview.status}
+                </span>
               </article>
               <article>
                 <strong>Accessibility</strong>
-                <span>{handover.accessibility.status}</span>
+                <span
+                  className={getEvidenceBadgeClass(
+                    handover.accessibility.status,
+                  )}
+                >
+                  {handover.accessibility.status}
+                </span>
               </article>
               <article>
                 <strong>Safeguarding</strong>
-                <span>{handover.safeguarding.status}</span>
+                <span
+                  className={getEvidenceBadgeClass(
+                    handover.safeguarding.status,
+                  )}
+                >
+                  {handover.safeguarding.status}
+                </span>
               </article>
               <article>
                 <strong>Preview</strong>
-                <span>{handover.preview.status}</span>
+                <span className={getEvidenceBadgeClass(handover.preview.status)}>
+                  {handover.preview.status}
+                </span>
               </article>
               <article>
                 <strong>Practical proof</strong>
-                <span>{handover.practicalProof?.status || "Not recorded"}</span>
+                <span
+                  className={getEvidenceBadgeClass(
+                    handover.practicalProof?.status || "Not recorded",
+                  )}
+                >
+                  {handover.practicalProof?.status || "Not recorded"}
+                </span>
                 <p>
                   {handover.practicalProof?.summary ||
                     "No practical proof configuration evidence was recorded."}
@@ -282,7 +380,7 @@ export default async function SubmittedVersionReviewPage({
               </article>
             </div>
             {handover.blockingWarnings.length > 0 ? (
-              <div className="workspace-error">
+              <div className="blocker-panel">
                 <strong>Blocking warnings</strong>
                 <ul>
                   {handover.blockingWarnings.map((warning) => (
@@ -293,7 +391,7 @@ export default async function SubmittedVersionReviewPage({
                 </ul>
               </div>
             ) : (
-              <p className="workspace-note">
+              <p className="review-success-note">
                 No blocking handover warnings were recorded at submission.
               </p>
             )}
@@ -307,8 +405,8 @@ export default async function SubmittedVersionReviewPage({
                 </ul>
               </div>
             ) : null}
-            <div className="decision-grid">
-              <article>
+            <div className="decision-grid review-evidence-grid">
+              <article className="review-evidence-card">
                 <h3>Required Storyboard blocks</h3>
                 {handover.requiredBlocks.length > 0 ? (
                   <ul>
@@ -322,7 +420,7 @@ export default async function SubmittedVersionReviewPage({
                   <p>No required blocks recorded.</p>
                 )}
               </article>
-              <article>
+              <article className="review-evidence-card">
                 <h3>Creator-added blocks</h3>
                 {handover.creatorAddedBlocks.length > 0 ? (
                   <ul>
@@ -338,7 +436,7 @@ export default async function SubmittedVersionReviewPage({
                   <p>No creator-added blocks recorded.</p>
                 )}
               </article>
-              <article>
+              <article className="review-evidence-card">
                 <h3>Practical proof configuration</h3>
                 {handover.practicalProof?.enabled ? (
                   <ul>
@@ -382,7 +480,14 @@ export default async function SubmittedVersionReviewPage({
       </section>
 
       <section className="studio-section" aria-labelledby="review-preview-title">
-        <h2 id="review-preview-title">Runtime preview</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="review-preview-title">Runtime preview</h2>
+            <p className="section-subcopy">
+              A read-only view of the learner-facing lesson structure.
+            </p>
+          </div>
+        </div>
         <div className="learner-preview-shell">
           {version.modules.map((module) => (
             <section className="preview-module" key={module.id}>
@@ -421,7 +526,16 @@ export default async function SubmittedVersionReviewPage({
       </section>
 
       <section className="studio-section" aria-labelledby="decision-title">
-        <h2 id="decision-title">Reviewer decision</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="decision-title">Reviewer decision</h2>
+            <p className="section-subcopy">
+              Choose one review outcome. Approval moves this version to the
+              separate DEC Admin publishing step.
+            </p>
+          </div>
+          <span className="status-badge">Publishing stays separate</span>
+        </div>
         <div className="decision-grid">
           <form
             action={approveSubmittedCourseAction.bind(
@@ -429,7 +543,7 @@ export default async function SubmittedVersionReviewPage({
               courseId,
               versionId,
             )}
-            className="checklist-form"
+            className="checklist-form review-decision-form review-decision-form-primary"
           >
             <h3>Approve for publishing handoff</h3>
             <p className="section-subcopy">
@@ -495,7 +609,7 @@ export default async function SubmittedVersionReviewPage({
 
           <form
             action={returnSubmittedCourseAction.bind(null, courseId, versionId)}
-            className="checklist-form"
+            className="checklist-form review-decision-form"
           >
             <h3>Return with routing</h3>
             <p className="section-subcopy">
@@ -539,7 +653,7 @@ export default async function SubmittedVersionReviewPage({
               <span>Required action</span>
               <textarea name="requiredAction" />
             </label>
-            <button className="workspace-button" type="submit">
+            <button className="workspace-button secondary" type="submit">
               Return to creator
             </button>
           </form>
@@ -550,7 +664,7 @@ export default async function SubmittedVersionReviewPage({
               courseId,
               versionId,
             )}
-            className="checklist-form"
+            className="checklist-form review-decision-form"
           >
             <h3>Require specialist review</h3>
             <p className="section-subcopy">
@@ -577,14 +691,14 @@ export default async function SubmittedVersionReviewPage({
               <span>Required specialist action</span>
               <textarea name="requiredAction" />
             </label>
-            <button className="workspace-button" type="submit">
+            <button className="workspace-button secondary" type="submit">
               Flag specialist review
             </button>
           </form>
 
           <form
             action={pauseSubmittedCourseAction.bind(null, courseId, versionId)}
-            className="checklist-form"
+            className="checklist-form review-decision-form"
           >
             <h3>Not approved / pause</h3>
             <p className="section-subcopy">
@@ -606,7 +720,7 @@ export default async function SubmittedVersionReviewPage({
               <span>Required next action</span>
               <textarea name="requiredAction" />
             </label>
-            <button className="workspace-button" type="submit">
+            <button className="workspace-button secondary" type="submit">
               Pause course
             </button>
           </form>
@@ -631,6 +745,30 @@ export default async function SubmittedVersionReviewPage({
       </nav>
     </WorkspaceShell>
   );
+}
+
+function getEvidenceBadgeClass(status: string) {
+  const normalized = status.toLowerCase();
+
+  if (
+    normalized.includes("ready") ||
+    normalized.includes("complete") ||
+    normalized.includes("approved") ||
+    normalized.includes("passed")
+  ) {
+    return "status-badge status-badge-ready";
+  }
+
+  if (
+    normalized.includes("blocked") ||
+    normalized.includes("missing") ||
+    normalized.includes("required") ||
+    normalized.includes("not ")
+  ) {
+    return "status-badge status-badge-blocked";
+  }
+
+  return "status-badge";
 }
 
 function getMissingFieldLabels(
