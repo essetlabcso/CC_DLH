@@ -39,7 +39,7 @@ const transitionRoles: Partial<
     ARCHIVED: ["creator", "admin"],
   },
   APPROVED: {
-    PUBLISHED: ["reviewer", "admin"],
+    PUBLISHED: ["admin"],
     ARCHIVED: ["admin"],
   },
   PUBLISHED: {

@@ -65,10 +65,17 @@ describe("course version lifecycle policy", () => {
     ).toThrow("Invalid course version transition");
   });
 
-  it("keeps publication decisions with reviewer or admin roles", () => {
+  it("keeps publication decisions with admin roles only", () => {
     expect(
       canRoleTransitionCourseVersion(
         "reviewer",
+        CourseVersionStatus.APPROVED,
+        CourseVersionStatus.PUBLISHED,
+      ),
+    ).toBe(false);
+    expect(
+      canRoleTransitionCourseVersion(
+        "admin",
         CourseVersionStatus.APPROVED,
         CourseVersionStatus.PUBLISHED,
       ),

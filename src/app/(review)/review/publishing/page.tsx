@@ -73,6 +73,7 @@ export default async function PublishingPage({
     },
     take: 3,
   });
+  const canPublishApprovedVersions = identity.session.role === "admin";
 
   return (
     <WorkspaceShell eyebrow="Publishing" title="Approved courses">
@@ -144,21 +145,27 @@ export default async function PublishingPage({
                       </div>
                     ) : null}
                   </div>
-                  <form
-                    action={publishApprovedCourseAction.bind(
-                      null,
-                      version.course.id,
-                      version.id,
-                    )}
-                  >
-                    <button
-                      className="workspace-button"
-                      disabled={!readiness.ready}
-                      type="submit"
+                  {canPublishApprovedVersions ? (
+                    <form
+                      action={publishApprovedCourseAction.bind(
+                        null,
+                        version.course.id,
+                        version.id,
+                      )}
                     >
-                      Publish now
-                    </button>
-                  </form>
+                      <button
+                        className="workspace-button"
+                        disabled={!readiness.ready}
+                        type="submit"
+                      >
+                        Publish now
+                      </button>
+                    </form>
+                  ) : (
+                    <p className="workspace-note">
+                      Approved courses must be published by a DEC Admin.
+                    </p>
+                  )}
                 </article>
               );
             })}
