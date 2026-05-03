@@ -255,22 +255,30 @@ model CourseWorkflowStepRecord {
 }
 
 model CourseSetup {
-  id                  String   @id @default(cuid())
-  courseVersionId     String   @unique
-  title               String
-  summary             String   @default("")
-  primaryLearnerGroup String   @default("")
-  language            String   @default("English")
-  formatAndTime       String   @default("")
-  level               String   @default("")
-  capacityArea        String   @default("")
-  sensitiveFlag       Boolean  @default(false)
-  certificateIntent   String   @default("")
-  learnerReality      String   @default("{}")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                         String   @id @default(cuid())
+  courseVersionId            String   @unique
+  title                      String
+  summary                    String   @default("")
+  primaryLearnerGroup        String   @default("")
+  language                   String   @default("English")
+  formatAndTime              String   @default("")
+  level                      String   @default("")
+  capacityArea               String   @default("")
+  sensitiveFlag              Boolean  @default(false)
+  certificateIntent          String   @default("")
+  learnerReality             String   @default("{}")
+  selectedDiagnosisDatasetId String?
+  selectedDiagnosisRecordId  String?
+  diagnosisSnapshot          String   @default("{}")
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 
-  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  courseVersion            CourseVersion     @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  selectedDiagnosisDataset DiagnosisDataset? @relation("CourseSetupSelectedDiagnosisDataset", fields: [selectedDiagnosisDatasetId], references: [id], onDelete: SetNull)
+  selectedDiagnosisRecord  DiagnosisRecord?  @relation("CourseSetupSelectedDiagnosisRecord", fields: [selectedDiagnosisRecordId], references: [id], onDelete: SetNull)
+
+  @@index([selectedDiagnosisDatasetId])
+  @@index([selectedDiagnosisRecordId])
 }
 
 model CourseDiagnosis {
@@ -838,10 +846,11 @@ model DiagnosisDataset {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  approvedBy User?             @relation("DiagnosisDatasetApprover", fields: [approvedById], references: [id], onDelete: SetNull)
-  createdBy  User?             @relation("DiagnosisDatasetCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy  User?             @relation("DiagnosisDatasetUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
-  records    DiagnosisRecord[]
+  approvedBy           User?             @relation("DiagnosisDatasetApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  createdBy            User?             @relation("DiagnosisDatasetCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy            User?             @relation("DiagnosisDatasetUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  records              DiagnosisRecord[]
+  selectedCourseSetups CourseSetup[]     @relation("CourseSetupSelectedDiagnosisDataset")
 
   @@index([approvalStatus])
   @@index([visibilityScope])
@@ -903,12 +912,13 @@ model DiagnosisRecord {
   createdAt                        DateTime  @default(now())
   updatedAt                        DateTime  @updatedAt
 
-  dataset      DiagnosisDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
-  organization Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  approvedBy   User?            @relation("DiagnosisRecordApprover", fields: [approvedById], references: [id], onDelete: SetNull)
-  lockedBy     User?            @relation("DiagnosisRecordLocker", fields: [lockedById], references: [id], onDelete: SetNull)
-  createdBy    User?            @relation("DiagnosisRecordCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy    User?            @relation("DiagnosisRecordUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  dataset              DiagnosisDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  organization         Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  approvedBy           User?            @relation("DiagnosisRecordApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  lockedBy             User?            @relation("DiagnosisRecordLocker", fields: [lockedById], references: [id], onDelete: SetNull)
+  createdBy            User?            @relation("DiagnosisRecordCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy            User?            @relation("DiagnosisRecordUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  selectedCourseSetups CourseSetup[]    @relation("CourseSetupSelectedDiagnosisRecord")
 
   @@unique([datasetId, diagnosisCode])
   @@index([datasetId, approvalStatus])
