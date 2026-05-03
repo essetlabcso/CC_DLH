@@ -522,6 +522,109 @@ select {
   gap: var(--dec-space-2);
 }
 
+.admin-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--dec-space-3);
+}
+
+.diagnosis-browser .admin-hero {
+  align-items: center;
+}
+
+.diagnosis-card-grid {
+  display: grid;
+  gap: var(--dec-space-3);
+}
+
+.diagnosis-dataset-card,
+.diagnosis-record-card,
+.diagnosis-filter-panel {
+  display: grid;
+  gap: var(--dec-space-3);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-surface);
+}
+
+.diagnosis-dataset-card > p {
+  margin: 0;
+  color: var(--dec-color-muted-text);
+}
+
+.diagnosis-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--dec-space-3);
+}
+
+.diagnosis-card-heading h3,
+.diagnosis-card-heading p {
+  margin: 0;
+}
+
+.diagnosis-card-heading h3 {
+  color: var(--dec-color-text);
+}
+
+.diagnosis-card-heading p {
+  color: var(--dec-color-muted-text);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.diagnosis-filter-panel {
+  background: var(--dec-color-background);
+}
+
+.diagnosis-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--dec-space-3);
+}
+
+.diagnosis-filter-field {
+  display: grid;
+  gap: var(--dec-space-2);
+}
+
+.diagnosis-filter-field span {
+  color: var(--dec-color-text);
+  font-weight: 800;
+}
+
+.reference-filter-row.compact {
+  grid-template-columns: auto auto;
+  justify-content: start;
+}
+
+.diagnosis-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--dec-space-3);
+}
+
+.diagnosis-preview-grid div {
+  display: grid;
+  gap: var(--dec-space-1);
+  padding: var(--dec-space-3);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-background);
+}
+
+.diagnosis-preview-grid strong {
+  color: var(--dec-color-text);
+}
+
+.diagnosis-preview-grid p {
+  margin: 0;
+  color: var(--dec-color-muted-text);
+}
+
 .review-hero {
   display: grid;
   gap: var(--dec-space-4);
@@ -2037,6 +2140,8 @@ select {
   .filter-form,
   .course-row,
   .course-row-actions,
+  .admin-hero-actions,
+  .diagnosis-card-heading,
   .reference-card-heading,
   .reference-value-group-heading,
   .staff-access-card {
@@ -2060,7 +2165,8 @@ select {
   .capacity-hero,
   .build-studio-layout,
   .form-grid,
-  .reference-filter-row {
+  .reference-filter-row,
+  .reference-filter-row.compact {
     grid-template-columns: 1fr;
   }
 
