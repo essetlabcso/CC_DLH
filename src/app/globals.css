@@ -474,6 +474,41 @@ select {
   min-width: 0;
 }
 
+.new-course-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.36fr);
+  gap: var(--dec-space-4);
+  align-items: start;
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-left: 4px solid var(--dec-color-primary);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.new-course-hero p {
+  margin: 0 0 var(--dec-space-3);
+  color: var(--dec-color-muted-text);
+}
+
+.new-course-next {
+  display: grid;
+  gap: var(--dec-space-2);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-surface);
+}
+
+.new-course-next strong {
+  color: var(--dec-color-text);
+}
+
+.new-course-next span {
+  color: var(--dec-color-muted-text);
+}
+
 .learner-module-card {
   align-items: stretch;
 }
@@ -1586,6 +1621,7 @@ select {
   .studio-course-hero,
   .learner-course-hero,
   .learner-dashboard-hero,
+  .new-course-hero,
   .build-studio-layout,
   .form-grid {
     grid-template-columns: 1fr;
