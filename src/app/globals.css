@@ -544,7 +544,8 @@ select {
   color: var(--dec-color-muted-text);
 }
 
-.diagnosis-hero {
+.diagnosis-hero,
+.capacity-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.36fr);
   gap: var(--dec-space-4);
@@ -557,12 +558,14 @@ select {
   background: var(--dec-color-background);
 }
 
-.diagnosis-hero p {
+.diagnosis-hero p,
+.capacity-hero p {
   margin: 0 0 var(--dec-space-3);
   color: var(--dec-color-muted-text);
 }
 
-.diagnosis-hero-next {
+.diagnosis-hero-next,
+.capacity-hero-next {
   display: grid;
   gap: var(--dec-space-2);
   padding: var(--dec-space-4);
@@ -571,11 +574,13 @@ select {
   background: var(--dec-color-surface);
 }
 
-.diagnosis-hero-next strong {
+.diagnosis-hero-next strong,
+.capacity-hero-next strong {
   color: var(--dec-color-text);
 }
 
-.diagnosis-hero-next span {
+.diagnosis-hero-next span,
+.capacity-hero-next span {
   color: var(--dec-color-muted-text);
 }
 
@@ -1732,6 +1737,7 @@ select {
   .new-course-hero,
   .setup-hero,
   .diagnosis-hero,
+  .capacity-hero,
   .build-studio-layout,
   .form-grid {
     grid-template-columns: 1fr;

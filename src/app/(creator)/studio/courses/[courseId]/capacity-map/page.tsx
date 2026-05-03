@@ -16,6 +16,19 @@ import {
 
 import { saveCourseCapacityMapAction } from "../../../actions";
 
+function formatCapacityStatus(status?: WorkflowStepStatus) {
+  switch (status) {
+    case WorkflowStepStatus.COMPLETE:
+      return "Complete";
+    case WorkflowStepStatus.IN_PROGRESS:
+      return "In progress";
+    case WorkflowStepStatus.LOCKED:
+      return "Locked";
+    default:
+      return "Ready";
+  }
+}
+
 type CapacityMapPageProps = {
   params?: Promise<{
     courseId?: string;
@@ -111,11 +124,34 @@ export default async function CapacityMapPage({
 
   return (
     <WorkspaceShell eyebrow="Capacity Map" title={editable.course.title}>
-      <p>
-        Place this course inside a CSO capacity domain, link it to a relevant
-        standard, and define the capacity outcome that future monitoring should
-        watch.
-      </p>
+      <section className="capacity-hero" aria-labelledby="capacity-map-overview">
+        <div>
+          <h2 id="capacity-map-overview">Map the course to capacity change</h2>
+          <p>
+            Place this course inside a CSO capacity domain, link it to a
+            relevant standard, and define the capacity outcome that future
+            monitoring should watch.
+          </p>
+          <div className="status-row" aria-label="Capacity Map status">
+            <span className="status-badge status-badge-ready">
+              Analysis locked
+            </span>
+            <span className="status-badge status-badge-ready">
+              Design anchors available
+            </span>
+            <span className="status-badge">
+              Capacity Map {formatCapacityStatus(capacityMapStatus)}
+            </span>
+          </div>
+        </div>
+        <div className="capacity-hero-next">
+          <strong>Design anchor</strong>
+          <span>
+            Use the locked Analysis Handover to keep the Capacity Map aligned
+            with the validated CSO need.
+          </span>
+        </div>
+      </section>
       {resolvedSearchParams?.analysisLocked === "1" ? (
         <p className="workspace-note">
           Analysis Handover locked for Design. Capacity Map is now open.
@@ -141,11 +177,11 @@ export default async function CapacityMapPage({
       ) : null}
 
       <form action={saveAction} className="setup-form">
-        <section className="studio-section" aria-labelledby="capacity-source">
+        <section className="setup-form-section" aria-labelledby="capacity-source">
           <h2 id="capacity-source">Controlled Capacity Map anchors</h2>
           <p className="section-subcopy">
-            Core Capacity Area, Capacity Practice Area, linked standard, and capacity
-            indicator come from the locked Analysis Handover.
+            Core Capacity Area, Capacity Practice Area, linked standard, and
+            capacity indicator come from the locked Analysis Handover.
           </p>
           <div className="context-grid">
             <article>
@@ -166,40 +202,68 @@ export default async function CapacityMapPage({
             </article>
           </div>
         </section>
-        <label>
-          <span>Capability focus</span>
-          <textarea
-            name="capabilityFocus"
-            required
-            defaultValue={capacityMap?.capabilityFocus || handover?.capacityIndicator}
-          />
-        </label>
-        <label>
-          <span>Capacity outcome</span>
-          <textarea
-            name="capacityOutcome"
-            required
-            defaultValue={capacityMap?.capacityOutcome || handover?.desiredPractice}
-          />
-        </label>
-        <label>
-          <span>How this links back to Diagnosis</span>
-          <textarea
-            name="diagnosisLink"
-            required
-            defaultValue={
-              capacityMap?.diagnosisLink || handover?.validatedCapacityGap
-            }
-          />
-        </label>
-        <label>
-          <span>Monitoring relevance</span>
-          <textarea
-            name="monitoringRelevance"
-            required
-            defaultValue={capacityMap?.monitoringRelevance || handover?.evaluationAnchor}
-          />
-        </label>
+        <section
+          className="setup-form-section"
+          aria-labelledby="capacity-outcome"
+        >
+          <div>
+            <h2 id="capacity-outcome">Capacity focus and outcome</h2>
+            <p className="section-subcopy">
+              Define what capacity should improve and the outcome this course
+              should make observable.
+            </p>
+          </div>
+          <label>
+            <span>Capability focus</span>
+            <textarea
+              name="capabilityFocus"
+              required
+              defaultValue={
+                capacityMap?.capabilityFocus || handover?.capacityIndicator
+              }
+            />
+          </label>
+          <label>
+            <span>Capacity outcome</span>
+            <textarea
+              name="capacityOutcome"
+              required
+              defaultValue={capacityMap?.capacityOutcome || handover?.desiredPractice}
+            />
+          </label>
+        </section>
+        <section
+          className="setup-form-section"
+          aria-labelledby="capacity-monitoring"
+        >
+          <div>
+            <h2 id="capacity-monitoring">Diagnosis and monitoring link</h2>
+            <p className="section-subcopy">
+              Connect the mapped capacity outcome back to the diagnosis evidence
+              and the future monitoring signal.
+            </p>
+          </div>
+          <label>
+            <span>How this links back to Diagnosis</span>
+            <textarea
+              name="diagnosisLink"
+              required
+              defaultValue={
+                capacityMap?.diagnosisLink || handover?.validatedCapacityGap
+              }
+            />
+          </label>
+          <label>
+            <span>Monitoring relevance</span>
+            <textarea
+              name="monitoringRelevance"
+              required
+              defaultValue={
+                capacityMap?.monitoringRelevance || handover?.evaluationAnchor
+              }
+            />
+          </label>
+        </section>
 
         <div className="next-step-panel">
           <h2>Next step: Action Map</h2>
