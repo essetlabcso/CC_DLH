@@ -395,6 +395,133 @@ select {
   text-transform: uppercase;
 }
 
+.reference-browser .admin-hero {
+  align-items: center;
+}
+
+.reference-filter-panel {
+  display: grid;
+  gap: var(--dec-space-2);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.reference-filter-row {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) auto auto;
+  gap: var(--dec-space-3);
+  align-items: center;
+}
+
+.reference-search-input {
+  min-height: 2.75rem;
+  width: 100%;
+  padding: var(--dec-space-3);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-surface);
+  color: var(--dec-color-text);
+}
+
+.reference-category-grid,
+.reference-value-groups,
+.reference-value-list {
+  display: grid;
+  gap: var(--dec-space-3);
+}
+
+.reference-category-grid {
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.reference-category-card,
+.reference-value-group,
+.reference-value-card {
+  display: grid;
+  gap: var(--dec-space-3);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-surface);
+}
+
+.reference-category-card {
+  align-content: start;
+}
+
+.reference-category-card > p,
+.reference-value-card > p,
+.reference-card-heading p,
+.reference-value-group-heading p {
+  margin: 0;
+  color: var(--dec-color-muted-text);
+}
+
+.reference-card-heading,
+.reference-value-group-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--dec-space-3);
+}
+
+.reference-card-heading h3,
+.reference-card-heading h4,
+.reference-value-group-heading h3 {
+  margin: 0 0 var(--dec-space-1);
+  color: var(--dec-color-text);
+}
+
+.reference-card-heading h4 {
+  font-size: 1rem;
+}
+
+.reference-meta-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--dec-space-2);
+  margin: 0;
+}
+
+.reference-meta-list div {
+  display: grid;
+  gap: 0.15rem;
+  padding: var(--dec-space-2);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-background);
+}
+
+.reference-meta-list dt {
+  color: var(--dec-color-muted-text);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reference-meta-list dd {
+  margin: 0;
+  color: var(--dec-color-text);
+  font-weight: 700;
+}
+
+.reference-value-group {
+  background: var(--dec-color-background);
+}
+
+.reference-value-card {
+  background: var(--dec-color-surface);
+}
+
+.reference-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--dec-space-2);
+}
+
 .review-hero {
   display: grid;
   gap: var(--dec-space-4);
@@ -1910,6 +2037,8 @@ select {
   .filter-form,
   .course-row,
   .course-row-actions,
+  .reference-card-heading,
+  .reference-value-group-heading,
   .staff-access-card {
     align-items: stretch;
     flex-direction: column;
@@ -1930,7 +2059,8 @@ select {
   .diagnosis-hero,
   .capacity-hero,
   .build-studio-layout,
-  .form-grid {
+  .form-grid,
+  .reference-filter-row {
     grid-template-columns: 1fr;
   }
 
