@@ -542,6 +542,332 @@ const fieldMetadata = [
   })),
 );
 
+const sampleDiagnosisDataset = {
+  id: "diagnosis_dataset_dec_csf_2026_r1",
+  datasetCode: "DEC-CSF-2026-R1",
+  datasetTitle: "CSF+ Partner CSO Capacity Diagnosis — Round 1",
+  assessmentPeriodStart: "2026-02-02T00:00:00.000Z",
+  assessmentPeriodEnd: "2026-03-27T00:00:00.000Z",
+  programOrProject: "EU CSF+",
+  assessmentPurpose:
+    "Validated capacity diagnosis to identify practical Knowledge and Skill gaps that can inform Phase 1 DEC Learning Hub course creation and complementary non-course support.",
+  regionsCovered: [
+    "Addis Ababa",
+    "Amhara",
+    "Oromia",
+    "Sidama",
+    "Somali",
+    "Tigray",
+  ],
+  organizationGroup: "Selected local CSO partners / CSF+ cohort",
+  dataCollectionMethods: [
+    "Workshop",
+    "Survey",
+    "Interview",
+    "Document review",
+    "Facilitated validation",
+  ],
+  approvalStatus: "APPROVED",
+  visibilityScope: "DEC_COURSE_CREATORS_INTERNAL_COURSE_CREATION",
+  notes:
+    "Internal demo/testing dataset using safe fictionalized summaries only. No raw interview, FGD, safeguarding, political, personal, or sensitive evidence is included.",
+  approvedAt: "2026-04-10T00:00:00.000Z",
+};
+
+const sampleDiagnosisRecords = [
+  diagnosisRecord({
+    code: "DEC-CSF-R1-001",
+    title: "Prepare concise outcome evidence notes",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Addis Ababa",
+    coreCapacityArea: "Monitoring, Evaluation, Accountability, and Learning",
+    capacityPracticeArea: "Outcome evidence and learning documentation",
+    targetAudience: "MEAL staff / Program staff",
+    currentBaseline:
+      "Staff understand reporting requirements and collect routine monitoring data, but outcome statements are often too activity-focused.",
+    gap:
+      "Staff understand reporting requirements but cannot prepare concise outcome evidence statements from routine monitoring data.",
+    desiredPractice:
+      "Staff prepare a short outcome evidence note that links activity outputs, observed change, evidence source, and learning implication.",
+    evidenceSource:
+      "Fictionalized workshop exercise, survey summary, and validation discussion.",
+    rootCauseSummary:
+      "The main barrier is practice applying an evidence-note structure to routine monitoring data.",
+    ksmeRoute: "Skill",
+    courseFitDecision: "Course-addressable",
+    recommendedCourseOrSupportTitle: "Writing outcome evidence notes",
+    priorityLevel: "High",
+    priorityRank: 1,
+    safeguardingRiskLevel: "Low",
+    dataSensitivityLevel: "Internal",
+    noHarmNote:
+      "Use anonymized examples and avoid raw participant details in practice activities.",
+    safeSummaryForDashboard:
+      "Course-addressable skill gap in turning monitoring data into concise outcome evidence.",
+    evaluationAnchor:
+      "Participant can produce a short outcome evidence note from a safe sample dataset.",
+    monitoringSignal:
+      "Quality of submitted outcome evidence notes improves in course practice tasks.",
+    possiblePracticalProof: "MEAL evidence output",
+    verifiedAchievementExample: "Accepted outcome evidence note using safe sample data.",
+  }),
+  diagnosisRecord({
+    code: "DEC-CSF-R1-002",
+    title: "Connect budget lines to activities and outputs",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Amhara",
+    coreCapacityArea: "Financial Management and Resource Mobilization",
+    capacityPracticeArea: "Donor budget justification",
+    targetAudience: "Finance staff / Program staff",
+    currentBaseline:
+      "Staff can identify common budget categories but justification notes vary in clarity and completeness.",
+    gap:
+      "Staff know budget categories but struggle to justify how budget lines connect to activities, allowable costs, and expected outputs.",
+    desiredPractice:
+      "Staff prepare a clear budget justification note using a simple checklist.",
+    evidenceSource: "Fictionalized document review and validation workshop summary.",
+    rootCauseSummary:
+      "The main barrier is skill in linking budget wording to activities, outputs, and allowability.",
+    ksmeRoute: "Skill",
+    courseFitDecision: "Course-addressable",
+    recommendedCourseOrSupportTitle: "Budget justification checklist practice",
+    priorityLevel: "High",
+    priorityRank: 2,
+    safeguardingRiskLevel: "Low",
+    dataSensitivityLevel: "Internal",
+    noHarmNote: "Use fictional budget lines and no real partner financial data.",
+    safeSummaryForDashboard:
+      "Course-addressable skill gap in writing donor-facing budget justifications.",
+    evaluationAnchor:
+      "Participant can draft a clear justification note for a fictional budget line.",
+    monitoringSignal:
+      "Practice submissions show clearer links between costs, activities, and outputs.",
+    possiblePracticalProof: "Budget justification sample",
+    verifiedAchievementExample: "Accepted fictional budget justification note.",
+  }),
+  diagnosisRecord({
+    code: "DEC-CSF-R1-003",
+    title: "Document board conflict-of-interest decisions",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Sidama",
+    coreCapacityArea: "Internal Governance and Leadership",
+    capacityPracticeArea: "Board decision records and conflict of interest",
+    targetAudience: "Board members / CSO leaders",
+    currentBaseline:
+      "Board members discuss conflicts informally, but meeting records do not consistently show declarations or decisions.",
+    gap:
+      "Board members are unclear on what counts as conflict of interest and how to document declarations in meeting records.",
+    desiredPractice:
+      "Board members identify a conflict-of-interest situation and document the decision using a simple procedure.",
+    evidenceSource: "Fictionalized governance checklist and facilitated validation.",
+    rootCauseSummary:
+      "The main barrier is knowledge of conflict-of-interest examples and documentation steps.",
+    ksmeRoute: "Knowledge",
+    courseFitDecision: "Course-addressable",
+    recommendedCourseOrSupportTitle: "Conflict-of-interest documentation basics",
+    priorityLevel: "Medium",
+    priorityRank: 3,
+    safeguardingRiskLevel: "Moderate",
+    dataSensitivityLevel: "Internal",
+    noHarmNote:
+      "Use fictional governance scenarios and avoid naming real organizations or people.",
+    safeSummaryForDashboard:
+      "Course-addressable knowledge gap in recognizing and documenting conflict-of-interest decisions.",
+    evaluationAnchor:
+      "Participant can identify a conflict scenario and select the right documentation steps.",
+    monitoringSignal:
+      "Practice records include a declaration, recusal, decision, and follow-up note.",
+    possiblePracticalProof: "Partnership or governance record",
+    verifiedAchievementExample: "Accepted fictional board decision note.",
+  }),
+  diagnosisRecord({
+    code: "DEC-CSF-R1-004",
+    title: "Categorize feedback and apply safe escalation",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Somali",
+    coreCapacityArea: "Transparency and Accountability",
+    capacityPracticeArea: "Community feedback and complaint categorization",
+    targetAudience: "Field staff / Safeguarding focal points",
+    currentBaseline:
+      "Staff collect community feedback, but sensitive complaint categories and referral pathways are not consistently applied.",
+    gap:
+      "Staff can collect feedback but often misclassify sensitive complaints or escalate them through informal channels.",
+    desiredPractice:
+      "Staff classify feedback using a simple category guide and apply safe referral/escalation rules.",
+    evidenceSource: "Fictionalized feedback categorization exercise and validation notes.",
+    rootCauseSummary:
+      "The issue includes knowledge of categories and skill applying safe escalation rules.",
+    ksmeRoute: "Mixed",
+    separableKnowledgeSkillComponent:
+      "Recognize feedback categories and apply safe escalation rules without collecting unnecessary sensitive data.",
+    courseFitDecision: "Partly course-addressable",
+    recommendedInterventionRoute:
+      "Short course component plus organization-specific referral pathway support.",
+    recommendedCourseOrSupportTitle: "Feedback categorization and safe escalation",
+    priorityLevel: "High",
+    priorityRank: 4,
+    safeguardingRiskLevel: "High",
+    dataSensitivityLevel: "High",
+    noHarmNote:
+      "Do not use real complaints. Training must use fictional examples and emphasize minimum necessary information.",
+    safeSummaryForDashboard:
+      "Partly course-addressable mixed gap in categorizing feedback and applying safe escalation rules.",
+    evaluationAnchor:
+      "Participant can classify fictional feedback and choose a safe escalation step.",
+    monitoringSignal:
+      "Practice tasks show correct category selection and safe referral decision-making.",
+    possiblePracticalProof: "Checklist",
+    verifiedAchievementExample: "Accepted safe escalation checklist using fictional examples.",
+  }),
+  diagnosisRecord({
+    code: "DEC-CSF-R1-005",
+    title: "Draft safe evidence-based advocacy messages",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Tigray",
+    coreCapacityArea: "Evidence-Based Advocacy and Civic Engagement",
+    capacityPracticeArea: "Safe evidence-based advocacy message",
+    targetAudience: "Advocacy staff / CSO leaders",
+    currentBaseline:
+      "Staff can describe advocacy goals, but messages sometimes lack neutral wording, evidence boundaries, or no-harm checks.",
+    gap:
+      "Staff understand advocacy goals but need support to translate evidence into safe, non-inflammatory public messages.",
+    desiredPractice:
+      "Staff prepare a short advocacy message using evidence, neutral language, and no-harm checks.",
+    evidenceSource: "Fictionalized message review exercise and validation summary.",
+    rootCauseSummary:
+      "The course-addressable part is drafting a safe message from non-sensitive evidence.",
+    ksmeRoute: "Mixed",
+    separableKnowledgeSkillComponent:
+      "Draft a safe, evidence-based advocacy message that avoids personal data, unsupported claims, and risky wording.",
+    courseFitDecision: "Partly course-addressable",
+    recommendedInterventionRoute:
+      "Short course component plus contextual review by authorized staff before external use.",
+    recommendedCourseOrSupportTitle: "Safe evidence-based advocacy message drafting",
+    priorityLevel: "High",
+    priorityRank: 5,
+    safeguardingRiskLevel: "High",
+    dataSensitivityLevel: "High",
+    noHarmNote:
+      "Use fictional non-sensitive evidence only. Do not include personal data, political claims, or real public messaging.",
+    safeSummaryForDashboard:
+      "Partly course-addressable mixed gap in safe advocacy message drafting.",
+    evaluationAnchor:
+      "Participant can draft a neutral fictional advocacy message with no-harm checks.",
+    monitoringSignal:
+      "Practice messages avoid unsupported claims, personal data, and risky wording.",
+    possiblePracticalProof: "Safe advocacy message",
+    verifiedAchievementExample: "Accepted fictional advocacy message with no-harm checklist.",
+  }),
+  diagnosisRecord({
+    code: "DEC-CSF-R1-006",
+    title: "Address digital reporting access barriers",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Oromia",
+    coreCapacityArea: "Digital Skills and Data Use / IT Competencies",
+    capacityPracticeArea: "Digital reporting workflow",
+    targetAudience: "Program staff / MEAL staff",
+    currentBaseline:
+      "Staff know the reporting requirement but cannot reliably access devices or connectivity during reporting windows.",
+    gap:
+      "Staff cannot submit digital reports consistently because device access and connectivity are unreliable.",
+    desiredPractice:
+      "Not course-addressable by itself; requires tool/access support, with only a possible future micro-guide if tools are available.",
+    evidenceSource: "Fictionalized operational barrier summary and validation discussion.",
+    rootCauseSummary:
+      "The primary barrier is environmental access to devices and connectivity.",
+    ksmeRoute: "Environment",
+    courseFitDecision: "Non-course support required",
+    recommendedInterventionRoute:
+      "Operational support for device access, connectivity, and reporting workflow conditions.",
+    recommendedCourseOrSupportTitle: "Not recommended for Phase 1 course creation",
+    priorityLevel: "Medium",
+    priorityRank: 6,
+    safeguardingRiskLevel: "Moderate",
+    dataSensitivityLevel: "Internal",
+    noHarmNote:
+      "Do not frame access barriers as individual performance gaps.",
+    safeSummaryForDashboard:
+      "Environment-only diagnosis showing that not every gap should become a course.",
+    evaluationAnchor:
+      "Track whether access conditions improve before considering any learning support.",
+    monitoringSignal:
+      "Reporting completion improves only if tool and connectivity barriers are addressed.",
+    possiblePracticalProof: "",
+    verifiedAchievementExample: "",
+    courseCreationStatus: "NON_COURSE_SUPPORT",
+  }),
+  diagnosisRecord({
+    code: "DEC-CSF-R1-007",
+    title: "Assess resource mobilization readiness",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Addis Ababa",
+    coreCapacityArea: "Strategic Planning and Organizational Sustainability",
+    capacityPracticeArea: "Resource mobilization readiness",
+    targetAudience: "CSO leaders / Program staff",
+    currentBaseline:
+      "Teams can list funding ideas, but readiness checks for organizational fit and delivery capacity are inconsistent.",
+    gap:
+      "Staff need a simple method to assess whether an opportunity matches organizational priorities, capacity, and compliance requirements.",
+    desiredPractice:
+      "Staff apply a readiness checklist before deciding whether to pursue a funding opportunity.",
+    evidenceSource: "Fictionalized opportunity-screening exercise and validation notes.",
+    rootCauseSummary:
+      "The gap combines knowledge of readiness criteria with skill applying a checklist.",
+    ksmeRoute: "Mixed",
+    separableKnowledgeSkillComponent:
+      "Use readiness criteria to screen a fictional funding opportunity before escalation.",
+    courseFitDecision: "Course-addressable",
+    recommendedCourseOrSupportTitle: "Resource mobilization readiness checklist",
+    priorityLevel: "Medium",
+    priorityRank: 7,
+    safeguardingRiskLevel: "Low",
+    dataSensitivityLevel: "Internal",
+    noHarmNote: "Use fictional opportunity examples only.",
+    safeSummaryForDashboard:
+      "Course-addressable mixed gap in screening resource mobilization opportunities.",
+    evaluationAnchor:
+      "Participant can complete a readiness checklist for a fictional opportunity.",
+    monitoringSignal:
+      "Practice checklists show clear rationale for pursue or do-not-pursue decisions.",
+    possiblePracticalProof: "Checklist",
+    verifiedAchievementExample: "Accepted fictional opportunity readiness checklist.",
+  }),
+  diagnosisRecord({
+    code: "DEC-CSF-R1-008",
+    title: "Clarify partnership roles and responsibilities",
+    organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    region: "Oromia",
+    coreCapacityArea: "Networking, Partnerships, and Collective Action",
+    capacityPracticeArea: "Partnership role matrix",
+    targetAudience: "Program staff / CSO leaders",
+    currentBaseline:
+      "Teams coordinate with partners, but roles, decision points, and follow-up owners are not consistently documented.",
+    gap:
+      "Staff struggle to translate partnership discussions into a simple role matrix with responsibilities and follow-up owners.",
+    desiredPractice:
+      "Staff prepare a basic role matrix for a fictional partnership scenario.",
+    evidenceSource: "Fictionalized partnership planning exercise and validation summary.",
+    rootCauseSummary:
+      "The main barrier is skill in converting discussion outcomes into clear role documentation.",
+    ksmeRoute: "Skill",
+    courseFitDecision: "Course-addressable",
+    recommendedCourseOrSupportTitle: "Partnership role matrix practice",
+    priorityLevel: "Medium",
+    priorityRank: 8,
+    safeguardingRiskLevel: "Low",
+    dataSensitivityLevel: "Internal",
+    noHarmNote: "Use fictional partnership scenarios with no real partner names.",
+    safeSummaryForDashboard:
+      "Course-addressable skill gap in documenting partnership roles and follow-up owners.",
+    evaluationAnchor:
+      "Participant can complete a role matrix for a fictional partnership scenario.",
+    monitoringSignal:
+      "Practice matrices identify roles, decision points, and follow-up owners clearly.",
+    possiblePracticalProof: "Partnership or governance record",
+    verifiedAchievementExample: "Accepted fictional partnership role matrix.",
+  }),
+];
+
 mkdirSync(dirname(databasePath), { recursive: true });
 
 const db = new DatabaseSync(databasePath);
@@ -658,6 +984,129 @@ try {
       "updatedAt" = CURRENT_TIMESTAMP
   `);
 
+  const upsertDiagnosisDataset = db.prepare(`
+    INSERT INTO "diagnosis_datasets" (
+      "id",
+      "datasetCode",
+      "datasetTitle",
+      "assessmentPeriodStart",
+      "assessmentPeriodEnd",
+      "programOrProject",
+      "assessmentPurpose",
+      "regionsCovered",
+      "organizationGroup",
+      "dataCollectionMethods",
+      "approvalStatus",
+      "visibilityScope",
+      "notes",
+      "approvedAt",
+      "updatedAt"
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT("datasetCode") DO UPDATE SET
+      "datasetTitle" = excluded."datasetTitle",
+      "assessmentPeriodStart" = excluded."assessmentPeriodStart",
+      "assessmentPeriodEnd" = excluded."assessmentPeriodEnd",
+      "programOrProject" = excluded."programOrProject",
+      "assessmentPurpose" = excluded."assessmentPurpose",
+      "regionsCovered" = excluded."regionsCovered",
+      "organizationGroup" = excluded."organizationGroup",
+      "dataCollectionMethods" = excluded."dataCollectionMethods",
+      "approvalStatus" = excluded."approvalStatus",
+      "visibilityScope" = excluded."visibilityScope",
+      "notes" = excluded."notes",
+      "approvedAt" = excluded."approvedAt",
+      "archivedAt" = NULL,
+      "updatedAt" = CURRENT_TIMESTAMP
+  `);
+
+  const upsertDiagnosisRecord = db.prepare(`
+    INSERT INTO "diagnosis_records" (
+      "id",
+      "datasetId",
+      "diagnosisCode",
+      "diagnosisTitle",
+      "organizationGroup",
+      "region",
+      "sectorThematicArea",
+      "coreCapacityArea",
+      "capacityPracticeArea",
+      "subCapacity",
+      "indicatorStandardLink",
+      "targetAudience",
+      "currentBaseline",
+      "desiredPractice",
+      "capacityGapStatement",
+      "evidenceSource",
+      "rootCauseSummary",
+      "ksmeRoute",
+      "separableKnowledgeSkillComponent",
+      "nonCourseBarrierSummary",
+      "courseFitDecision",
+      "recommendedInterventionRoute",
+      "recommendedCourseOrSupportTitle",
+      "priorityLevel",
+      "priorityRank",
+      "safeguardingRiskLevel",
+      "dataSensitivityLevel",
+      "noHarmNote",
+      "safeSummaryForDashboard",
+      "evaluationAnchor",
+      "monitoringSignal",
+      "possiblePracticalProof",
+      "verifiedAchievementExample",
+      "approvalStatus",
+      "visibilityScope",
+      "courseCreationStatus",
+      "isLocked",
+      "isActive",
+      "approvedAt",
+      "lockedAt",
+      "updatedAt"
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT("datasetId", "diagnosisCode") DO UPDATE SET
+      "diagnosisTitle" = excluded."diagnosisTitle",
+      "organizationGroup" = excluded."organizationGroup",
+      "region" = excluded."region",
+      "sectorThematicArea" = excluded."sectorThematicArea",
+      "coreCapacityArea" = excluded."coreCapacityArea",
+      "capacityPracticeArea" = excluded."capacityPracticeArea",
+      "subCapacity" = excluded."subCapacity",
+      "indicatorStandardLink" = excluded."indicatorStandardLink",
+      "targetAudience" = excluded."targetAudience",
+      "currentBaseline" = excluded."currentBaseline",
+      "desiredPractice" = excluded."desiredPractice",
+      "capacityGapStatement" = excluded."capacityGapStatement",
+      "evidenceSource" = excluded."evidenceSource",
+      "rootCauseSummary" = excluded."rootCauseSummary",
+      "ksmeRoute" = excluded."ksmeRoute",
+      "separableKnowledgeSkillComponent" = excluded."separableKnowledgeSkillComponent",
+      "nonCourseBarrierSummary" = excluded."nonCourseBarrierSummary",
+      "courseFitDecision" = excluded."courseFitDecision",
+      "recommendedInterventionRoute" = excluded."recommendedInterventionRoute",
+      "recommendedCourseOrSupportTitle" = excluded."recommendedCourseOrSupportTitle",
+      "priorityLevel" = excluded."priorityLevel",
+      "priorityRank" = excluded."priorityRank",
+      "safeguardingRiskLevel" = excluded."safeguardingRiskLevel",
+      "dataSensitivityLevel" = excluded."dataSensitivityLevel",
+      "noHarmNote" = excluded."noHarmNote",
+      "safeSummaryForDashboard" = excluded."safeSummaryForDashboard",
+      "evaluationAnchor" = excluded."evaluationAnchor",
+      "monitoringSignal" = excluded."monitoringSignal",
+      "possiblePracticalProof" = excluded."possiblePracticalProof",
+      "verifiedAchievementExample" = excluded."verifiedAchievementExample",
+      "approvalStatus" = excluded."approvalStatus",
+      "visibilityScope" = excluded."visibilityScope",
+      "courseCreationStatus" = excluded."courseCreationStatus",
+      "isLocked" = excluded."isLocked",
+      "isActive" = excluded."isActive",
+      "approvedAt" = excluded."approvedAt",
+      "lockedAt" = excluded."lockedAt",
+      "archivedAt" = NULL,
+      "updatedAt" = CURRENT_TIMESTAMP
+  `);
+
   for (const category of categories) {
     const categoryId = categoryIdFor(category.key);
 
@@ -706,6 +1155,68 @@ try {
     );
   }
 
+  upsertDiagnosisDataset.run(
+    sampleDiagnosisDataset.id,
+    sampleDiagnosisDataset.datasetCode,
+    sampleDiagnosisDataset.datasetTitle,
+    sampleDiagnosisDataset.assessmentPeriodStart,
+    sampleDiagnosisDataset.assessmentPeriodEnd,
+    sampleDiagnosisDataset.programOrProject,
+    sampleDiagnosisDataset.assessmentPurpose,
+    JSON.stringify(sampleDiagnosisDataset.regionsCovered),
+    sampleDiagnosisDataset.organizationGroup,
+    JSON.stringify(sampleDiagnosisDataset.dataCollectionMethods),
+    sampleDiagnosisDataset.approvalStatus,
+    sampleDiagnosisDataset.visibilityScope,
+    sampleDiagnosisDataset.notes,
+    sampleDiagnosisDataset.approvedAt,
+  );
+
+  for (const item of sampleDiagnosisRecords) {
+    upsertDiagnosisRecord.run(
+      diagnosisRecordIdFor(item.code),
+      sampleDiagnosisDataset.id,
+      item.code,
+      item.title,
+      item.organizationGroup,
+      item.region,
+      item.sectorThematicArea,
+      item.coreCapacityArea,
+      item.capacityPracticeArea,
+      item.capacityPracticeArea,
+      item.indicatorStandardLink,
+      item.targetAudience,
+      item.currentBaseline,
+      item.desiredPractice,
+      item.gap,
+      item.evidenceSource,
+      item.rootCauseSummary,
+      item.ksmeRoute,
+      item.separableKnowledgeSkillComponent,
+      item.nonCourseBarrierSummary,
+      item.courseFitDecision,
+      item.recommendedInterventionRoute,
+      item.recommendedCourseOrSupportTitle,
+      item.priorityLevel,
+      item.priorityRank,
+      item.safeguardingRiskLevel,
+      item.dataSensitivityLevel,
+      item.noHarmNote,
+      item.safeSummaryForDashboard,
+      item.evaluationAnchor,
+      item.monitoringSignal,
+      item.possiblePracticalProof,
+      item.verifiedAchievementExample,
+      item.approvalStatus,
+      item.visibilityScope,
+      item.courseCreationStatus,
+      item.isLocked ? 1 : 0,
+      item.isActive ? 1 : 0,
+      item.approvedAt,
+      item.lockedAt,
+    );
+  }
+
   db.exec("COMMIT");
   console.log(
     `Seeded ${categories.length} admin lookup categories and ${categories.reduce(
@@ -714,6 +1225,9 @@ try {
     )} system-locked lookup values.`,
   );
   console.log(`Seeded ${fieldMetadata.length} admin field metadata records.`);
+  console.log(
+    `Seeded 1 sample diagnosis dataset and ${sampleDiagnosisRecords.length} sample diagnosis records for internal demo/testing.`,
+  );
 } catch (error) {
   db.exec("ROLLBACK");
   throw error;
@@ -751,6 +1265,30 @@ function field(key, label, fieldType, displayOrder, options = {}) {
   };
 }
 
+function diagnosisRecord(options) {
+  return {
+    sectorThematicArea: "CSO capacity strengthening",
+    indicatorStandardLink: "",
+    separableKnowledgeSkillComponent: "",
+    nonCourseBarrierSummary: "",
+    recommendedInterventionRoute: "Course creation",
+    priorityLevel: "Medium",
+    priorityRank: null,
+    safeguardingRiskLevel: "Low",
+    dataSensitivityLevel: "Internal",
+    possiblePracticalProof: "",
+    verifiedAchievementExample: "",
+    approvalStatus: "APPROVED",
+    visibilityScope: "DEC_COURSE_CREATORS_INTERNAL_COURSE_CREATION",
+    courseCreationStatus: "READY_FOR_COURSE_SETUP",
+    isLocked: true,
+    isActive: true,
+    approvedAt: "2026-04-11T00:00:00.000Z",
+    lockedAt: "2026-04-11T00:00:00.000Z",
+    ...options,
+  };
+}
+
 function categoryIdFor(categoryKey) {
   return `admin_lookup_category_${categoryKey}`;
 }
@@ -761,6 +1299,10 @@ function valueIdFor(categoryKey, valueKey) {
 
 function fieldMetadataIdFor(workflowPhase, metadataKey) {
   return `admin_field_metadata_${workflowPhase}_${metadataKey}`;
+}
+
+function diagnosisRecordIdFor(diagnosisCode) {
+  return `diagnosis_record_${slugKey(diagnosisCode)}`;
 }
 
 function slugKey(label) {
