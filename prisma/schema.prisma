@@ -88,10 +88,11 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users       User[]
-  memberships OrganizationMembership[]
-  courses     Course[]
+  users                User[]
+  memberships          OrganizationMembership[]
+  courses              Course[]
   verifiedAchievements LearnerVerifiedAchievement[]
+  diagnosisRecords     DiagnosisRecord[]
 }
 
 model User {
@@ -103,22 +104,36 @@ model User {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  organization  Organization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  memberships   OrganizationMembership[]
-  courses       Course[]                   @relation("CourseOwner")
-  versions      CourseVersion[]            @relation("VersionCreator")
-  events        CourseLifecycleEvent[]
-  workflowSteps CourseWorkflowStepRecord[] @relation("WorkflowStepUpdater")
-  reviewRecords CourseReviewRecord[]       @relation("CourseReviewer")
-  lessonProgress LearnerLessonProgress[]
-  finalTestAttempts LearnerFinalTestAttempt[]
-  certificates  LearnerCertificate[]
-  certificateEvents LearnerCertificateStatusEvent[] @relation("CertificateStatusActor")
-  practicalProofSubmissions LearnerPracticalProofSubmission[]
-  practicalProofReviews LearnerPracticalProofSubmission[] @relation("PracticalProofReviewer")
+  organization                   Organization                           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  memberships                    OrganizationMembership[]
+  courses                        Course[]                               @relation("CourseOwner")
+  versions                       CourseVersion[]                        @relation("VersionCreator")
+  events                         CourseLifecycleEvent[]
+  workflowSteps                  CourseWorkflowStepRecord[]             @relation("WorkflowStepUpdater")
+  reviewRecords                  CourseReviewRecord[]                   @relation("CourseReviewer")
+  lessonProgress                 LearnerLessonProgress[]
+  finalTestAttempts              LearnerFinalTestAttempt[]
+  certificates                   LearnerCertificate[]
+  certificateEvents              LearnerCertificateStatusEvent[]        @relation("CertificateStatusActor")
+  practicalProofSubmissions      LearnerPracticalProofSubmission[]
+  practicalProofReviews          LearnerPracticalProofSubmission[]      @relation("PracticalProofReviewer")
   practicalProofSubmissionEvents LearnerPracticalProofSubmissionEvent[] @relation("PracticalProofEventActor")
-  verifiedAchievements LearnerVerifiedAchievement[] @relation("VerifiedAchievementLearner")
-  issuedVerifiedAchievements LearnerVerifiedAchievement[] @relation("VerifiedAchievementIssuer")
+  verifiedAchievements           LearnerVerifiedAchievement[]           @relation("VerifiedAchievementLearner")
+  issuedVerifiedAchievements     LearnerVerifiedAchievement[]           @relation("VerifiedAchievementIssuer")
+  createdLookupCategories        AdminLookupCategory[]                  @relation("AdminLookupCategoryCreator")
+  updatedLookupCategories        AdminLookupCategory[]                  @relation("AdminLookupCategoryUpdater")
+  createdLookupValues            AdminLookupValue[]                     @relation("AdminLookupValueCreator")
+  updatedLookupValues            AdminLookupValue[]                     @relation("AdminLookupValueUpdater")
+  createdFieldMetadata           AdminFieldMetadata[]                   @relation("AdminFieldMetadataCreator")
+  updatedFieldMetadata           AdminFieldMetadata[]                   @relation("AdminFieldMetadataUpdater")
+  createdDiagnosisDatasets       DiagnosisDataset[]                     @relation("DiagnosisDatasetCreator")
+  updatedDiagnosisDatasets       DiagnosisDataset[]                     @relation("DiagnosisDatasetUpdater")
+  approvedDiagnosisDatasets      DiagnosisDataset[]                     @relation("DiagnosisDatasetApprover")
+  createdDiagnosisRecords        DiagnosisRecord[]                      @relation("DiagnosisRecordCreator")
+  updatedDiagnosisRecords        DiagnosisRecord[]                      @relation("DiagnosisRecordUpdater")
+  approvedDiagnosisRecords       DiagnosisRecord[]                      @relation("DiagnosisRecordApprover")
+  lockedDiagnosisRecords         DiagnosisRecord[]                      @relation("DiagnosisRecordLocker")
+  adminAuditLogs                 AdminAuditLog[]                        @relation("AdminAuditActor")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -173,46 +188,46 @@ model Course {
 }
 
 model CourseVersion {
-  id                    String              @id @default(cuid())
-  courseId              String
-  createdById           String
-  sourceVersionId       String?
-  versionNumber         Int
-  status                CourseVersionStatus @default(DRAFT)
-  designRecord          String              @default("{}")
-  creatorReviewReadyAt  DateTime?
-  submittedAt           DateTime?
-  returnedAt            DateTime?
-  approvedAt            DateTime?
-  publishedAt           DateTime?
-  replacedAt            DateTime?
-  archivedAt            DateTime?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  id                   String              @id @default(cuid())
+  courseId             String
+  createdById          String
+  sourceVersionId      String?
+  versionNumber        Int
+  status               CourseVersionStatus @default(DRAFT)
+  designRecord         String              @default("{}")
+  creatorReviewReadyAt DateTime?
+  submittedAt          DateTime?
+  returnedAt           DateTime?
+  approvedAt           DateTime?
+  publishedAt          DateTime?
+  replacedAt           DateTime?
+  archivedAt           DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 
-  course            Course                     @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  createdBy         User                       @relation("VersionCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  sourceVersion     CourseVersion?            @relation("VersionRevisionSource", fields: [sourceVersionId], references: [id], onDelete: SetNull)
-  revisionVersions  CourseVersion[]           @relation("VersionRevisionSource")
-  workflowSteps     CourseWorkflowStepRecord[]
-  setup             CourseSetup?
-  diagnosis         CourseDiagnosis?
-  analysisHandover  CourseAnalysisHandover?
-  capacityMap       CourseCapacityMap?
-  actionMap         CourseActionMap?
-  storyboard        CourseStoryboard?
-  designHandover    CourseDesignHandover?
-  reviewRecord      CourseReviewRecord?
-  monitoringRecord  CourseMonitoringRecord?
-  revisionRecord    CourseRevisionRecord?
-  practicalProofConfig CoursePracticalProofConfig?
-  modules           CourseModule[]
-  events            CourseLifecycleEvent[]
-  lessonProgress    LearnerLessonProgress[]
-  finalTestAttempts LearnerFinalTestAttempt[]
-  certificates       LearnerCertificate[]
+  course                    Course                            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy                 User                              @relation("VersionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  sourceVersion             CourseVersion?                    @relation("VersionRevisionSource", fields: [sourceVersionId], references: [id], onDelete: SetNull)
+  revisionVersions          CourseVersion[]                   @relation("VersionRevisionSource")
+  workflowSteps             CourseWorkflowStepRecord[]
+  setup                     CourseSetup?
+  diagnosis                 CourseDiagnosis?
+  analysisHandover          CourseAnalysisHandover?
+  capacityMap               CourseCapacityMap?
+  actionMap                 CourseActionMap?
+  storyboard                CourseStoryboard?
+  designHandover            CourseDesignHandover?
+  reviewRecord              CourseReviewRecord?
+  monitoringRecord          CourseMonitoringRecord?
+  revisionRecord            CourseRevisionRecord?
+  practicalProofConfig      CoursePracticalProofConfig?
+  modules                   CourseModule[]
+  events                    CourseLifecycleEvent[]
+  lessonProgress            LearnerLessonProgress[]
+  finalTestAttempts         LearnerFinalTestAttempt[]
+  certificates              LearnerCertificate[]
   practicalProofSubmissions LearnerPracticalProofSubmission[]
-  verifiedAchievements LearnerVerifiedAchievement[]
+  verifiedAchievements      LearnerVerifiedAchievement[]
 
   @@unique([courseId, versionNumber])
   @@index([courseId, status])
@@ -277,28 +292,28 @@ model CourseDiagnosis {
 }
 
 model CourseAnalysisHandover {
-  id                                  String    @id @default(cuid())
-  courseVersionId                     String    @unique
-  capacityArea                        String    @default("")
-  subCapacityArea                     String    @default("")
-  linkedStandard                      String    @default("")
-  capacityIndicator                   String    @default("")
-  validatedCapacityGap                String    @default("")
-  baseline                            String    @default("")
-  desiredPractice                     String    @default("")
-  rootCauseSummary                    String    @default("")
-  ksmeRoute                           String    @default("")
-  separableKnowledgeSkillComponent    String    @default("")
-  interventionDecision                String    @default("")
-  analysisGateDecision                String    @default("")
-  referralOrFurtherDiagnosisNote      String    @default("")
-  safeguardsNote                      String    @default("")
-  evaluationAnchor                    String    @default("")
-  status                              String    @default("DRAFT")
-  lockedAt                            DateTime?
-  lockedById                          String?
-  createdAt                           DateTime  @default(now())
-  updatedAt                           DateTime  @updatedAt
+  id                               String    @id @default(cuid())
+  courseVersionId                  String    @unique
+  capacityArea                     String    @default("")
+  subCapacityArea                  String    @default("")
+  linkedStandard                   String    @default("")
+  capacityIndicator                String    @default("")
+  validatedCapacityGap             String    @default("")
+  baseline                         String    @default("")
+  desiredPractice                  String    @default("")
+  rootCauseSummary                 String    @default("")
+  ksmeRoute                        String    @default("")
+  separableKnowledgeSkillComponent String    @default("")
+  interventionDecision             String    @default("")
+  analysisGateDecision             String    @default("")
+  referralOrFurtherDiagnosisNote   String    @default("")
+  safeguardsNote                   String    @default("")
+  evaluationAnchor                 String    @default("")
+  status                           String    @default("DRAFT")
+  lockedAt                         DateTime?
+  lockedById                       String?
+  createdAt                        DateTime  @default(now())
+  updatedAt                        DateTime  @updatedAt
 
   courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
 
@@ -391,29 +406,29 @@ model CourseReviewRecord {
 }
 
 model CoursePracticalProofConfig {
-  id                              String   @id @default(cuid())
-  courseVersionId                 String   @unique
-  enabled                         Boolean  @default(false)
-  proofTitle                      String   @default("")
-  proofPurpose                    String   @default("")
-  acceptedProofType               String   @default("")
-  submissionFormat                String   @default("")
-  instructions                    String   @default("")
-  safetyGuidance                  String   @default("")
-  reviewCriteria                  String   @default("")
-  capacityArea                    String   @default("")
-  subCapacityArea                 String   @default("")
-  linkedStandard                  String   @default("")
-  capacityIndicator               String   @default("")
-  visibilityDefault               String   @default("PRIVATE")
-  donorVisibilityEnabled          Boolean  @default(false)
-  certificateSeparationConfirmed  Boolean  @default(false)
-  specialistReviewRequired        Boolean  @default(false)
-  createdAt                       DateTime @default(now())
-  updatedAt                       DateTime @updatedAt
+  id                             String   @id @default(cuid())
+  courseVersionId                String   @unique
+  enabled                        Boolean  @default(false)
+  proofTitle                     String   @default("")
+  proofPurpose                   String   @default("")
+  acceptedProofType              String   @default("")
+  submissionFormat               String   @default("")
+  instructions                   String   @default("")
+  safetyGuidance                 String   @default("")
+  reviewCriteria                 String   @default("")
+  capacityArea                   String   @default("")
+  subCapacityArea                String   @default("")
+  linkedStandard                 String   @default("")
+  capacityIndicator              String   @default("")
+  visibilityDefault              String   @default("PRIVATE")
+  donorVisibilityEnabled         Boolean  @default(false)
+  certificateSeparationConfirmed Boolean  @default(false)
+  specialistReviewRequired       Boolean  @default(false)
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
 
-  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
-  submissions   LearnerPracticalProofSubmission[]
+  courseVersion        CourseVersion                     @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  submissions          LearnerPracticalProofSubmission[]
   verifiedAchievements LearnerVerifiedAchievement[]
 
   @@index([enabled])
@@ -421,34 +436,34 @@ model CoursePracticalProofConfig {
 }
 
 model LearnerPracticalProofSubmission {
-  id                                  String   @id @default(cuid())
-  userId                              String
-  courseVersionId                     String
-  practicalProofConfigId              String
-  reviewerId                          String?
-  status                              String   @default("SUBMITTED")
-  visibilityDefault                   String   @default("PRIVATE")
-  proofText                           String   @default("")
-  evidenceLink                        String   @default("")
-  safetyAcknowledged                  Boolean  @default(false)
-  certificateSeparationAcknowledged   Boolean  @default(false)
-  donorVisibilityConsent              Boolean  @default(false)
-  aiVerificationUsed                  Boolean  @default(false)
-  learnerFeedback                     String   @default("")
-  internalReviewNote                  String   @default("")
-  requiredAction                      String   @default("")
-  reviewChecklist                     String   @default("{}")
-  redactionRequired                   Boolean  @default(false)
-  specialistReviewRequired            Boolean  @default(false)
-  reviewedAt                          DateTime?
-  submittedAt                         DateTime @default(now())
-  createdAt                           DateTime @default(now())
-  updatedAt                           DateTime @updatedAt
+  id                                String    @id @default(cuid())
+  userId                            String
+  courseVersionId                   String
+  practicalProofConfigId            String
+  reviewerId                        String?
+  status                            String    @default("SUBMITTED")
+  visibilityDefault                 String    @default("PRIVATE")
+  proofText                         String    @default("")
+  evidenceLink                      String    @default("")
+  safetyAcknowledged                Boolean   @default(false)
+  certificateSeparationAcknowledged Boolean   @default(false)
+  donorVisibilityConsent            Boolean   @default(false)
+  aiVerificationUsed                Boolean   @default(false)
+  learnerFeedback                   String    @default("")
+  internalReviewNote                String    @default("")
+  requiredAction                    String    @default("")
+  reviewChecklist                   String    @default("{}")
+  redactionRequired                 Boolean   @default(false)
+  specialistReviewRequired          Boolean   @default(false)
+  reviewedAt                        DateTime?
+  submittedAt                       DateTime  @default(now())
+  createdAt                         DateTime  @default(now())
+  updatedAt                         DateTime  @updatedAt
 
-  user                 User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewer             User?                      @relation("PracticalProofReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
-  courseVersion        CourseVersion              @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
-  practicalProofConfig CoursePracticalProofConfig @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
+  user                 User                                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewer             User?                                  @relation("PracticalProofReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  courseVersion        CourseVersion                          @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  practicalProofConfig CoursePracticalProofConfig             @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
   events               LearnerPracticalProofSubmissionEvent[]
   verifiedAchievement  LearnerVerifiedAchievement?
 
@@ -483,7 +498,7 @@ model LearnerPracticalProofSubmissionEvent {
   createdAt                DateTime @default(now())
 
   submission LearnerPracticalProofSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  actor      User? @relation("PracticalProofEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actor      User?                           @relation("PracticalProofEventActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([submissionId, createdAt])
   @@index([actorId])
@@ -562,7 +577,7 @@ model CourseModule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  version CourseVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  version CourseVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
   lessons CourseLesson[]
 
   @@unique([versionId, sortOrder])
@@ -577,8 +592,8 @@ model CourseLesson {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  module CourseModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  blocks LessonBlock[]
+  module          CourseModule            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  blocks          LessonBlock[]
   learnerProgress LearnerLessonProgress[]
 
   @@unique([moduleId, sortOrder])
@@ -586,18 +601,18 @@ model CourseLesson {
 }
 
 model LessonBlock {
-  id        String          @id @default(cuid())
-  lessonId  String
-  type      LessonBlockType
-  sortOrder Int
-  content   String          @default("{}")
-  origin    String          @default("DESIGN_REQUIRED")
-  justification String      @default("")
-  purposeLink   String      @default("")
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  lessonId      String
+  type          LessonBlockType
+  sortOrder     Int
+  content       String          @default("{}")
+  origin        String          @default("DESIGN_REQUIRED")
+  justification String          @default("")
+  purposeLink   String          @default("")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
-  lesson CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson            CourseLesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   finalTestAttempts LearnerFinalTestAttempt[]
 
   @@unique([lessonId, sortOrder])
@@ -656,8 +671,8 @@ model LearnerCertificate {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseVersion CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  user          User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseVersion CourseVersion                   @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
   statusEvents  LearnerCertificateStatusEvent[]
 
   @@unique([userId, courseVersionId])
@@ -696,4 +711,244 @@ model CourseLifecycleEvent {
 
   @@index([courseVersionId, createdAt])
   @@index([actorId])
+}
+
+model AdminLookupCategory {
+  id               String   @id @default(cuid())
+  categoryKey      String   @unique
+  categoryName     String
+  workflowPhase    String   @default("cross-workflow")
+  description      String   @default("")
+  isSystemCategory Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  createdById      String?
+  updatedById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdBy User?              @relation("AdminLookupCategoryCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?              @relation("AdminLookupCategoryUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  values    AdminLookupValue[]
+
+  @@index([workflowPhase])
+  @@index([isActive])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("admin_lookup_categories")
+}
+
+model AdminLookupValue {
+  id                   String   @id @default(cuid())
+  categoryId           String
+  parentValueId        String?
+  valueKey             String
+  displayLabel         String
+  description          String   @default("")
+  helpText             String   @default("")
+  displayOrder         Int      @default(0)
+  isActive             Boolean  @default(true)
+  isSystemLocked       Boolean  @default(false)
+  visibleToAdmin       Boolean  @default(true)
+  visibleToCreator     Boolean  @default(true)
+  visibleToReviewer    Boolean  @default(true)
+  visibleToParticipant Boolean  @default(false)
+  visibleInMonitoring  Boolean  @default(false)
+  changeReason         String   @default("")
+  createdById          String?
+  updatedById          String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  category    AdminLookupCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  parentValue AdminLookupValue?   @relation("AdminLookupValueHierarchy", fields: [parentValueId], references: [id], onDelete: SetNull)
+  childValues AdminLookupValue[]  @relation("AdminLookupValueHierarchy")
+  createdBy   User?               @relation("AdminLookupValueCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?               @relation("AdminLookupValueUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([categoryId, valueKey])
+  @@index([categoryId, isActive])
+  @@index([parentValueId])
+  @@index([displayOrder])
+  @@index([visibleToCreator])
+  @@index([visibleToReviewer])
+  @@index([visibleToParticipant])
+  @@index([visibleInMonitoring])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("admin_lookup_values")
+}
+
+model AdminFieldMetadata {
+  id                   String   @id @default(cuid())
+  workflowPhase        String
+  formSection          String
+  metadataKey          String
+  fieldLabel           String
+  fieldType            String   @default("text")
+  lookupCategoryKey    String?
+  requiredRule         String   @default("optional")
+  editableByCreator    Boolean  @default(false)
+  editableByAdmin      Boolean  @default(true)
+  readOnlyAfterLock    Boolean  @default(true)
+  inheritedFrom        String   @default("")
+  visibleToCreator     Boolean  @default(true)
+  visibleToReviewer    Boolean  @default(true)
+  visibleToParticipant Boolean  @default(false)
+  visibleInDashboard   Boolean  @default(false)
+  validationRule       String   @default("")
+  helpText             String   @default("")
+  displayOrder         Int      @default(0)
+  isActive             Boolean  @default(true)
+  createdById          String?
+  updatedById          String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  createdBy User? @relation("AdminFieldMetadataCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("AdminFieldMetadataUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([workflowPhase, metadataKey])
+  @@index([workflowPhase, formSection])
+  @@index([lookupCategoryKey])
+  @@index([isActive])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("admin_field_metadata")
+}
+
+model DiagnosisDataset {
+  id                    String    @id @default(cuid())
+  datasetCode           String    @unique
+  datasetTitle          String
+  assessmentPeriodStart DateTime?
+  assessmentPeriodEnd   DateTime?
+  programOrProject      String    @default("")
+  assessmentPurpose     String    @default("")
+  regionsCovered        String    @default("[]")
+  organizationGroup     String    @default("")
+  dataCollectionMethods String    @default("[]")
+  approvalStatus        String    @default("DRAFT")
+  visibilityScope       String    @default("ADMIN_ONLY")
+  notes                 String    @default("")
+  approvedById          String?
+  approvedAt            DateTime?
+  archivedAt            DateTime?
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  approvedBy User?             @relation("DiagnosisDatasetApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  createdBy  User?             @relation("DiagnosisDatasetCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy  User?             @relation("DiagnosisDatasetUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  records    DiagnosisRecord[]
+
+  @@index([approvalStatus])
+  @@index([visibilityScope])
+  @@index([archivedAt])
+  @@index([approvedById])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("diagnosis_datasets")
+}
+
+model DiagnosisRecord {
+  id                               String    @id @default(cuid())
+  datasetId                        String
+  diagnosisCode                    String
+  diagnosisTitle                   String
+  organizationId                   String?
+  organizationGroup                String    @default("")
+  region                           String    @default("")
+  sectorThematicArea               String    @default("")
+  coreCapacityArea                 String    @default("")
+  capacityPracticeArea             String    @default("")
+  subCapacity                      String    @default("")
+  indicatorStandardLink            String    @default("")
+  targetAudience                   String    @default("")
+  currentBaseline                  String    @default("")
+  desiredPractice                  String    @default("")
+  capacityGapStatement             String    @default("")
+  evidenceSource                   String    @default("")
+  rootCauseSummary                 String    @default("")
+  ksmeRoute                        String    @default("")
+  separableKnowledgeSkillComponent String    @default("")
+  nonCourseBarrierSummary          String    @default("")
+  courseFitDecision                String    @default("")
+  recommendedInterventionRoute     String    @default("")
+  recommendedCourseOrSupportTitle  String    @default("")
+  priorityLevel                    String    @default("")
+  priorityRank                     Int?
+  safeguardingRiskLevel            String    @default("")
+  dataSensitivityLevel             String    @default("LOW")
+  noHarmNote                       String    @default("")
+  safeSummaryForDashboard          String    @default("")
+  evaluationAnchor                 String    @default("")
+  monitoringSignal                 String    @default("")
+  possiblePracticalProof           String    @default("")
+  verifiedAchievementExample       String    @default("")
+  approvalStatus                   String    @default("DRAFT")
+  visibilityScope                  String    @default("ADMIN_ONLY")
+  courseCreationStatus             String    @default("NOT_SELECTED")
+  isLocked                         Boolean   @default(false)
+  isActive                         Boolean   @default(true)
+  approvedById                     String?
+  approvedAt                       DateTime?
+  lockedById                       String?
+  lockedAt                         DateTime?
+  archivedAt                       DateTime?
+  changeReason                     String    @default("")
+  createdById                      String?
+  updatedById                      String?
+  createdAt                        DateTime  @default(now())
+  updatedAt                        DateTime  @updatedAt
+
+  dataset      DiagnosisDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  organization Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  approvedBy   User?            @relation("DiagnosisRecordApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  lockedBy     User?            @relation("DiagnosisRecordLocker", fields: [lockedById], references: [id], onDelete: SetNull)
+  createdBy    User?            @relation("DiagnosisRecordCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?            @relation("DiagnosisRecordUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([datasetId, diagnosisCode])
+  @@index([datasetId, approvalStatus])
+  @@index([organizationId])
+  @@index([region])
+  @@index([coreCapacityArea])
+  @@index([capacityPracticeArea])
+  @@index([ksmeRoute])
+  @@index([courseFitDecision])
+  @@index([dataSensitivityLevel])
+  @@index([visibilityScope])
+  @@index([courseCreationStatus])
+  @@index([isActive])
+  @@index([isLocked])
+  @@index([approvedById])
+  @@index([lockedById])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("diagnosis_records")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  beforeJson String   @default("")
+  afterJson  String   @default("")
+  reason     String   @default("")
+  riskLevel  String   @default("LOW")
+  metadata   String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([riskLevel])
+  @@index([createdAt])
+  @@map("admin_audit_log")
 }
