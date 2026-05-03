@@ -135,10 +135,39 @@ export default async function DiagnosisPage({
 
   return (
     <WorkspaceShell eyebrow="Diagnosis" title={editable.course.title}>
-      <p>
-        Confirm the practical CSO challenge, evidence, K/S/M/E route, safeguards,
-        and evaluation anchor before Design opens.
-      </p>
+      <div className="diagnosis-hero">
+        <div>
+          <p>
+            Confirm the practical CSO challenge, evidence, K/S/M/E route,
+            safeguards, and evaluation anchor before Design opens.
+          </p>
+          <div className="review-hero-status" aria-label="Diagnosis status">
+            <span
+              className={`status-badge ${
+                handoverLocked ? "status-badge-ready" : ""
+              }`}
+            >
+              {handover ? getAnalysisHandoverStatusLabel(handover) : "Draft not saved"}
+            </span>
+            <span
+              className={`status-badge ${
+                canProceed ? "status-badge-ready" : "status-badge-blocked"
+              }`}
+            >
+              {canProceed ? "Design can open" : "Design waits"}
+            </span>
+            <span className="status-badge">
+              {diagnosis?.ksmeGap
+                ? diagnosis.ksmeGap.toUpperCase()
+                : "KSME not set"}
+            </span>
+          </div>
+        </div>
+        <div className="diagnosis-hero-next">
+          <strong>Analysis route check</strong>
+          <span>{routeDecision}</span>
+        </div>
+      </div>
       {resolvedSearchParams?.saved === "1" ? (
         <p className="workspace-note">
           Analysis Handover saved as a draft. Lock it for Design when the route
@@ -197,113 +226,140 @@ export default async function DiagnosisPage({
         <>
 
       <form action={saveAction} className="setup-form">
-        <label>
-          <span>What training or support is being requested?</span>
-          <textarea
-            name="surfaceRequest"
-            required
-            defaultValue={diagnosis?.surfaceRequest}
-          />
-        </label>
-        <label>
-          <span>What evidence shows a real performance or practice gap?</span>
-          <textarea
-            name="performanceEvidence"
-            required
-            defaultValue={diagnosis?.performanceEvidence}
-          />
-        </label>
-        <div className="form-grid">
+        <section className="setup-form-section" aria-labelledby="diagnosis-evidence-title">
+          <div>
+            <h2 id="diagnosis-evidence-title">Diagnosis evidence</h2>
+            <p className="section-subcopy">
+              Confirm the request, evidence, current practice, and desired
+              practice before routing the work.
+            </p>
+          </div>
           <label>
-            <span>Current reality</span>
+            <span>What training or support is being requested?</span>
             <textarea
-              name="currentReality"
+              name="surfaceRequest"
               required
-              defaultValue={diagnosis?.currentReality}
+              defaultValue={diagnosis?.surfaceRequest}
             />
           </label>
           <label>
-            <span>Desired reality</span>
+            <span>What evidence shows a real performance or practice gap?</span>
             <textarea
-              name="desiredReality"
+              name="performanceEvidence"
               required
-              defaultValue={diagnosis?.desiredReality}
-            />
-          </label>
-        </div>
-        <label>
-          <span>Affected learner group</span>
-          <input
-            name="affectedLearnerGroup"
-            required
-            defaultValue={diagnosis?.affectedLearnerGroup}
-          />
-        </label>
-        <fieldset>
-          <legend>Evidence source</legend>
-          <label>
-            <span>Source or reference</span>
-            <input
-              name="evidenceSource"
-              required
-              defaultValue={evidenceSources.source}
+              defaultValue={diagnosis?.performanceEvidence}
             />
           </label>
           <div className="form-grid">
             <label>
-              <span>Evidence type</span>
-              <input
-                name="evidenceType"
+              <span>Current reality</span>
+              <textarea
+                name="currentReality"
                 required
-                defaultValue={evidenceSources.type}
+                defaultValue={diagnosis?.currentReality}
               />
             </label>
             <label>
-              <span>Evidence date or period</span>
-              <input name="evidencePeriod" defaultValue={evidenceSources.period} />
+              <span>Desired reality</span>
+              <textarea
+                name="desiredReality"
+                required
+                defaultValue={diagnosis?.desiredReality}
+              />
             </label>
           </div>
-        </fieldset>
-        <div className="form-grid">
           <label>
-            <span>KSME gap</span>
-            <select name="ksmeGap" required defaultValue={diagnosis?.ksmeGap}>
-              <option value="">Choose the main gap</option>
-              <option value="knowledge">Knowledge</option>
-              <option value="skill">Skill</option>
-              <option value="motivation">Motivation</option>
-              <option value="environment">Environment or resource condition</option>
-              <option value="mixed">Mixed</option>
-            </select>
-          </label>
-          <label>
-            <span>Course-fit decision</span>
-            <select
-              name="courseFitDecision"
+            <span>Affected learner group</span>
+            <input
+              name="affectedLearnerGroup"
               required
-              defaultValue={diagnosis?.courseFitDecision}
-            >
-              <option value="">Choose a decision</option>
-              <option value="course-fit">A course is likely appropriate</option>
-              <option value="needs-more-evidence">
-                Needs further diagnosis
-              </option>
-              <option value="alternative-intervention">
-                Recommend another intervention
-              </option>
-            </select>
+              defaultValue={diagnosis?.affectedLearnerGroup}
+            />
           </label>
-        </div>
-        <label>
-          <span>Alternative intervention recommendation</span>
-          <textarea
-            name="alternativeIntervention"
-            defaultValue={diagnosis?.alternativeIntervention}
-          />
-        </label>
+          <div className="setup-subsection">
+            <h3>Evidence source</h3>
+            <label>
+              <span>Source or reference</span>
+              <input
+                name="evidenceSource"
+                required
+                defaultValue={evidenceSources.source}
+              />
+            </label>
+            <div className="form-grid">
+              <label>
+                <span>Evidence type</span>
+                <input
+                  name="evidenceType"
+                  required
+                  defaultValue={evidenceSources.type}
+                />
+              </label>
+              <label>
+                <span>Evidence date or period</span>
+                <input
+                  name="evidencePeriod"
+                  defaultValue={evidenceSources.period}
+                />
+              </label>
+            </div>
+          </div>
+        </section>
 
-        <fieldset>
-          <legend>Analysis-to-Design Handover</legend>
+        <section className="setup-form-section" aria-labelledby="diagnosis-route-title">
+          <div>
+            <h2 id="diagnosis-route-title">Course-fit route</h2>
+            <p className="section-subcopy">
+              Decide whether the gap is a course-fit and whether a separable
+              Knowledge or Skill component exists.
+            </p>
+          </div>
+          <div className="form-grid">
+            <label>
+              <span>KSME gap</span>
+              <select name="ksmeGap" required defaultValue={diagnosis?.ksmeGap}>
+                <option value="">Choose the main gap</option>
+                <option value="knowledge">Knowledge</option>
+                <option value="skill">Skill</option>
+                <option value="motivation">Motivation</option>
+                <option value="environment">Environment or resource condition</option>
+                <option value="mixed">Mixed</option>
+              </select>
+            </label>
+            <label>
+              <span>Course-fit decision</span>
+              <select
+                name="courseFitDecision"
+                required
+                defaultValue={diagnosis?.courseFitDecision}
+              >
+                <option value="">Choose a decision</option>
+                <option value="course-fit">A course is likely appropriate</option>
+                <option value="needs-more-evidence">
+                  Needs further diagnosis
+                </option>
+                <option value="alternative-intervention">
+                  Recommend another intervention
+                </option>
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Alternative intervention recommendation</span>
+            <textarea
+              name="alternativeIntervention"
+              defaultValue={diagnosis?.alternativeIntervention}
+            />
+          </label>
+        </section>
+
+        <section className="setup-form-section" aria-labelledby="analysis-handover-title">
+          <div>
+            <h2 id="analysis-handover-title">Analysis-to-Design Handover</h2>
+            <p className="section-subcopy">
+              The locked evidence package Design will use as its source.
+            </p>
+          </div>
           <div className="form-grid">
             <label>
               <span>Capacity area</span>
@@ -450,7 +506,7 @@ export default async function DiagnosisPage({
               defaultValue={handover?.evaluationAnchor}
             />
           </label>
-        </fieldset>
+        </section>
 
         <div className="next-step-panel">
           <h2>Analysis route check</h2>
@@ -481,8 +537,25 @@ export default async function DiagnosisPage({
       </form>
 
       {handover ? (
-        <section className="studio-section" aria-labelledby="lock-analysis-title">
-          <h2 id="lock-analysis-title">Lock Analysis for Design</h2>
+        <section
+          className="studio-section setup-form-section"
+          aria-labelledby="lock-analysis-title"
+        >
+          <div className="section-heading-row">
+            <div>
+              <h2 id="lock-analysis-title">Lock Analysis for Design</h2>
+              <p className="section-subcopy">
+                Locking makes this handover the read-only Design reference.
+              </p>
+            </div>
+            <span
+              className={`status-badge ${
+                canProceed ? "status-badge-ready" : "status-badge-blocked"
+              }`}
+            >
+              {canProceed ? "Ready to lock" : "Not ready"}
+            </span>
+          </div>
           <div className="context-grid">
             <article>
               <strong>Handover status</strong>
