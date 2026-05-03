@@ -446,6 +446,34 @@ select {
   color: var(--dec-color-muted-text);
 }
 
+.learner-dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.36fr);
+  gap: var(--dec-space-4);
+  align-items: start;
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-left: 4px solid var(--dec-color-secondary);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.learner-dashboard-hero p {
+  margin: 0 0 var(--dec-space-3);
+  color: var(--dec-color-muted-text);
+}
+
+.learner-dashboard-card {
+  align-items: stretch;
+}
+
+.learner-dashboard-card-main {
+  display: grid;
+  gap: var(--dec-space-4);
+  min-width: 0;
+}
+
 .learner-module-card {
   align-items: stretch;
 }
@@ -1557,6 +1585,7 @@ select {
   .build-hero,
   .studio-course-hero,
   .learner-course-hero,
+  .learner-dashboard-hero,
   .build-studio-layout,
   .form-grid {
     grid-template-columns: 1fr;
