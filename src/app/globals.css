@@ -315,6 +315,102 @@ select {
   color: var(--dec-color-muted-text);
 }
 
+.studio-course-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.34fr);
+  gap: var(--dec-space-4);
+  align-items: start;
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-left: 4px solid var(--dec-color-primary);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.studio-course-hero p {
+  margin: 0 0 var(--dec-space-3);
+  color: var(--dec-color-muted-text);
+}
+
+.studio-course-hero-action {
+  display: grid;
+  gap: var(--dec-space-2);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-surface);
+}
+
+.studio-course-hero-action strong,
+.studio-course-card-heading h2 {
+  color: var(--dec-color-text);
+}
+
+.studio-course-hero-action span,
+.studio-course-card-heading p {
+  color: var(--dec-color-muted-text);
+}
+
+.studio-course-card {
+  align-items: stretch;
+}
+
+.studio-course-card-main {
+  display: grid;
+  gap: var(--dec-space-4);
+  min-width: 0;
+}
+
+.studio-course-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dec-space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.studio-course-card-heading h2,
+.studio-course-card-heading p {
+  margin: 0;
+}
+
+.studio-workflow-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dec-space-2);
+}
+
+.workflow-chip {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-surface);
+  color: var(--dec-color-muted-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.workflow-chip-complete {
+  border-color: var(--dec-color-secondary);
+  background: #f3f9ec;
+  color: var(--dec-color-text);
+}
+
+.workflow-chip-active,
+.workflow-chip-ready {
+  border-color: var(--dec-color-primary);
+  background: #edf7fd;
+  color: var(--dec-color-text);
+}
+
+.workflow-chip-locked {
+  background: var(--dec-color-background);
+}
+
 .public-page {
   min-height: 100vh;
   background: var(--dec-color-background);
@@ -1399,6 +1495,7 @@ select {
   .readiness-grid,
   .decision-grid,
   .build-hero,
+  .studio-course-hero,
   .build-studio-layout,
   .form-grid {
     grid-template-columns: 1fr;

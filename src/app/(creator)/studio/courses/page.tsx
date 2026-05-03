@@ -31,12 +31,58 @@ export default async function StudioCoursesPage({
     organizationId: identity.user.organizationId,
     role: identity.session.role,
   });
+  const submittedCount = courses.filter(
+    (course) => course.versions[0]?.status === "SUBMITTED",
+  ).length;
+  const returnedCount = courses.filter(
+    (course) => course.versions[0]?.status === "RETURNED",
+  ).length;
+  const activeBuildCount = courses.filter((course) => {
+    const version = course.versions[0];
+
+    if (!version) {
+      return false;
+    }
+
+    const buildStatus = getWorkflowStepStatus(
+      version.workflowSteps,
+      CourseWorkflowStep.BUILD,
+    );
+
+    return buildStatus === WorkflowStepStatus.IN_PROGRESS;
+  }).length;
 
   return (
     <WorkspaceShell eyebrow="Course Creator Studio" title="My courses">
-      <p>
-        Manage DEC courses you are preparing, reviewing, revising, or monitoring.
-      </p>
+      <div className="studio-course-hero">
+        <div>
+          <p>
+            Manage DEC courses you are preparing, reviewing, revising, or
+            monitoring.
+          </p>
+          <div className="review-hero-status" aria-label="Studio course summary">
+            <span className="status-badge">{courses.length} total</span>
+            <span className="status-badge status-badge-ready">
+              {activeBuildCount} in build
+            </span>
+            <span className="status-badge">{submittedCount} submitted</span>
+            <span
+              className={`status-badge ${
+                returnedCount > 0 ? "status-badge-blocked" : ""
+              }`}
+            >
+              {returnedCount} returned
+            </span>
+          </div>
+        </div>
+        <div className="studio-course-hero-action">
+          <strong>Next creator move</strong>
+          <span>
+            Open the course with the most urgent status, or start a new course
+            from setup.
+          </span>
+        </div>
+      </div>
       {resolvedSearchParams?.submitted === "1" ? (
         <p className="workspace-note">
           Course submitted for formal review. Reviewers can now see it in their
@@ -160,22 +206,46 @@ export default async function StudioCoursesPage({
                 : setupStatus === WorkflowStepStatus.COMPLETE
                   ? "Continue diagnosis"
                   : "Continue setup";
+            const workflowSteps = [
+              ["Setup", setupStatus],
+              ["Diagnosis", diagnosisStatus],
+              ["Capacity", capacityMapStatus],
+              ["Action", actionMapStatus],
+              ["Storyboard", storyboardStatus],
+              ["Build", buildStatus],
+              ["Preview", previewStatus],
+              ["Review", creatorReviewStatus],
+            ] as const;
 
             return (
-              <article className="course-row" key={course.id}>
-                <div>
-                  <h2>{course.title}</h2>
-                  <p>
-                    {getCourseStatusLabel(version?.status)} · Course Setup{" "}
-                    {formatStepStatus(setupStatus)} · Diagnosis{" "}
-                    {formatStepStatus(diagnosisStatus)} · Capacity Map{" "}
-                    {formatStepStatus(capacityMapStatus)} · Action Map{" "}
-                    {formatStepStatus(actionMapStatus)} · Storyboard{" "}
-                    {formatStepStatus(storyboardStatus)} · Build{" "}
-                    {formatStepStatus(buildStatus)} · Preview{" "}
-                    {formatStepStatus(previewStatus)} · Creator Review{" "}
-                    {formatStepStatus(creatorReviewStatus)}
-                  </p>
+              <article className="course-row studio-course-card" key={course.id}>
+                <div className="studio-course-card-main">
+                  <div className="studio-course-card-heading">
+                    <div>
+                      <h2>{course.title}</h2>
+                      <p>{getCourseStatusLabel(version?.status)}</p>
+                    </div>
+                    <span
+                      className={`status-badge ${getCourseBadgeClass(
+                        version?.status,
+                      )}`}
+                    >
+                      {getCourseStatusLabel(version?.status)}
+                    </span>
+                  </div>
+                  <div
+                    className="studio-workflow-strip"
+                    aria-label={`Workflow status for ${course.title}`}
+                  >
+                    {workflowSteps.map(([label, status]) => (
+                      <span
+                        className={`workflow-chip ${getStepChipClass(status)}`}
+                        key={label}
+                      >
+                        {label}: {formatStepStatus(status)}
+                      </span>
+                    ))}
+                  </div>
                   {returnGuidance ? (
                     <div className="next-step-panel">
                       <h3>{returnGuidance.decisionLabel}</h3>
@@ -195,7 +265,14 @@ export default async function StudioCoursesPage({
                     </div>
                   ) : null}
                 </div>
-                <Link href={continueHref}>{continueLabel}</Link>
+                <Link
+                  className={`workspace-link ${
+                    version?.status === "SUBMITTED" ? "" : "primary"
+                  }`}
+                  href={continueHref}
+                >
+                  {continueLabel}
+                </Link>
               </article>
             );
           })}
@@ -235,5 +312,30 @@ function formatStepStatus(status: string | undefined) {
       return "locked";
     default:
       return "ready";
+  }
+}
+
+function getStepChipClass(status: string | undefined) {
+  switch (status) {
+    case "COMPLETE":
+      return "workflow-chip-complete";
+    case "IN_PROGRESS":
+      return "workflow-chip-active";
+    case "LOCKED":
+      return "workflow-chip-locked";
+    default:
+      return "workflow-chip-ready";
+  }
+}
+
+function getCourseBadgeClass(status: string | undefined) {
+  switch (status) {
+    case "RETURNED":
+      return "status-badge-blocked";
+    case "PUBLISHED":
+    case "SUBMITTED":
+      return "status-badge-published";
+    default:
+      return "status-badge-ready";
   }
 }
