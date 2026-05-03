@@ -204,6 +204,197 @@ select {
   color: var(--dec-color-text);
 }
 
+.workspace-copy:has(.admin-dashboard) {
+  max-width: none;
+}
+
+.admin-dashboard {
+  display: grid;
+  gap: var(--dec-space-6);
+  margin-top: var(--dec-space-4);
+}
+
+.admin-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-left: 4px solid var(--dec-color-primary);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.admin-hero h2,
+.admin-section-heading h2,
+.admin-readiness-card h3,
+.admin-empty-panel h2 {
+  margin: 0;
+  color: var(--dec-color-text);
+}
+
+.admin-hero p,
+.admin-section-heading p,
+.admin-stat-card p,
+.admin-readiness-card p,
+.admin-task-card p,
+.admin-rule-card p,
+.admin-empty-panel p {
+  margin: 0;
+  color: var(--dec-color-muted-text);
+}
+
+.admin-section {
+  display: grid;
+  gap: var(--dec-space-3);
+}
+
+.admin-section-heading {
+  display: grid;
+  gap: var(--dec-space-1);
+}
+
+.admin-metrics-grid,
+.admin-card-grid,
+.admin-task-grid,
+.admin-rule-grid {
+  display: grid;
+  gap: var(--dec-space-3);
+}
+
+.admin-metrics-grid {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.admin-card-grid,
+.admin-task-grid {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.admin-rule-grid {
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.admin-stat-card,
+.admin-readiness-card,
+.admin-task-card,
+.admin-rule-card,
+.admin-empty-panel,
+.admin-table-card {
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-surface);
+}
+
+.admin-stat-card,
+.admin-readiness-card,
+.admin-task-card,
+.admin-rule-card,
+.admin-empty-panel {
+  padding: var(--dec-space-4);
+}
+
+.admin-stat-card {
+  display: grid;
+  gap: var(--dec-space-1);
+  border-top: 4px solid var(--dec-color-primary);
+}
+
+.admin-stat-card span {
+  color: var(--dec-color-muted-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-stat-card strong {
+  color: var(--dec-color-text);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.admin-readiness-card,
+.admin-task-card {
+  display: grid;
+  align-content: start;
+  gap: var(--dec-space-3);
+}
+
+.admin-readiness-card > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--dec-space-3);
+}
+
+.admin-task-card {
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-task-card strong {
+  color: var(--dec-color-text);
+  font-size: 1.05rem;
+}
+
+.admin-task-card:hover {
+  border-color: var(--dec-color-primary);
+}
+
+.admin-rule-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--dec-space-3);
+  align-items: start;
+  background: var(--dec-color-background);
+}
+
+.admin-rule-card span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: var(--dec-radius-sm);
+  background: #f3f9ec;
+  color: var(--dec-color-text);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.admin-empty-panel {
+  display: grid;
+  gap: var(--dec-space-3);
+  background: var(--dec-color-background);
+}
+
+.admin-table-card {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--dec-color-text);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: var(--dec-space-3);
+  border-bottom: 1px solid var(--dec-color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-table th {
+  background: var(--dec-color-background);
+  color: var(--dec-color-muted-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .review-hero {
   display: grid;
   gap: var(--dec-space-4);
