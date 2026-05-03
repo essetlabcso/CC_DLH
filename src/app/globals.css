@@ -411,6 +411,66 @@ select {
   background: var(--dec-color-background);
 }
 
+.learner-course-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.36fr);
+  gap: var(--dec-space-4);
+  align-items: start;
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-left: 4px solid var(--dec-color-primary);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-background);
+}
+
+.learner-course-hero p {
+  margin: 0 0 var(--dec-space-3);
+  color: var(--dec-color-muted-text);
+}
+
+.learner-course-next {
+  display: grid;
+  gap: var(--dec-space-2);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-surface);
+}
+
+.learner-course-next strong {
+  color: var(--dec-color-text);
+}
+
+.learner-course-next span {
+  color: var(--dec-color-muted-text);
+}
+
+.learner-module-card {
+  align-items: stretch;
+}
+
+.learner-module-card > div {
+  display: grid;
+  gap: var(--dec-space-3);
+  min-width: 0;
+}
+
+.learner-module-card .lesson-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.learner-module-card .lesson-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dec-space-2);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--dec-space-2) 0;
+  border-top: 1px solid var(--dec-color-border);
+}
+
 .public-page {
   min-height: 100vh;
   background: var(--dec-color-background);
@@ -1496,6 +1556,7 @@ select {
   .decision-grid,
   .build-hero,
   .studio-course-hero,
+  .learner-course-hero,
   .build-studio-layout,
   .form-grid {
     grid-template-columns: 1fr;

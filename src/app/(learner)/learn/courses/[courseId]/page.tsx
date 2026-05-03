@@ -189,13 +189,63 @@ export default async function LearnerCoursePage({
         .filter(Boolean)
         .map((field) => learnerProofSubmissionFieldLabels[field] || field)
     : [];
+  const completedLessons = progressRecords.filter(
+    (progress) => progress.completedAt,
+  ).length;
+  const lessonCompletionLabel = `${completedLessons}/${totalLessons} lessons complete`;
+  const finalTestStatusLabel = bestFinalTestAttempt?.passed
+    ? "Final test passed"
+    : latestFinalTestAttempt
+      ? "Final test attempted"
+      : "Final test not started";
+  const proofStatusLabel = proofReadiness.enabled
+    ? proofSubmission
+      ? formatLearnerProofStatus(proofSubmission.status)
+      : proofReadiness.ready
+        ? "Proof optional"
+        : "Proof unavailable"
+    : "No proof requirement";
 
   return (
     <WorkspaceShell eyebrow="Course" title={version.course.title}>
-      <p>
-        {version.setup?.summary ||
-          "A DEC-reviewed course for practical CSO learning."}
-      </p>
+      <div className="learner-course-hero">
+        <div>
+          <p>
+            {version.setup?.summary ||
+              "A DEC-reviewed course for practical CSO learning."}
+          </p>
+          <div className="review-hero-status" aria-label="Course progress summary">
+            <span className="status-badge">{lessonCompletionLabel}</span>
+            <span
+              className={`status-badge ${getLearnerProgressBadgeClass(
+                progressSummary.label,
+              )}`}
+            >
+              {progressSummary.label}
+            </span>
+            <span
+              className={`status-badge ${
+                bestFinalTestAttempt?.passed
+                  ? "status-badge-ready"
+                  : "status-badge-blocked"
+              }`}
+            >
+              {finalTestStatusLabel}
+            </span>
+            <span className={getCertificateBadgeClass(certificateEligibility.label)}>
+              {certificateEligibility.label}
+            </span>
+          </div>
+        </div>
+        <div className="learner-course-next">
+          <strong>Next learner step</strong>
+          <span>
+            {firstLesson
+              ? "Start or continue lessons, then complete the final test for certificate eligibility."
+              : "Course lessons are not available yet."}
+          </span>
+        </div>
+      </div>
       {resolvedSearchParams?.finalTest === "1" ? (
         <p className="workspace-note">Final test submitted.</p>
       ) : null}
@@ -234,7 +284,17 @@ export default async function LearnerCoursePage({
       ) : null}
 
       <section className="studio-section" aria-labelledby="course-meta-title">
-        <h2 id="course-meta-title">Course overview</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="course-meta-title">Course overview</h2>
+            <p className="section-subcopy">
+              Practical course details, progress, and certificate status.
+            </p>
+          </div>
+          <span className="status-badge status-badge-published">
+            Published {formatPublishedDate(version.publishedAt)}
+          </span>
+        </div>
         <div className="context-grid">
           <article>
             <strong>Format</strong>
@@ -250,47 +310,83 @@ export default async function LearnerCoursePage({
           </article>
           <article>
             <strong>Progress</strong>
-            <span>{progressSummary.label}</span>
+            <span
+              className={`status-badge ${getLearnerProgressBadgeClass(
+                progressSummary.label,
+              )}`}
+            >
+              {progressSummary.label}
+            </span>
           </article>
           <article>
             <strong>Certificate</strong>
-            <span>{certificateEligibility.label}</span>
+            <span className={getCertificateBadgeClass(certificateEligibility.label)}>
+              {certificateEligibility.label}
+            </span>
           </article>
         </div>
-        <p className="workspace-note">
-          Published {formatPublishedDate(version.publishedAt)}
-        </p>
       </section>
 
       <section className="studio-section" aria-labelledby="modules-title">
-        <h2 id="modules-title">What you will learn</h2>
+        <div className="section-heading-row">
+          <div>
+            <h2 id="modules-title">What you will learn</h2>
+            <p className="section-subcopy">
+              Lessons are short, trackable steps toward the final test.
+            </p>
+          </div>
+          <span className="status-badge">
+            {countLearnerCourseBlocks(version.modules)} learner blocks
+          </span>
+        </div>
         <div className="course-list course-list-spacious">
           {version.modules.map((module) => (
-            <article className="course-row" key={module.id}>
+            <article className="course-row learner-module-card" key={module.id}>
               <div>
-                <h3>{module.title}</h3>
-                <p>
-                  {module.lessons.length}{" "}
-                  {module.lessons.length === 1 ? "lesson" : "lessons"} ·{" "}
-                  {module.lessons.reduce(
-                    (total, lesson) => total + lesson.blocks.length,
-                    0,
-                  )}{" "}
-                  learning blocks
-                </p>
+                <div className="studio-course-card-heading">
+                  <div>
+                    <h3>{module.title}</h3>
+                    <p>
+                      {module.lessons.length}{" "}
+                      {module.lessons.length === 1 ? "lesson" : "lessons"} ·{" "}
+                      {module.lessons.reduce(
+                        (total, lesson) => total + lesson.blocks.length,
+                        0,
+                      )}{" "}
+                      learning blocks
+                    </p>
+                  </div>
+                  <span className="status-badge">
+                    {
+                      module.lessons.filter((lesson) =>
+                        completedLessonIds.has(lesson.id),
+                      ).length
+                    }
+                    /{module.lessons.length} complete
+                  </span>
+                </div>
                 <ol className="lesson-list">
                   {module.lessons.map((lesson) => (
                     <li key={lesson.id}>
-                      {lesson.title} ·{" "}
-                      {completedLessonIds.has(lesson.id)
-                        ? "Complete"
-                        : "Not complete"}
+                      <span>{lesson.title}</span>
+                      <span
+                        className={`workflow-chip ${
+                          completedLessonIds.has(lesson.id)
+                            ? "workflow-chip-complete"
+                            : "workflow-chip-ready"
+                        }`}
+                      >
+                        {completedLessonIds.has(lesson.id)
+                          ? "Complete"
+                          : "Not complete"}
+                      </span>
                     </li>
                   ))}
                 </ol>
               </div>
               {module.lessons[0] ? (
                 <Link
+                  className="workspace-link primary"
                   href={`/learn/courses/${version.course.id}/lessons/${module.lessons[0].id}`}
                 >
                   Open module
@@ -317,7 +413,24 @@ export default async function LearnerCoursePage({
 
       {finalTestBlock && finalTest.ok ? (
         <section className="studio-section" aria-labelledby="final-test-title">
-          <h2 id="final-test-title">Final test</h2>
+          <div className="section-heading-row">
+            <div>
+              <h2 id="final-test-title">Final test</h2>
+              <p className="section-subcopy">
+                Score 80% or above to pass the course and unlock the course
+                certificate.
+              </p>
+            </div>
+            <span
+              className={`status-badge ${
+                bestFinalTestAttempt?.passed
+                  ? "status-badge-ready"
+                  : "status-badge-blocked"
+              }`}
+            >
+              {finalTestStatusLabel}
+            </span>
+          </div>
           <div className="final-test-panel">
             <div>
               <p className="block-kicker">Course assessment</p>
@@ -366,7 +479,13 @@ export default async function LearnerCoursePage({
                 </article>
                 <article>
                   <strong>Status</strong>
-                  <span>
+                  <span
+                    className={`status-badge ${
+                      latestFinalTestAttempt.passed
+                        ? "status-badge-ready"
+                        : "status-badge-blocked"
+                    }`}
+                  >
                     {latestFinalTestAttempt.passed
                       ? "Passed"
                       : "Not passed yet"}
@@ -380,7 +499,16 @@ export default async function LearnerCoursePage({
 
       {proofReadiness.enabled && proofReadiness.ready ? (
         <section className="studio-section" aria-labelledby="proof-title">
-          <h2 id="proof-title">Optional practical proof</h2>
+          <div className="section-heading-row">
+            <div>
+              <h2 id="proof-title">Optional practical proof</h2>
+              <p className="section-subcopy">
+                A private, optional evidence pathway separate from the course
+                certificate.
+              </p>
+            </div>
+            <span className="status-badge">{proofStatusLabel}</span>
+          </div>
           <div className="final-test-panel">
             <div>
               <p className="block-kicker">Separate from certification</p>
@@ -648,4 +776,32 @@ export default async function LearnerCoursePage({
       </nav>
     </WorkspaceShell>
   );
+}
+
+function getLearnerProgressBadgeClass(label: string) {
+  const normalized = label.toLowerCase();
+
+  if (normalized.includes("complete")) {
+    return "status-badge-ready";
+  }
+
+  if (normalized.includes("not") || normalized.includes("0")) {
+    return "status-badge-blocked";
+  }
+
+  return "status-badge-published";
+}
+
+function getCertificateBadgeClass(label: string) {
+  const normalized = label.toLowerCase();
+
+  if (normalized.includes("earned") || normalized.includes("eligible")) {
+    return "status-badge status-badge-ready";
+  }
+
+  if (normalized.includes("not") || normalized.includes("locked")) {
+    return "status-badge status-badge-blocked";
+  }
+
+  return "status-badge";
 }
