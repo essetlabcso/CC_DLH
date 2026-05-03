@@ -306,6 +306,242 @@ const categories = [
   },
 ];
 
+const fieldMetadata = [
+  {
+    phase: "course_setup",
+    section: "Course identity",
+    fields: [
+      field("course_title", "Course title", "text", 1, {
+        requiredRule: "required",
+        editableByCreator: true,
+        helpText: "Main participant-facing course title.",
+      }),
+      field("course_short_title", "Course short title", "text", 2, {
+        editableByCreator: true,
+        helpText: "Short display title for compact course cards and tables.",
+      }),
+      field("course_code", "Course code", "text", 3, {
+        helpText: "Stable DEC course identifier assigned or confirmed by Admin.",
+      }),
+      field("course_summary", "Course summary", "long_text", 4, {
+        requiredRule: "required",
+        editableByCreator: true,
+        helpText: "Brief participant-facing summary of what the course covers.",
+      }),
+      field("course_rationale", "Course rationale", "long_text", 5, {
+        editableByCreator: true,
+        helpText: "Why this course is needed based on approved capacity evidence.",
+      }),
+      field("course_owner_id", "Course owner", "user_picker", 6, {
+        requiredRule: "required",
+        helpText: "Primary user responsible for the course draft.",
+      }),
+      field("co_creators", "Co-creators", "user_picker", 7, {
+        helpText: "Additional course creators or subject matter contributors.",
+      }),
+      field("responsible_unit", "Responsible unit", "text", 8, {
+        helpText: "DEC unit, team, or partner group responsible for stewardship.",
+      }),
+      field("target_audience", "Target Audience", "dropdown", 9, {
+        lookupCategoryKey: "target_audience_groups",
+        requiredRule: "required",
+        editableByCreator: true,
+        helpText: "Primary Course Participant group for this course.",
+      }),
+      field("participant_profile", "Participant profile", "long_text", 10, {
+        editableByCreator: true,
+        helpText: "Short profile of the Course Participants and their working context.",
+      }),
+      field("participant_level", "Participant level", "dropdown", 11, {
+        lookupCategoryKey: "participant_experience_levels",
+        editableByCreator: true,
+        helpText: "Expected experience level of Course Participants.",
+      }),
+      field("organization_type", "Organization type", "dropdown", 12, {
+        lookupCategoryKey: "organization_types",
+        editableByCreator: true,
+        helpText: "Type of organization the course is designed to support.",
+      }),
+      field("geographic_focus", "Geographic focus", "dropdown", 13, {
+        lookupCategoryKey: "geographic_focus_areas",
+        editableByCreator: true,
+        visibleInDashboard: true,
+        helpText: "Primary Ethiopian region or focus area for the course context.",
+      }),
+      field("course_language", "Course language", "dropdown", 14, {
+        lookupCategoryKey: "course_languages",
+        editableByCreator: true,
+        helpText: "Primary language for participant-facing course content.",
+      }),
+      field("delivery_format", "Delivery format", "dropdown", 15, {
+        lookupCategoryKey: "delivery_formats",
+        editableByCreator: true,
+        helpText: "How Course Participants are expected to take the course.",
+      }),
+      field("access_type", "Access type", "dropdown", 16, {
+        lookupCategoryKey: "access_types",
+        helpText: "Planned access control for participant availability.",
+      }),
+      field("enrollment_method", "Enrollment method", "dropdown", 17, {
+        lookupCategoryKey: "enrollment_methods",
+        helpText: "How Course Participants will be enrolled.",
+      }),
+      field("course_start_date", "Course start date", "date", 18, {
+        helpText: "Optional planned start date for cohort or time-bound courses.",
+      }),
+      field("course_end_date", "Course end date", "date", 19, {
+        helpText: "Optional planned end date for cohort or time-bound courses.",
+      }),
+      field("estimated_total_effort_hours", "Estimated total effort hours", "number", 20, {
+        editableByCreator: true,
+        helpText: "Estimated total participant effort required to complete the course.",
+      }),
+      field("weekly_commitment_level", "Weekly commitment level", "text", 21, {
+        editableByCreator: true,
+        helpText: "Expected weekly time commitment for Course Participants.",
+      }),
+      field("selected_diagnosis_dataset_id", "Selected diagnosis dataset", "record_picker", 22, {
+        requiredRule: "required",
+        helpText: "Approved diagnosis dataset that anchors the course.",
+      }),
+      field("selected_diagnosis_record_id", "Selected diagnosis record", "record_picker", 23, {
+        requiredRule: "required",
+        helpText: "Approved diagnosis record that supplies the course evidence anchor.",
+      }),
+    ],
+  },
+  {
+    phase: "approved_diagnosis_reference",
+    section: "Approved diagnosis context",
+    inheritedFrom: "diagnosis_record",
+    fields: [
+      field("diagnosis_dataset_code", "Diagnosis dataset code", "text", 1),
+      field("diagnosis_record_code", "Diagnosis record code", "text", 2),
+      field("core_capacity_area", "Core Capacity Area", "dropdown", 3, {
+        lookupCategoryKey: "capacity_areas",
+        visibleInDashboard: true,
+      }),
+      field("capacity_practice_area", "Capacity Practice Area", "text", 4, {
+        visibleInDashboard: true,
+        helpText: "Workbook-aligned Capacity Practice Area, equivalent to older sub-capacity wording.",
+      }),
+      field("capacity_gap_statement", "Capacity gap statement", "long_text", 5),
+      field("current_baseline", "Current baseline", "long_text", 6),
+      field("desired_practice", "Desired practice", "long_text", 7),
+      field("evidence_source_summary", "Evidence source summary", "long_text", 8),
+      field("ksme_route", "K/S/M/E route", "dropdown", 9, {
+        lookupCategoryKey: "ksme_routes",
+        visibleInDashboard: true,
+      }),
+      field("separable_knowledge_skill_component", "Separable Knowledge/Skill component", "long_text", 10),
+      field("course_fit_decision", "Course-fit decision", "dropdown", 11, {
+        lookupCategoryKey: "course_fit_decisions",
+        visibleInDashboard: true,
+      }),
+      field("safeguarding_no_harm_note", "Safeguarding and no-harm note", "long_text", 12),
+      field("data_sensitivity_level", "Data sensitivity level", "dropdown", 13, {
+        lookupCategoryKey: "data_sensitivity_levels",
+        visibleInDashboard: true,
+      }),
+      field("evaluation_anchor", "Evaluation anchor", "long_text", 14),
+      field("monitoring_anchor", "Monitoring anchor", "long_text", 15, {
+        visibleInDashboard: true,
+      }),
+    ],
+  },
+  {
+    phase: "design",
+    section: "Design planning",
+    inheritedFrom: "analysis",
+    fields: [
+      field("capacity_objective", "Capacity objective", "long_text", 1, { editableByCreator: true }),
+      field("performance_goal", "Performance goal", "long_text", 2, { editableByCreator: true }),
+      field("required_actions", "Required actions", "long_text", 3, { editableByCreator: true }),
+      field("practice_activities", "Practice activities", "long_text", 4, { editableByCreator: true }),
+      field("minimum_information", "Minimum information", "long_text", 5, { editableByCreator: true }),
+      field("assessment_intent", "Assessment intent", "long_text", 6, { editableByCreator: true }),
+      field("accessibility_localization_needs", "Accessibility and localization needs", "multi_select", 7, {
+        lookupCategoryKey: "accessibility_requirements",
+        editableByCreator: true,
+      }),
+      field("storyboard_block_plan", "Storyboard block plan", "long_text", 8, { editableByCreator: true }),
+    ],
+  },
+  {
+    phase: "build",
+    section: "Build Studio",
+    inheritedFrom: "design",
+    fields: [
+      field("lesson_title", "Lesson title", "text", 1, { editableByCreator: true }),
+      field("block_type", "Block type", "dropdown", 2, { editableByCreator: true }),
+      field("block_purpose", "Block purpose", "long_text", 3, { editableByCreator: true }),
+      field("block_traceability_anchor", "Block traceability anchor", "text", 4, { editableByCreator: true }),
+      field("creator_added_block_justification", "Creator-added block justification", "long_text", 5, { editableByCreator: true }),
+      field("ai_assistance_status", "AI assistance status", "dropdown", 6, {
+        lookupCategoryKey: "ai_assistance_settings",
+        editableByCreator: true,
+      }),
+      field("accessibility_check_status", "Accessibility check status", "status", 7),
+      field("safeguarding_check_status", "Safeguarding check status", "status", 8),
+      field("final_test_configured", "Final test configured", "boolean", 9),
+      field("practical_proof_enabled", "Practical proof enabled", "boolean", 10),
+    ],
+  },
+  {
+    phase: "review",
+    section: "Review decision",
+    fields: [
+      field("review_track", "Review track", "dropdown", 1, {
+        lookupCategoryKey: "review_tracks",
+      }),
+      field("review_decision", "Review decision", "dropdown", 2, {
+        lookupCategoryKey: "review_decisions",
+      }),
+      field("reviewer_comments", "Reviewer comments", "long_text", 3),
+      field("returned_to_phase", "Returned to phase", "text", 4),
+      field("specialist_review_required", "Specialist review required", "boolean", 5),
+      field("review_approval_status", "Review approval status", "status", 6),
+    ],
+  },
+  {
+    phase: "publish",
+    section: "Publication record",
+    fields: [
+      field("publish_visibility_mode", "Publish visibility mode", "dropdown", 1, {
+        lookupCategoryKey: "publish_visibility_modes",
+      }),
+      field("enrollment_method", "Enrollment method", "dropdown", 2, {
+        lookupCategoryKey: "enrollment_methods",
+      }),
+      field("published_version_label", "Published version label", "text", 3),
+      field("release_notes", "Release notes", "long_text", 4),
+      field("published_by", "Published by", "user_picker", 5),
+      field("published_at", "Published at", "date", 6),
+    ],
+  },
+  {
+    phase: "monitoring",
+    section: "Monitoring signals",
+    fields: [
+      field("enrollment_count", "Enrollment count", "number", 1, { visibleInDashboard: true }),
+      field("completion_rate", "Completion rate", "number", 2, { visibleInDashboard: true }),
+      field("final_test_pass_rate", "Final test pass rate", "number", 3, { visibleInDashboard: true }),
+      field("certificate_count", "Certificate count", "number", 4, { visibleInDashboard: true }),
+      field("practical_proof_submission_count", "Practical proof submission count", "number", 5, { visibleInDashboard: true }),
+      field("verified_achievement_count", "Verified achievement count", "number", 6, { visibleInDashboard: true }),
+      field("feedback_summary", "Feedback summary", "long_text", 7, { visibleInDashboard: true }),
+      field("course_improvement_flag", "Course improvement flag", "boolean", 8, { visibleInDashboard: true }),
+    ],
+  },
+].flatMap((group) =>
+  group.fields.map((item) => ({
+    ...item,
+    workflowPhase: group.phase,
+    formSection: group.section,
+    inheritedFrom: item.inheritedFrom ?? group.inheritedFrom ?? "",
+  })),
+);
+
 mkdirSync(dirname(databasePath), { recursive: true });
 
 const db = new DatabaseSync(databasePath);
@@ -376,6 +612,52 @@ try {
       "updatedAt" = CURRENT_TIMESTAMP
   `);
 
+  const upsertFieldMetadata = db.prepare(`
+    INSERT INTO "admin_field_metadata" (
+      "id",
+      "workflowPhase",
+      "formSection",
+      "metadataKey",
+      "fieldLabel",
+      "fieldType",
+      "lookupCategoryKey",
+      "requiredRule",
+      "editableByCreator",
+      "editableByAdmin",
+      "readOnlyAfterLock",
+      "inheritedFrom",
+      "visibleToCreator",
+      "visibleToReviewer",
+      "visibleToParticipant",
+      "visibleInDashboard",
+      "validationRule",
+      "helpText",
+      "displayOrder",
+      "isActive",
+      "updatedAt"
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, true, ?, ?, ?, ?, ?, ?, ?, ?, ?, true, CURRENT_TIMESTAMP)
+    ON CONFLICT("workflowPhase", "metadataKey") DO UPDATE SET
+      "formSection" = excluded."formSection",
+      "fieldLabel" = excluded."fieldLabel",
+      "fieldType" = excluded."fieldType",
+      "lookupCategoryKey" = excluded."lookupCategoryKey",
+      "requiredRule" = excluded."requiredRule",
+      "editableByCreator" = excluded."editableByCreator",
+      "editableByAdmin" = true,
+      "readOnlyAfterLock" = excluded."readOnlyAfterLock",
+      "inheritedFrom" = excluded."inheritedFrom",
+      "visibleToCreator" = excluded."visibleToCreator",
+      "visibleToReviewer" = excluded."visibleToReviewer",
+      "visibleToParticipant" = excluded."visibleToParticipant",
+      "visibleInDashboard" = excluded."visibleInDashboard",
+      "validationRule" = excluded."validationRule",
+      "helpText" = excluded."helpText",
+      "displayOrder" = excluded."displayOrder",
+      "isActive" = true,
+      "updatedAt" = CURRENT_TIMESTAMP
+  `);
+
   for (const category of categories) {
     const categoryId = categoryIdFor(category.key);
 
@@ -401,6 +683,29 @@ try {
     }
   }
 
+  for (const item of fieldMetadata) {
+    upsertFieldMetadata.run(
+      fieldMetadataIdFor(item.workflowPhase, item.key),
+      item.workflowPhase,
+      item.formSection,
+      item.key,
+      item.label,
+      item.fieldType,
+      item.lookupCategoryKey,
+      item.requiredRule,
+      item.editableByCreator ? 1 : 0,
+      item.readOnlyAfterLock ? 1 : 0,
+      item.inheritedFrom,
+      item.visibleToCreator ? 1 : 0,
+      item.visibleToReviewer ? 1 : 0,
+      item.visibleToParticipant ? 1 : 0,
+      item.visibleInDashboard ? 1 : 0,
+      item.validationRule,
+      item.helpText,
+      item.displayOrder,
+    );
+  }
+
   db.exec("COMMIT");
   console.log(
     `Seeded ${categories.length} admin lookup categories and ${categories.reduce(
@@ -408,6 +713,7 @@ try {
       0,
     )} system-locked lookup values.`,
   );
+  console.log(`Seeded ${fieldMetadata.length} admin field metadata records.`);
 } catch (error) {
   db.exec("ROLLBACK");
   throw error;
@@ -425,12 +731,36 @@ function value(label, displayOrder, description = "") {
   };
 }
 
+function field(key, label, fieldType, displayOrder, options = {}) {
+  return {
+    key,
+    label,
+    fieldType,
+    displayOrder,
+    lookupCategoryKey: options.lookupCategoryKey ?? null,
+    requiredRule: options.requiredRule ?? "optional",
+    editableByCreator: options.editableByCreator ?? false,
+    readOnlyAfterLock: options.readOnlyAfterLock ?? true,
+    visibleToCreator: options.visibleToCreator ?? true,
+    visibleToReviewer: options.visibleToReviewer ?? true,
+    visibleToParticipant: options.visibleToParticipant ?? false,
+    visibleInDashboard: options.visibleInDashboard ?? false,
+    validationRule: options.validationRule ?? "",
+    helpText: options.helpText ?? "",
+    inheritedFrom: options.inheritedFrom,
+  };
+}
+
 function categoryIdFor(categoryKey) {
   return `admin_lookup_category_${categoryKey}`;
 }
 
 function valueIdFor(categoryKey, valueKey) {
   return `admin_lookup_value_${categoryKey}_${valueKey}`;
+}
+
+function fieldMetadataIdFor(workflowPhase, metadataKey) {
+  return `admin_field_metadata_${workflowPhase}_${metadataKey}`;
 }
 
 function slugKey(label) {
