@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildCourseSetupDiagnosisSelectionData,
   buildCourseSetupDiagnosisSnapshot,
+  getDiagnosisRecordEligibility,
   parseCourseSetupDiagnosisSnapshot,
   serializeCourseSetupDiagnosisSnapshot,
 } from "./diagnosis-selection";
@@ -104,4 +106,148 @@ describe("course setup diagnosis snapshot helpers", () => {
     expect(parseCourseSetupDiagnosisSnapshot("{bad json")).toBeNull();
     expect(parseCourseSetupDiagnosisSnapshot("{}")).toBeNull();
   });
+
+  it("keeps course setup selection data scoped to the selected diagnosis record", () => {
+    const record = buildRecordWithDataset({
+      id: "record-1",
+      datasetId: "dataset-1",
+      diagnosisCode: "MEAL-001",
+    });
+
+    const data = buildCourseSetupDiagnosisSelectionData(record);
+
+    expect(data.selectedDiagnosisDatasetId).toBe("dataset-1");
+    expect(data.selectedDiagnosisRecordId).toBe("record-1");
+    expect(
+      parseCourseSetupDiagnosisSnapshot(data.diagnosisSnapshot),
+    )?.toMatchObject({
+      dataset: {
+        code: "DEC-CSF-2026-R1",
+      },
+      record: {
+        code: "MEAL-001",
+      },
+    });
+    expect(buildCourseSetupDiagnosisSelectionData(null)).toEqual({});
+  });
+
+  it("allows only course-eligible diagnosis records to anchor course setup", () => {
+    expect(
+      getDiagnosisRecordEligibility({
+        courseFitDecision: "Course-addressable",
+        ksmeRoute: "Skill",
+        separableKnowledgeSkillComponent: "",
+      }),
+    ).toMatchObject({ selectable: true, tone: "ready" });
+    expect(
+      getDiagnosisRecordEligibility({
+        courseFitDecision: "Partly course-addressable",
+        ksmeRoute: "Mixed",
+        separableKnowledgeSkillComponent: "Draft a safe message.",
+      }),
+    ).toMatchObject({ selectable: true, tone: "partial" });
+    expect(
+      getDiagnosisRecordEligibility({
+        courseFitDecision: "Partly course-addressable",
+        ksmeRoute: "Mixed",
+        separableKnowledgeSkillComponent: "",
+      }),
+    ).toMatchObject({ selectable: false, tone: "blocked" });
+    expect(
+      getDiagnosisRecordEligibility({
+        courseFitDecision: "Non-course support required",
+        ksmeRoute: "Environment",
+        separableKnowledgeSkillComponent: "",
+      }),
+    ).toMatchObject({ selectable: false, tone: "blocked" });
+    expect(
+      getDiagnosisRecordEligibility({
+        courseFitDecision: "Further diagnosis needed",
+        ksmeRoute: "Unclear / needs further diagnosis",
+        separableKnowledgeSkillComponent: "",
+      }),
+    ).toMatchObject({ selectable: false, tone: "blocked" });
+  });
 });
+
+function buildRecordWithDataset(overrides: {
+  diagnosisCode?: string;
+  datasetId?: string;
+  id?: string;
+}) {
+  const now = new Date("2026-01-01T00:00:00.000Z");
+
+  return {
+    id: overrides.id ?? "record-1",
+    datasetId: overrides.datasetId ?? "dataset-1",
+    diagnosisCode: overrides.diagnosisCode ?? "MEAL-001",
+    diagnosisTitle: "Outcome evidence",
+    organizationId: null,
+    organizationGroup: "",
+    region: "Addis Ababa",
+    sectorThematicArea: "",
+    coreCapacityArea: "MEAL",
+    capacityPracticeArea: "Outcome evidence",
+    subCapacity: "",
+    indicatorStandardLink: "",
+    targetAudience: "MEAL staff",
+    currentBaseline: "",
+    desiredPractice: "",
+    capacityGapStatement: "",
+    evidenceSource: "",
+    rootCauseSummary: "",
+    ksmeRoute: "Skill",
+    separableKnowledgeSkillComponent: "",
+    nonCourseBarrierSummary: "",
+    courseFitDecision: "Course-addressable",
+    recommendedInterventionRoute: "",
+    recommendedCourseOrSupportTitle: "",
+    priorityLevel: "",
+    priorityRank: null,
+    safeguardingRiskLevel: "Low",
+    dataSensitivityLevel: "Internal",
+    noHarmNote: "",
+    safeSummaryForDashboard: "",
+    evaluationAnchor: "",
+    monitoringSignal: "",
+    possiblePracticalProof: "",
+    verifiedAchievementExample: "",
+    approvalStatus: "APPROVED",
+    visibilityScope: "DEC_COURSE_CREATORS_INTERNAL_COURSE_CREATION",
+    courseCreationStatus: "READY_FOR_COURSE_SETUP",
+    isLocked: true,
+    isActive: true,
+    approvedById: null,
+    approvedAt: now,
+    lockedById: null,
+    lockedAt: now,
+    archivedAt: null,
+    changeReason: "",
+    createdById: null,
+    updatedById: null,
+    createdAt: now,
+    updatedAt: now,
+    dataset: {
+      id: overrides.datasetId ?? "dataset-1",
+      datasetCode: "DEC-CSF-2026-R1",
+      datasetTitle: "CSF+ Partner CSO Capacity Diagnosis - Round 1",
+      assessmentPeriodStart: null,
+      assessmentPeriodEnd: null,
+      programOrProject: "EU CSF+",
+      assessmentPurpose: "",
+      regionsCovered: "[]",
+      organizationGroup: "",
+      dataCollectionMethods: "[]",
+      approvalStatus: "APPROVED",
+      visibilityScope: "DEC_COURSE_CREATORS_INTERNAL_COURSE_CREATION",
+      notes: "",
+      approvedById: null,
+      approvedAt: now,
+      archivedAt: null,
+      createdById: null,
+      updatedById: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+  };
+}

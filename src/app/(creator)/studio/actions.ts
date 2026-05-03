@@ -57,6 +57,10 @@ import { parseCourseSetupFormData } from "@/lib/studio/course-setup";
 import { buildInitialWorkflowStepRecords } from "@/lib/studio/course-workflow-records";
 import { getEditableCourseVersion } from "@/lib/studio/courses";
 import {
+  buildCourseSetupDiagnosisSelectionData,
+} from "@/lib/studio/diagnosis-selection";
+import { getSelectableDiagnosisRecordById } from "@/lib/studio/diagnosis-options";
+import {
   buildCreatorReviewChecklist,
   parseCreatorReviewChecksFormData,
   summarizeCreatorReviewChecks,
@@ -152,6 +156,16 @@ export async function saveCourseSetupAction(courseId: string, formData: FormData
     notFound();
   }
 
+  const selectedDiagnosisRecord = result.value.selectedDiagnosisRecordId
+    ? await getSelectableDiagnosisRecordById(
+        prisma,
+        result.value.selectedDiagnosisRecordId,
+      )
+    : null;
+  const diagnosisSelectionData = selectedDiagnosisRecord
+    ? buildCourseSetupDiagnosisSelectionData(selectedDiagnosisRecord)
+    : {};
+
   await prisma.$transaction([
     prisma.course.update({
       where: {
@@ -177,6 +191,7 @@ export async function saveCourseSetupAction(courseId: string, formData: FormData
         sensitiveFlag: result.value.sensitiveFlag,
         certificateIntent: result.value.certificateIntent,
         learnerReality: JSON.stringify(result.value.learnerReality),
+        ...diagnosisSelectionData,
       },
       create: {
         courseVersionId: editable.version.id,
@@ -190,6 +205,7 @@ export async function saveCourseSetupAction(courseId: string, formData: FormData
         sensitiveFlag: result.value.sensitiveFlag,
         certificateIntent: result.value.certificateIntent,
         learnerReality: JSON.stringify(result.value.learnerReality),
+        ...diagnosisSelectionData,
       },
     }),
     prisma.courseWorkflowStepRecord.upsert({

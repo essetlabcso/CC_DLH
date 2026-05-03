@@ -8,6 +8,7 @@ export type CourseSetupInput = {
   capacityArea: string;
   sensitiveFlag: boolean;
   certificateIntent: string;
+  selectedDiagnosisRecordId: string;
   learnerReality: {
     deviceAccess: string;
     connectivity: string;
@@ -48,6 +49,10 @@ export function parseCourseSetupFormData(
     capacityArea: getTextValue(formData, "capacityArea"),
     sensitiveFlag: formData.get("sensitiveFlag") === "on",
     certificateIntent: getTextValue(formData, "certificateIntent"),
+    selectedDiagnosisRecordId: getTextValue(
+      formData,
+      "selectedDiagnosisRecordId",
+    ),
     learnerReality: {
       deviceAccess: getTextValue(formData, "deviceAccess"),
       connectivity: getTextValue(formData, "connectivity"),

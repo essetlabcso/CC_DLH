@@ -13,6 +13,7 @@ describe("course setup form parsing", () => {
     formData.set("formatAndTime", "Mobile, 45 minutes");
     formData.set("level", "Introductory");
     formData.set("capacityArea", "Safeguarding and accountability");
+    formData.set("selectedDiagnosisRecordId", "diagnosis-record-1");
     formData.set("deviceAccess", "Shared smartphones");
     formData.set("connectivity", "Intermittent mobile data");
     formData.set("timeAvailable", "Short learning sessions");
@@ -24,6 +25,9 @@ describe("course setup form parsing", () => {
       expect(isCourseSetupComplete(result.value)).toBe(true);
       expect(result.value.learnerReality.connectivity).toBe(
         "Intermittent mobile data",
+      );
+      expect(result.value.selectedDiagnosisRecordId).toBe(
+        "diagnosis-record-1",
       );
     }
   });

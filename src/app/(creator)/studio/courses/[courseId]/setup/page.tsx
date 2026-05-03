@@ -5,6 +5,8 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { getEditableCourseVersion } from "@/lib/studio/courses";
+import { parseCourseSetupDiagnosisSnapshot } from "@/lib/studio/diagnosis-selection";
+import { getCourseSetupDiagnosisOptions } from "@/lib/studio/diagnosis-options";
 
 import { saveCourseSetupAction } from "../../../actions";
 
@@ -50,6 +52,15 @@ export default async function CourseSetupPage({
 
   const setup = editable.version.setup;
   const learnerReality = parseLearnerReality(setup?.learnerReality);
+  const diagnosisOptions = await getCourseSetupDiagnosisOptions(prisma);
+  const selectedDiagnosis = setup?.selectedDiagnosisRecordId
+    ? diagnosisOptions.find(
+        (option) => option.id === setup.selectedDiagnosisRecordId,
+      )
+    : null;
+  const savedDiagnosisSnapshot = parseCourseSetupDiagnosisSnapshot(
+    setup?.diagnosisSnapshot,
+  );
   const saveAction = saveCourseSetupAction.bind(null, courseId);
   const missingFields = resolvedSearchParams?.fields
     ? resolvedSearchParams.fields.split(",").filter(Boolean)
@@ -91,6 +102,132 @@ export default async function CourseSetupPage({
       ) : null}
 
       <form action={saveAction} className="setup-form">
+        <section
+          className="setup-form-section diagnosis-anchor-section"
+          aria-labelledby="setup-diagnosis-anchor-title"
+        >
+          <div className="diagnosis-anchor-heading">
+            <div>
+              <h2 id="setup-diagnosis-anchor-title">
+                Diagnosis evidence anchor
+              </h2>
+              <p className="section-subcopy">
+                DEC courses should start from approved capacity evidence. Select
+                the diagnosis record this course will respond to, or leave it
+                blank for now while this foundation is being introduced.
+              </p>
+            </div>
+            {selectedDiagnosis ? (
+              <span className="status-badge status-badge-ready">
+                Evidence selected
+              </span>
+            ) : savedDiagnosisSnapshot ? (
+              <span className="status-badge status-badge-blocked">
+                Historical selection
+              </span>
+            ) : (
+              <span className="status-badge">Optional for now</span>
+            )}
+          </div>
+
+          {selectedDiagnosis ? (
+            <SelectedDiagnosisSummary
+              title={selectedDiagnosis.diagnosisTitle}
+              code={selectedDiagnosis.diagnosisCode}
+              dataset={`${selectedDiagnosis.datasetCode} · ${selectedDiagnosis.datasetTitle}`}
+              capacityPracticeArea={
+                selectedDiagnosis.capacityPracticeArea ||
+                selectedDiagnosis.subCapacity
+              }
+              targetAudience={selectedDiagnosis.targetAudience}
+              region={selectedDiagnosis.region}
+              ksmeRoute={selectedDiagnosis.ksmeRoute}
+              courseFitDecision={selectedDiagnosis.courseFitDecision}
+            />
+          ) : savedDiagnosisSnapshot ? (
+            <SelectedDiagnosisSummary
+              title={savedDiagnosisSnapshot.record.title}
+              code={savedDiagnosisSnapshot.record.code}
+              dataset={`${savedDiagnosisSnapshot.dataset.code} · ${savedDiagnosisSnapshot.dataset.title}`}
+              capacityPracticeArea={
+                savedDiagnosisSnapshot.record.capacityPracticeArea ||
+                savedDiagnosisSnapshot.record.subCapacity
+              }
+              targetAudience={savedDiagnosisSnapshot.record.targetAudience}
+              region={savedDiagnosisSnapshot.record.region}
+              ksmeRoute={savedDiagnosisSnapshot.record.ksmeRoute}
+              courseFitDecision={
+                savedDiagnosisSnapshot.record.courseFitDecision
+              }
+              note="This saved context is preserved from the original selection. It may no longer be available for new course setup."
+            />
+          ) : null}
+
+          <fieldset className="diagnosis-option-fieldset">
+            <legend>Approved diagnosis records</legend>
+            {diagnosisOptions.length > 0 ? (
+              <div className="diagnosis-option-grid">
+                {diagnosisOptions.map((option) => {
+                  const selected = option.id === setup?.selectedDiagnosisRecordId;
+                  const selectable = option.eligibility.selectable;
+
+                  return (
+                    <label
+                      className={`diagnosis-option-card diagnosis-option-card-${option.eligibility.tone}`}
+                      key={option.id}
+                    >
+                      <input
+                        type="radio"
+                        name="selectedDiagnosisRecordId"
+                        value={option.id}
+                        defaultChecked={selected}
+                        disabled={!selectable}
+                      />
+                      <span className="diagnosis-option-body">
+                        <span className="diagnosis-option-title-row">
+                          <strong>{option.diagnosisTitle}</strong>
+                          <span
+                            className={`status-badge ${getDiagnosisStatusBadgeClass(
+                              option.eligibility.tone,
+                            )}`}
+                          >
+                            {getDiagnosisStatusLabel(option.eligibility.tone)}
+                          </span>
+                        </span>
+                        <span className="diagnosis-option-meta">
+                          {option.diagnosisCode} · {option.datasetCode}
+                        </span>
+                        <span className="diagnosis-option-tags">
+                          <span>{option.courseFitDecision}</span>
+                          <span>K/S/M/E Route: {option.ksmeRoute}</span>
+                          <span>Target Audience: {option.targetAudience}</span>
+                        </span>
+                        <span className="diagnosis-option-detail">
+                          <strong>Capacity Practice Area</strong>
+                          {option.capacityPracticeArea ||
+                            option.subCapacity ||
+                            "Not specified"}
+                        </span>
+                        <span className="diagnosis-option-detail">
+                          <strong>Gap</strong>
+                          {option.capacityGapStatement || "Not specified"}
+                        </span>
+                        <span className="diagnosis-option-note">
+                          {option.eligibility.reason}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="workspace-note">
+                No approved diagnosis records are available yet.
+              </p>
+            )}
+          </fieldset>
+        </section>
+
         <section className="setup-form-section" aria-labelledby="setup-identity-title">
           <div>
             <h2 id="setup-identity-title">Course identity</h2>
@@ -243,6 +380,89 @@ export default async function CourseSetupPage({
       </div>
     </WorkspaceShell>
   );
+}
+
+function SelectedDiagnosisSummary({
+  capacityPracticeArea,
+  code,
+  courseFitDecision,
+  dataset,
+  ksmeRoute,
+  note,
+  region,
+  targetAudience,
+  title,
+}: {
+  capacityPracticeArea: string;
+  code: string;
+  courseFitDecision: string;
+  dataset: string;
+  ksmeRoute: string;
+  note?: string;
+  region: string;
+  targetAudience: string;
+  title: string;
+}) {
+  return (
+    <div className="selected-diagnosis-summary">
+      <div>
+        <span className="status-badge status-badge-ready">Selected anchor</span>
+        <h3>{title}</h3>
+        <p>
+          {code} · {dataset}
+        </p>
+      </div>
+      <dl className="diagnosis-anchor-facts">
+        <div>
+          <dt>Capacity Practice Area</dt>
+          <dd>{capacityPracticeArea || "Not specified"}</dd>
+        </div>
+        <div>
+          <dt>Target Audience</dt>
+          <dd>{targetAudience || "Not specified"}</dd>
+        </div>
+        <div>
+          <dt>Region</dt>
+          <dd>{region || "Not specified"}</dd>
+        </div>
+        <div>
+          <dt>K/S/M/E Route</dt>
+          <dd>{ksmeRoute || "Not specified"}</dd>
+        </div>
+        <div>
+          <dt>Course-Fit Decision</dt>
+          <dd>{courseFitDecision || "Not specified"}</dd>
+        </div>
+      </dl>
+      {note ? <p className="diagnosis-option-note">{note}</p> : null}
+    </div>
+  );
+}
+
+function getDiagnosisStatusBadgeClass(
+  tone: "ready" | "partial" | "blocked",
+) {
+  if (tone === "ready") {
+    return "status-badge-ready";
+  }
+
+  if (tone === "blocked") {
+    return "status-badge-blocked";
+  }
+
+  return "";
+}
+
+function getDiagnosisStatusLabel(tone: "ready" | "partial" | "blocked") {
+  if (tone === "ready") {
+    return "Course-addressable";
+  }
+
+  if (tone === "blocked") {
+    return "Not selectable";
+  }
+
+  return "Partly course-addressable";
 }
 
 function parseLearnerReality(value: string | undefined) {
