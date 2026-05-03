@@ -167,6 +167,21 @@ describe("course setup diagnosis snapshot helpers", () => {
         separableKnowledgeSkillComponent: "",
       }),
     ).toMatchObject({ selectable: false, tone: "blocked" });
+    expect(
+      getDiagnosisRecordEligibility({
+        courseFitDecision: "Blended support recommended",
+        ksmeRoute: "Motivation",
+        separableKnowledgeSkillComponent:
+          "Practice applying a simple planning checklist.",
+      }),
+    ).toMatchObject({ selectable: true, tone: "partial" });
+    expect(
+      getDiagnosisRecordEligibility({
+        courseFitDecision: "Course-addressable",
+        ksmeRoute: "Environment",
+        separableKnowledgeSkillComponent: "",
+      }),
+    ).toMatchObject({ selectable: false, tone: "blocked" });
   });
 });
 

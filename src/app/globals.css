@@ -1039,6 +1039,10 @@ select {
   border-left: 4px solid var(--dec-color-secondary);
 }
 
+.diagnosis-anchor-error {
+  margin: 0;
+}
+
 .diagnosis-anchor-heading,
 .diagnosis-option-title-row {
   display: flex;
@@ -1191,6 +1195,12 @@ select {
   margin: 0;
   color: var(--dec-color-text);
   font-weight: 700;
+}
+
+.workspace-link.disabled,
+.workspace-link[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .setup-sensitive-row {

@@ -162,6 +162,11 @@ export async function saveCourseSetupAction(courseId: string, formData: FormData
         result.value.selectedDiagnosisRecordId,
       )
     : null;
+
+  if (!selectedDiagnosisRecord) {
+    redirect(`/studio/courses/${courseId}/setup?error=diagnosis`);
+  }
+
   const diagnosisSelectionData = selectedDiagnosisRecord
     ? buildCourseSetupDiagnosisSelectionData(selectedDiagnosisRecord)
     : {};

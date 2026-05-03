@@ -78,6 +78,10 @@ export function isCourseSetupComplete(input: CourseSetupInput) {
   return requiredFields.every((field) => Boolean(input[field]));
 }
 
+export function hasDiagnosisEvidenceAnchor(input: CourseSetupInput) {
+  return Boolean(input.selectedDiagnosisRecordId);
+}
+
 function getTextValue(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim();
 }

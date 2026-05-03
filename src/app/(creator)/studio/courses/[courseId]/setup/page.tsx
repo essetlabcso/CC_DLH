@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CourseWorkflowStep, WorkflowStepStatus } from "@prisma/client";
 
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
@@ -65,6 +66,11 @@ export default async function CourseSetupPage({
   const missingFields = resolvedSearchParams?.fields
     ? resolvedSearchParams.fields.split(",").filter(Boolean)
     : [];
+  const courseSetupComplete =
+    editable.version.workflowSteps.find(
+      (step) => step.step === CourseWorkflowStep.COURSE_SETUP,
+    )?.status === WorkflowStepStatus.COMPLETE;
+  const canContinueToDiagnosis = Boolean(selectedDiagnosis) || courseSetupComplete;
 
   return (
     <WorkspaceShell eyebrow="Course Setup" title={editable.course.title}>
@@ -100,6 +106,12 @@ export default async function CourseSetupPage({
           Please complete the required fields: {missingFields.join(", ")}.
         </p>
       ) : null}
+      {resolvedSearchParams?.error === "diagnosis" ? (
+        <p className="workspace-error">
+          Select an approved course-eligible diagnosis record before completing
+          Course Setup. DEC courses must start from approved capacity evidence.
+        </p>
+      ) : null}
 
       <form action={saveAction} className="setup-form">
         <section
@@ -113,8 +125,8 @@ export default async function CourseSetupPage({
               </h2>
               <p className="section-subcopy">
                 DEC courses should start from approved capacity evidence. Select
-                the diagnosis record this course will respond to, or leave it
-                blank for now while this foundation is being introduced.
+                the diagnosis record this course will respond to before
+                completing Course Setup.
               </p>
             </div>
             {selectedDiagnosis ? (
@@ -126,9 +138,19 @@ export default async function CourseSetupPage({
                 Historical selection
               </span>
             ) : (
-              <span className="status-badge">Optional for now</span>
+              <span className="status-badge status-badge-blocked">
+                Evidence required
+              </span>
             )}
           </div>
+
+          {resolvedSearchParams?.error === "diagnosis" ? (
+            <p className="workspace-error diagnosis-anchor-error">
+              Select an approved course-eligible diagnosis record before
+              completing Course Setup. DEC courses must start from approved
+              capacity evidence.
+            </p>
+          ) : null}
 
           {selectedDiagnosis ? (
             <SelectedDiagnosisSummary
@@ -370,12 +392,18 @@ export default async function CourseSetupPage({
           and whether a course is the right intervention.
         </p>
         <nav className="workspace-nav" aria-label="Course Setup next step">
-          <Link
-            className="workspace-link primary"
-            href={`/studio/courses/${courseId}/diagnosis`}
-          >
-            Continue to Diagnosis
-          </Link>
+          {canContinueToDiagnosis ? (
+            <Link
+              className="workspace-link primary"
+              href={`/studio/courses/${courseId}/diagnosis`}
+            >
+              Continue to Diagnosis
+            </Link>
+          ) : (
+            <span className="workspace-link disabled" aria-disabled="true">
+              Select diagnosis evidence to continue
+            </span>
+          )}
         </nav>
       </div>
     </WorkspaceShell>
