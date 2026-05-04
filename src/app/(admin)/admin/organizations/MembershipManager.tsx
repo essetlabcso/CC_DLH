@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MembershipStatus, UserRole } from "@prisma/client";
-import { addOrganizationMemberAction, updateOrganizationMembershipAction } from "./actions";
+import { addOrganizationMemberAction, updateOrganizationMembershipAction, inviteOrganizationMemberAction } from "./actions";
 
 type Member = {
   id: string;
@@ -23,6 +23,7 @@ export function MembershipManager({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [addMode, setAddMode] = useState<"existing" | "new">("existing");
 
   return (
     <div className="admin-membership-manager">
@@ -47,34 +48,98 @@ export function MembershipManager({
       {isAdding && (
         <section className="admin-user-card" style={{ marginBottom: "2rem", border: "2px solid var(--primary-accent)" }}>
           <div className="admin-section-heading">
-            <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Add existing user</h3>
-            <p>Associate a registered user with this organization.</p>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Add or Invite Member</h3>
+            <p>Add an existing user or invite a new user to this organization.</p>
           </div>
-          <form action={addOrganizationMemberAction.bind(null, organizationId)} className="admin-inline-form">
-            <label>
-              <span>User Email</span>
-              <input name="email" type="email" placeholder="user@example.com" required />
-            </label>
-            <label>
-              <span>Reason for adding</span>
-              <textarea 
-                name="reason" 
-                placeholder="Why is this user being added to this organization?" 
-                required 
-                rows={2} 
-              />
-            </label>
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-              <button className="workspace-link" type="submit">Add Member</button>
-              <button 
-                className="workspace-link secondary" 
-                type="button" 
-                onClick={() => setIsAdding(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          
+          <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+            <button 
+              className={`workspace-link ${addMode === "existing" ? "" : "secondary"}`}
+              onClick={() => setAddMode("existing")}
+            >
+              Add Existing
+            </button>
+            <button 
+              className={`workspace-link ${addMode === "new" ? "" : "secondary"}`}
+              onClick={() => setAddMode("new")}
+            >
+              Invite New User
+            </button>
+          </div>
+
+          {addMode === "existing" ? (
+            <form action={addOrganizationMemberAction.bind(null, organizationId)} className="admin-inline-form">
+              <label>
+                <span>User Email</span>
+                <input name="email" type="email" placeholder="user@example.com" required />
+              </label>
+              <label>
+                <span>Reason for adding</span>
+                <textarea 
+                  name="reason" 
+                  placeholder="Why is this user being added to this organization?" 
+                  required 
+                  rows={2} 
+                />
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                <button className="workspace-link" type="submit">Add Member</button>
+                <button 
+                  className="workspace-link secondary" 
+                  type="button" 
+                  onClick={() => setIsAdding(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form action={inviteOrganizationMemberAction.bind(null, organizationId)} className="admin-inline-form">
+              <label>
+                <span>User Name</span>
+                <input name="name" type="text" placeholder="Full Name" required />
+              </label>
+              <label>
+                <span>User Email</span>
+                <input name="email" type="email" placeholder="user@example.com" required />
+              </label>
+              <fieldset style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Initial Roles</legend>
+                <div className="reference-visibility-grid">
+                  {Object.values(UserRole).map((role) => (
+                    <label className="checkbox-row" key={role}>
+                      <input
+                        defaultChecked={role === "LEARNER"}
+                        name="roles"
+                        type="checkbox"
+                        value={role}
+                      />
+                      <span>{role === "LEARNER" ? "Participant" : formatLabel(role)}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <label>
+                <span>Reason for inviting</span>
+                <textarea 
+                  name="reason" 
+                  placeholder="Why is this user being invited to this organization?" 
+                  required 
+                  rows={2} 
+                />
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                <button className="workspace-link" type="submit">Invite User</button>
+                <button 
+                  className="workspace-link secondary" 
+                  type="button" 
+                  onClick={() => setIsAdding(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </section>
       )}
 

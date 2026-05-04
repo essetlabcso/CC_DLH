@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
 import { parseOrganizationForm } from "@/lib/admin/organization-form";
-import { parseAddMemberForm, parseUpdateMembershipForm } from "@/lib/admin/membership-form";
+import { parseAddMemberForm, parseUpdateMembershipForm, parseInviteMemberForm } from "@/lib/admin/membership-form";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 
@@ -428,3 +428,91 @@ function toAuditOrganization(org: {
   };
 }
 
+export async function inviteOrganizationMemberAction(organizationId: string, formData: FormData) {
+  const identity = await requireWorkspaceIdentity(`/admin/organizations/${organizationId}`);
+  const parsed = parseInviteMemberForm(formData);
+
+  if (!parsed.ok) {
+    redirect(`/admin/organizations/${organizationId}?error=${encodeURIComponent(parsed.message)}`);
+  }
+
+  // Check if user already exists
+  let user = await prisma.user.findFirst({
+    where: { email: parsed.data.email },
+  });
+
+  const isNewUser = !user;
+  const isHighRisk = parsed.data.roles.includes(UserRole.ADMIN);
+
+  await prisma.$transaction(async (tx) => {
+    if (!user) {
+      user = await tx.user.create({
+        data: {
+          email: parsed.data.email,
+          name: parsed.data.name,
+          organizationId: organizationId,
+          status: "INVITED",
+        },
+      });
+    }
+
+    // Check for existing membership
+    const existingMembership = await tx.organizationMembership.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: user.id,
+        },
+      },
+    });
+
+    if (existingMembership) {
+      // We cannot redirect inside a transaction safely without throwing, but Next.js redirect throws.
+      // So it will abort the transaction, which is fine since we want to abort.
+      redirect(
+        `/admin/organizations/${organizationId}?error=${encodeURIComponent(
+          "This user is already a member of this organization."
+        )}`
+      );
+    }
+
+    const membership = await tx.organizationMembership.create({
+      data: {
+        organizationId,
+        userId: user.id,
+        status: MembershipStatus.INVITED,
+      },
+    });
+
+    for (const role of parsed.data.roles) {
+      await tx.membershipRoleAssignment.create({
+        data: {
+          membershipId: membership.id,
+          role: role,
+        },
+      });
+    }
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "USER_INVITED",
+        actorId: identity.user.id,
+        afterJson: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email,
+          organizationId,
+          membershipId: membership.id,
+          roles: parsed.data.roles,
+          isNewUser,
+        }),
+        entityId: user.id,
+        entityType: "User",
+        reason: parsed.data.reason,
+        riskLevel: isHighRisk ? "HIGH" : "MEDIUM",
+      },
+    });
+  });
+
+  revalidateOrganizationPaths(organizationId);
+  redirect(`/admin/organizations/${organizationId}?updated=1`);
+}

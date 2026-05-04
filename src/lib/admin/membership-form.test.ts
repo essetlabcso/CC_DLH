@@ -1,6 +1,6 @@
 import { MembershipStatus, UserRole } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { parseAddMemberForm, parseUpdateMembershipForm } from "./membership-form";
+import { parseAddMemberForm, parseUpdateMembershipForm, parseInviteMemberForm } from "./membership-form";
 
 describe("membership-form validation", () => {
   describe("parseAddMemberForm", () => {
@@ -78,6 +78,93 @@ describe("membership-form validation", () => {
 
       const result = parseUpdateMembershipForm(formData);
       expect(result.ok).toBe(false);
+    });
+  });
+
+  describe("parseInviteMemberForm", () => {
+    it("accepts valid invite with ADMIN role", () => {
+      const formData = new FormData();
+      formData.append("name", "Test User");
+      formData.append("email", "invite@example.com");
+      formData.append("roles", UserRole.ADMIN);
+      formData.append("reason", "Inviting an admin.");
+
+      const result = parseInviteMemberForm(formData);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data.name).toBe("Test User");
+        expect(result.data.email).toBe("invite@example.com");
+        expect(result.data.roles).toContain(UserRole.ADMIN);
+      }
+    });
+
+    it("rejects missing or short name", () => {
+      const formData = new FormData();
+      formData.append("name", "A");
+      formData.append("email", "invite@example.com");
+      formData.append("roles", UserRole.LEARNER);
+      formData.append("reason", "Inviting user.");
+
+      const result = parseInviteMemberForm(formData);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.message).toContain("valid name");
+      }
+    });
+
+    it("rejects invalid email", () => {
+      const formData = new FormData();
+      formData.append("name", "Test User");
+      formData.append("email", "not-an-email");
+      formData.append("roles", UserRole.LEARNER);
+      formData.append("reason", "Inviting user.");
+
+      const result = parseInviteMemberForm(formData);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.message).toContain("valid email");
+      }
+    });
+
+    it("rejects missing roles", () => {
+      const formData = new FormData();
+      formData.append("name", "Test User");
+      formData.append("email", "invite@example.com");
+      formData.append("reason", "Inviting user.");
+
+      const result = parseInviteMemberForm(formData);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.message).toContain("At least one role");
+      }
+    });
+
+    it("rejects invalid role", () => {
+      const formData = new FormData();
+      formData.append("name", "Test User");
+      formData.append("email", "invite@example.com");
+      formData.append("roles", "INVALID_ROLE");
+      formData.append("reason", "Inviting user.");
+
+      const result = parseInviteMemberForm(formData);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.message).toContain("Invalid role");
+      }
+    });
+
+    it("rejects short reason", () => {
+      const formData = new FormData();
+      formData.append("name", "Test User");
+      formData.append("email", "invite@example.com");
+      formData.append("roles", UserRole.LEARNER);
+      formData.append("reason", "abc");
+
+      const result = parseInviteMemberForm(formData);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.message).toContain("at least 5 characters");
+      }
     });
   });
 });
