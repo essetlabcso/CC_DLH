@@ -625,6 +625,50 @@ select {
   color: var(--dec-color-muted-text);
 }
 
+.admin-draft-form {
+  width: min(100%, 56rem);
+}
+
+.admin-draft-form fieldset {
+  display: grid;
+  gap: var(--dec-space-3);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  background: var(--dec-color-surface);
+}
+
+.admin-draft-form legend {
+  padding: 0 var(--dec-space-2);
+  color: var(--dec-color-text);
+  font-weight: 800;
+}
+
+.admin-draft-form .form-help,
+.admin-draft-form .form-error {
+  margin: 0;
+}
+
+.admin-draft-form .form-help {
+  color: var(--dec-color-muted-text);
+  font-size: 0.9rem;
+}
+
+.admin-draft-form .form-error {
+  padding: var(--dec-space-3);
+  border: 1px solid color-mix(in srgb, var(--dec-color-danger) 38%, var(--dec-color-border));
+  border-radius: var(--dec-radius-md);
+  background: color-mix(in srgb, var(--dec-color-danger) 8%, var(--dec-color-background));
+  color: var(--dec-color-danger);
+  font-weight: 800;
+}
+
+.admin-draft-form .form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dec-space-3);
+}
+
 .review-hero {
   display: grid;
   gap: var(--dec-space-4);

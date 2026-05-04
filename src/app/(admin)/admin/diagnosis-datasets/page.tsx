@@ -20,6 +20,9 @@ export default async function AdminDiagnosisDatasetsPage() {
             <Link className="workspace-link secondary" href="/admin">
               Back to Admin
             </Link>
+            <Link className="workspace-link" href="/admin/diagnosis-datasets/new">
+              New draft dataset
+            </Link>
             <Link className="workspace-link secondary" href="/admin/diagnosis-records">
               Diagnosis Records
             </Link>
@@ -141,6 +144,14 @@ export default async function AdminDiagnosisDatasetsPage() {
                     >
                       Open dataset
                     </Link>
+                    {dataset.canEdit ? (
+                      <Link
+                        className="workspace-link secondary"
+                        href={`/admin/diagnosis-datasets/${dataset.id}/edit`}
+                      >
+                        Edit draft
+                      </Link>
+                    ) : null}
                   </div>
                 </article>
               ))}

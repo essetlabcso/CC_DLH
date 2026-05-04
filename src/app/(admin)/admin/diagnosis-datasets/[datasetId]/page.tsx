@@ -42,6 +42,14 @@ export default async function AdminDiagnosisDatasetDetailPage({
             <Link className="workspace-link secondary" href="/admin/diagnosis-datasets">
               Back to datasets
             </Link>
+            {dataset.canEdit ? (
+              <Link
+                className="workspace-link"
+                href={`/admin/diagnosis-datasets/${dataset.id}/edit`}
+              >
+                Edit draft
+              </Link>
+            ) : null}
             <Link className="workspace-link secondary" href="/admin/diagnosis-records">
               Diagnosis records
             </Link>
@@ -89,7 +97,15 @@ export default async function AdminDiagnosisDatasetDetailPage({
             >
               {dataset.archivedAt ? "Archived" : "Active"}
             </span>
-            <span className="status-badge status-badge-published">Read only</span>
+            {dataset.canEdit ? (
+              <span className="status-badge status-badge-ready">
+                Draft edit available
+              </span>
+            ) : (
+              <span className="status-badge status-badge-published">
+                Read only
+              </span>
+            )}
           </div>
         </section>
 

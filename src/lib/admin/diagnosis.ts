@@ -15,6 +15,9 @@ export type AdminDiagnosisDatasetCard = {
   approvedAt: Date | null;
   archivedAt: Date | null;
   recordCount: number;
+  selectedCourseSetupCount: number;
+  canEdit: boolean;
+  canEditDatasetCode: boolean;
 };
 
 export type AdminDiagnosisRecordCard = {
@@ -78,6 +81,8 @@ export type AdminDiagnosisCourseEligibility = {
 };
 
 export type AdminDiagnosisDatasetDetail = AdminDiagnosisDatasetCard & {
+  assessmentPeriodEnd: Date | null;
+  assessmentPeriodStart: Date | null;
   dataCollectionMethods: string[];
   notes: string;
   createdByName: string | null;
@@ -184,6 +189,7 @@ export async function getAdminDiagnosisDatasetBrowser(): Promise<AdminDiagnosisD
       _count: {
         select: {
           records: true,
+          selectedCourseSetups: true,
         },
       },
     },
@@ -196,6 +202,8 @@ export async function getAdminDiagnosisDatasetBrowser(): Promise<AdminDiagnosisD
     datasetTitle: dataset.datasetTitle,
     programOrProject: dataset.programOrProject,
     assessmentPurpose: dataset.assessmentPurpose,
+    assessmentPeriodEnd: dataset.assessmentPeriodEnd,
+    assessmentPeriodStart: dataset.assessmentPeriodStart,
     assessmentPeriod: formatPeriod(
       dataset.assessmentPeriodStart,
       dataset.assessmentPeriodEnd,
@@ -208,6 +216,18 @@ export async function getAdminDiagnosisDatasetBrowser(): Promise<AdminDiagnosisD
     approvedAt: dataset.approvedAt,
     archivedAt: dataset.archivedAt,
     recordCount: dataset._count.records,
+    selectedCourseSetupCount: dataset._count.selectedCourseSetups,
+    canEdit: canEditDataset({
+      approvalStatus: dataset.approvalStatus,
+      archivedAt: dataset.archivedAt,
+      selectedCourseSetupCount: dataset._count.selectedCourseSetups,
+    }),
+    canEditDatasetCode: canEditDatasetCode({
+      approvalStatus: dataset.approvalStatus,
+      archivedAt: dataset.archivedAt,
+      recordCount: dataset._count.records,
+      selectedCourseSetupCount: dataset._count.selectedCourseSetups,
+    }),
   }));
 
   return {
@@ -325,6 +345,8 @@ export async function getAdminDiagnosisDatasetDetail(
     datasetTitle: dataset.datasetTitle,
     programOrProject: dataset.programOrProject,
     assessmentPurpose: dataset.assessmentPurpose,
+    assessmentPeriodEnd: dataset.assessmentPeriodEnd,
+    assessmentPeriodStart: dataset.assessmentPeriodStart,
     assessmentPeriod: formatPeriod(
       dataset.assessmentPeriodStart,
       dataset.assessmentPeriodEnd,
@@ -338,6 +360,18 @@ export async function getAdminDiagnosisDatasetDetail(
     approvedAt: dataset.approvedAt,
     archivedAt: dataset.archivedAt,
     recordCount: records.length,
+    selectedCourseSetupCount: dataset.selectedCourseSetups.length,
+    canEdit: canEditDataset({
+      approvalStatus: dataset.approvalStatus,
+      archivedAt: dataset.archivedAt,
+      selectedCourseSetupCount: dataset.selectedCourseSetups.length,
+    }),
+    canEditDatasetCode: canEditDatasetCode({
+      approvalStatus: dataset.approvalStatus,
+      archivedAt: dataset.archivedAt,
+      recordCount: records.length,
+      selectedCourseSetupCount: dataset.selectedCourseSetups.length,
+    }),
     notes: dataset.notes,
     createdByName: dataset.createdBy?.name ?? null,
     updatedByName: dataset.updatedBy?.name ?? null,
@@ -848,5 +882,38 @@ function parseList(value: string) {
 function uniqueSorted(values: string[]) {
   return Array.from(new Set(values.filter(Boolean))).sort((left, right) =>
     left.localeCompare(right),
+  );
+}
+
+function canEditDataset({
+  approvalStatus,
+  archivedAt,
+  selectedCourseSetupCount,
+}: {
+  approvalStatus: string;
+  archivedAt: Date | null;
+  selectedCourseSetupCount: number;
+}) {
+  return (
+    isStatus(approvalStatus, "DRAFT") &&
+    !archivedAt &&
+    selectedCourseSetupCount === 0
+  );
+}
+
+function canEditDatasetCode({
+  approvalStatus,
+  archivedAt,
+  recordCount,
+  selectedCourseSetupCount,
+}: {
+  approvalStatus: string;
+  archivedAt: Date | null;
+  recordCount: number;
+  selectedCourseSetupCount: number;
+}) {
+  return (
+    canEditDataset({ approvalStatus, archivedAt, selectedCourseSetupCount }) &&
+    recordCount === 0
   );
 }
