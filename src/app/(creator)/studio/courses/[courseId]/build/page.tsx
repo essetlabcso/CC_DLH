@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { DesignSummaryPanel } from "@/components/studio/DesignSummaryPanel";
+import { EvidenceContextPanel } from "@/components/studio/EvidenceContextPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -39,6 +40,7 @@ import {
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
 import { isDesignHandoverLocked } from "@/lib/studio/design-handover";
+import { buildEvidenceContextDisplayModel } from "@/lib/studio/evidence-context";
 import { parseStoryboardLessonPlan } from "@/lib/studio/storyboard";
 
 import {
@@ -115,6 +117,23 @@ export default async function BuildStudioPage({
   const storyboardLesson = parseStoryboardLessonPlan(
     storyboard?.lessonPlan,
   )[0];
+  const analysisHandover = editable.version.analysisHandover;
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const evidenceContext = buildEvidenceContextDisplayModel({
+    analysisHandover,
+    currentStageLabel: "Design / Build context",
+    diagnosisSnapshotValue: editable.version.setup?.diagnosisSnapshot,
+    linkedDiagnosisRecord,
+  });
 
   if (
     storyboardStatus !== WorkflowStepStatus.COMPLETE ||
@@ -128,6 +147,7 @@ export default async function BuildStudioPage({
           Complete Storyboard and lock the Design-to-Build Handover before
           creating learner-facing lesson content.
         </p>
+        <EvidenceContextPanel context={evidenceContext} />
         <nav className="workspace-nav" aria-label="Build Studio recovery">
           <Link
             className="workspace-link primary"
@@ -172,7 +192,6 @@ export default async function BuildStudioPage({
   const proofConfig = editable.version.practicalProofConfig;
   const proofReadiness = buildPracticalProofReadiness(proofConfig);
   const proofAction = savePracticalProofConfigAction.bind(null, courseId);
-  const analysisHandover = editable.version.analysisHandover;
   const lessonCount = modules.reduce(
     (total, module) => total + module.lessons.length,
     0,
@@ -323,10 +342,13 @@ export default async function BuildStudioPage({
       ) : null}
 
       {designHandover ? (
-        <DesignSummaryPanel
-          handover={designHandover}
-          analysisHandover={editable.version.analysisHandover}
-        />
+        <>
+          <EvidenceContextPanel context={evidenceContext} />
+          <DesignSummaryPanel
+            handover={designHandover}
+            analysisHandover={analysisHandover}
+          />
+        </>
       ) : null}
 
       <section className="studio-section" aria-labelledby="build-source-title">
