@@ -218,6 +218,14 @@ export default async function AdminDiagnosisRecordsPage({
                       >
                         Open record
                       </Link>
+                      {record.canEdit ? (
+                        <Link
+                          className="workspace-link"
+                          href={`/admin/diagnosis-records/${record.id}/edit`}
+                        >
+                          Edit draft
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
 

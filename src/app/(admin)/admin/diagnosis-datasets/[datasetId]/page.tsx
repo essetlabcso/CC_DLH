@@ -50,6 +50,14 @@ export default async function AdminDiagnosisDatasetDetailPage({
                 Edit draft
               </Link>
             ) : null}
+            {dataset.canEdit ? (
+              <Link
+                className="workspace-link"
+                href={`/admin/diagnosis-records/new?datasetId=${dataset.id}`}
+              >
+                New draft record
+              </Link>
+            ) : null}
             <Link className="workspace-link secondary" href="/admin/diagnosis-records">
               Diagnosis records
             </Link>
@@ -196,6 +204,14 @@ export default async function AdminDiagnosisDatasetDetailPage({
                       >
                         Open record
                       </Link>
+                      {record.canEdit ? (
+                        <Link
+                          className="workspace-link"
+                          href={`/admin/diagnosis-records/${record.id}/edit`}
+                        >
+                          Edit draft
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
                   <dl className="reference-meta-list">

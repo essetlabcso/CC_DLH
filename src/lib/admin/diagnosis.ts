@@ -42,9 +42,11 @@ export type AdminDiagnosisRecordCard = {
   isLocked: boolean;
   isActive: boolean;
   archivedAt: Date | null;
+  canEdit: boolean;
   currentBaseline: string;
   capacityGapStatement: string;
   desiredPractice: string;
+  selectedCourseSetupCount: number;
 };
 
 export type AdminDiagnosisCourseUsage = {
@@ -72,6 +74,8 @@ export type AdminDiagnosisLinkedRecord = {
   isLocked: boolean;
   isActive: boolean;
   archivedAt: Date | null;
+  canEdit: boolean;
+  selectedCourseSetupCount: number;
 };
 
 export type AdminDiagnosisCourseEligibility = {
@@ -134,6 +138,18 @@ export type AdminDiagnosisRecordDetail = AdminDiagnosisRecordCard & {
   changeReason: string;
   linkedCourseSetups: AdminDiagnosisCourseUsage[];
   courseEligibility: AdminDiagnosisCourseEligibility;
+  canEdit: boolean;
+  selectedCourseSetupCount: number;
+};
+
+export type AdminDiagnosisRecordDraftFormOptions = {
+  capacityAreas: string[];
+  courseFitDecisions: string[];
+  dataSensitivityLevels: string[];
+  geographicFocusAreas: string[];
+  ksmeRoutes: string[];
+  safeguardingRiskLevels: string[];
+  targetAudienceGroups: string[];
 };
 
 export type AdminDiagnosisDatasetBrowser = {
@@ -283,6 +299,11 @@ export async function getAdminDiagnosisDatasetDetail(
           region: true,
           subCapacity: true,
           targetAudience: true,
+          _count: {
+            select: {
+              selectedCourseSetups: true,
+            },
+          },
         },
       },
       selectedCourseSetups: {
@@ -337,6 +358,16 @@ export async function getAdminDiagnosisDatasetDetail(
     isLocked: record.isLocked,
     isActive: record.isActive,
     archivedAt: record.archivedAt,
+    selectedCourseSetupCount: record._count.selectedCourseSetups,
+    canEdit: canEditRecord({
+      approvalStatus: record.approvalStatus,
+      archivedAt: record.archivedAt,
+      datasetApprovalStatus: dataset.approvalStatus,
+      datasetArchivedAt: dataset.archivedAt,
+      isActive: record.isActive,
+      isLocked: record.isLocked,
+      selectedCourseSetupCount: record._count.selectedCourseSetups,
+    }),
   }));
 
   return {
@@ -416,8 +447,15 @@ export async function getAdminDiagnosisRecordBrowser({
       include: {
         dataset: {
           select: {
+            approvalStatus: true,
+            archivedAt: true,
             datasetCode: true,
             datasetTitle: true,
+          },
+        },
+        _count: {
+          select: {
+            selectedCourseSetups: true,
           },
         },
       },
@@ -465,6 +503,16 @@ export async function getAdminDiagnosisRecordBrowser({
     isLocked: record.isLocked,
     isActive: record.isActive,
     archivedAt: record.archivedAt,
+    selectedCourseSetupCount: record._count.selectedCourseSetups,
+    canEdit: canEditRecord({
+      approvalStatus: record.approvalStatus,
+      archivedAt: record.archivedAt,
+      datasetApprovalStatus: record.dataset.approvalStatus,
+      datasetArchivedAt: record.dataset.archivedAt,
+      isActive: record.isActive,
+      isLocked: record.isLocked,
+      selectedCourseSetupCount: record._count.selectedCourseSetups,
+    }),
     currentBaseline: record.currentBaseline,
     capacityGapStatement: record.capacityGapStatement,
     desiredPractice: record.desiredPractice,
@@ -559,6 +607,11 @@ export async function getAdminDiagnosisRecordDetail(
           },
         },
       },
+      _count: {
+        select: {
+          selectedCourseSetups: true,
+        },
+      },
       updatedBy: {
         select: {
           name: true,
@@ -634,6 +687,16 @@ export async function getAdminDiagnosisRecordDetail(
     updatedAt: record.updatedAt,
     changeReason: record.changeReason,
     linkedCourseSetups: record.selectedCourseSetups.map(formatCourseUsage),
+    selectedCourseSetupCount: record._count.selectedCourseSetups,
+    canEdit: canEditRecord({
+      approvalStatus: record.approvalStatus,
+      archivedAt: record.archivedAt,
+      datasetApprovalStatus: record.dataset.approvalStatus,
+      datasetArchivedAt: record.dataset.archivedAt,
+      isActive: record.isActive,
+      isLocked: record.isLocked,
+      selectedCourseSetupCount: record._count.selectedCourseSetups,
+    }),
     courseEligibility: evaluateCourseEligibility({
       courseFitDecision: record.courseFitDecision,
       datasetArchivedAt: record.dataset.archivedAt,
@@ -646,6 +709,49 @@ export async function getAdminDiagnosisRecordDetail(
       separableKnowledgeSkillComponent:
         record.separableKnowledgeSkillComponent,
     }),
+  };
+}
+
+export async function getAdminDiagnosisRecordDraftFormOptions(): Promise<AdminDiagnosisRecordDraftFormOptions> {
+  const categories = await prisma.adminLookupCategory.findMany({
+    include: {
+      values: {
+        orderBy: [{ displayOrder: "asc" }, { displayLabel: "asc" }],
+        where: {
+          isActive: true,
+          visibleToAdmin: true,
+        },
+      },
+    },
+    where: {
+      categoryKey: {
+        in: [
+          "capacity_areas",
+          "course_fit_decisions",
+          "data_sensitivity_levels",
+          "geographic_focus_areas",
+          "ksme_routes",
+          "safeguarding_risk_levels",
+          "target_audience_groups",
+        ],
+      },
+      isActive: true,
+    },
+  });
+
+  const labelsFor = (categoryKey: string) =>
+    categories
+      .find((category) => category.categoryKey === categoryKey)
+      ?.values.map((value) => value.displayLabel) ?? [];
+
+  return {
+    capacityAreas: labelsFor("capacity_areas"),
+    courseFitDecisions: labelsFor("course_fit_decisions"),
+    dataSensitivityLevels: labelsFor("data_sensitivity_levels"),
+    geographicFocusAreas: labelsFor("geographic_focus_areas"),
+    ksmeRoutes: labelsFor("ksme_routes"),
+    safeguardingRiskLevels: labelsFor("safeguarding_risk_levels"),
+    targetAudienceGroups: labelsFor("target_audience_groups"),
   };
 }
 
@@ -915,5 +1021,33 @@ function canEditDatasetCode({
   return (
     canEditDataset({ approvalStatus, archivedAt, selectedCourseSetupCount }) &&
     recordCount === 0
+  );
+}
+
+function canEditRecord({
+  approvalStatus,
+  archivedAt,
+  datasetApprovalStatus,
+  datasetArchivedAt,
+  isActive,
+  isLocked,
+  selectedCourseSetupCount,
+}: {
+  approvalStatus: string;
+  archivedAt: Date | null;
+  datasetApprovalStatus: string;
+  datasetArchivedAt: Date | null;
+  isActive: boolean;
+  isLocked: boolean;
+  selectedCourseSetupCount: number;
+}) {
+  return (
+    isStatus(datasetApprovalStatus, "DRAFT") &&
+    !datasetArchivedAt &&
+    isStatus(approvalStatus, "DRAFT") &&
+    !isLocked &&
+    isActive &&
+    !archivedAt &&
+    selectedCourseSetupCount === 0
   );
 }

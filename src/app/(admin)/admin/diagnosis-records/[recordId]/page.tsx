@@ -49,6 +49,14 @@ export default async function AdminDiagnosisRecordDetailPage({
             >
               Open dataset
             </Link>
+            {record.canEdit ? (
+              <Link
+                className="workspace-link"
+                href={`/admin/diagnosis-records/${record.id}/edit`}
+              >
+                Edit draft
+              </Link>
+            ) : null}
           </div>
         </section>
 
@@ -101,7 +109,13 @@ export default async function AdminDiagnosisRecordDetailPage({
             >
               {record.courseEligibility.label}
             </span>
-            <span className="status-badge status-badge-published">Read only</span>
+            {record.canEdit ? (
+              <span className="status-badge status-badge-ready">
+                Draft edit available
+              </span>
+            ) : (
+              <span className="status-badge status-badge-published">Read only</span>
+            )}
           </div>
         </section>
 

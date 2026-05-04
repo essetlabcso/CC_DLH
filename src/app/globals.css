@@ -669,6 +669,25 @@ select {
   gap: var(--dec-space-3);
 }
 
+.readiness-warning-panel {
+  display: grid;
+  gap: var(--dec-space-2);
+  padding: var(--dec-space-4);
+  border: 1px solid color-mix(in srgb, #b45309 44%, var(--dec-color-border));
+  border-radius: var(--dec-radius-md);
+  background: color-mix(in srgb, #b45309 10%, var(--dec-color-surface));
+}
+
+.readiness-warning-panel h3,
+.readiness-warning-panel p {
+  margin: 0;
+}
+
+.readiness-warning-panel ul {
+  margin: 0;
+  padding-left: var(--dec-space-5);
+}
+
 .review-hero {
   display: grid;
   gap: var(--dec-space-4);
