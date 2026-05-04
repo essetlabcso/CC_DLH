@@ -135,6 +135,12 @@ export default async function AdminDiagnosisDatasetsPage() {
                     <span className="status-badge status-badge-published">
                       Read only
                     </span>
+                    <Link
+                      className="workspace-link secondary"
+                      href={`/admin/diagnosis-datasets/${dataset.id}`}
+                    >
+                      Open dataset
+                    </Link>
                   </div>
                 </article>
               ))}

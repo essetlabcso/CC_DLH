@@ -212,6 +212,12 @@ export default async function AdminDiagnosisRecordsPage({
                       >
                         {record.archivedAt || !record.isActive ? "Archived" : "Active"}
                       </span>
+                      <Link
+                        className="workspace-link secondary"
+                        href={`/admin/diagnosis-records/${record.id}`}
+                      >
+                        Open record
+                      </Link>
                     </div>
                   </div>
 

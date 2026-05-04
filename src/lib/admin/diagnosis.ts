@@ -44,6 +44,93 @@ export type AdminDiagnosisRecordCard = {
   desiredPractice: string;
 };
 
+export type AdminDiagnosisCourseUsage = {
+  courseId: string;
+  courseTitle: string;
+  courseVersionId: string;
+  setupTitle: string;
+  setupUpdatedAt: Date;
+  versionNumber: number;
+  versionStatus: string;
+};
+
+export type AdminDiagnosisLinkedRecord = {
+  id: string;
+  diagnosisCode: string;
+  diagnosisTitle: string;
+  coreCapacityArea: string;
+  capacityPracticeArea: string;
+  subCapacity: string;
+  targetAudience: string;
+  region: string;
+  ksmeRoute: string;
+  courseFitDecision: string;
+  approvalStatus: string;
+  isLocked: boolean;
+  isActive: boolean;
+  archivedAt: Date | null;
+};
+
+export type AdminDiagnosisCourseEligibility = {
+  isEligible: boolean;
+  label: string;
+  reasons: string[];
+};
+
+export type AdminDiagnosisDatasetDetail = AdminDiagnosisDatasetCard & {
+  dataCollectionMethods: string[];
+  notes: string;
+  createdByName: string | null;
+  updatedByName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  linkedCourseSetups: AdminDiagnosisCourseUsage[];
+  records: AdminDiagnosisLinkedRecord[];
+  totals: {
+    approvedRecords: number;
+    lockedRecords: number;
+    activeRecords: number;
+    archivedRecords: number;
+    selectedCourseSetups: number;
+  };
+};
+
+export type AdminDiagnosisRecordDetail = AdminDiagnosisRecordCard & {
+  datasetId: string;
+  assessmentPeriod: string;
+  datasetApprovalStatus: string;
+  datasetArchivedAt: Date | null;
+  organizationName: string | null;
+  sectorThematicArea: string;
+  indicatorStandardLink: string;
+  evidenceSource: string;
+  rootCauseSummary: string;
+  separableKnowledgeSkillComponent: string;
+  nonCourseBarrierSummary: string;
+  recommendedInterventionRoute: string;
+  recommendedCourseOrSupportTitle: string;
+  priorityLevel: string;
+  priorityRank: number | null;
+  noHarmNote: string;
+  safeSummaryForDashboard: string;
+  evaluationAnchor: string;
+  monitoringSignal: string;
+  possiblePracticalProof: string;
+  verifiedAchievementExample: string;
+  courseCreationStatus: string;
+  approvedByName: string | null;
+  approvedAt: Date | null;
+  lockedByName: string | null;
+  lockedAt: Date | null;
+  createdByName: string | null;
+  updatedByName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  changeReason: string;
+  linkedCourseSetups: AdminDiagnosisCourseUsage[];
+  courseEligibility: AdminDiagnosisCourseEligibility;
+};
+
 export type AdminDiagnosisDatasetBrowser = {
   datasets: AdminDiagnosisDatasetCard[];
   totals: {
@@ -140,6 +227,134 @@ export async function getAdminDiagnosisDatasetBrowser(): Promise<AdminDiagnosisD
         (total, dataset) => total + dataset.recordCount,
         0,
       ),
+    },
+  };
+}
+
+export async function getAdminDiagnosisDatasetDetail(
+  datasetId: string,
+): Promise<AdminDiagnosisDatasetDetail | null> {
+  const dataset = await prisma.diagnosisDataset.findUnique({
+    include: {
+      approvedBy: {
+        select: {
+          name: true,
+        },
+      },
+      createdBy: {
+        select: {
+          name: true,
+        },
+      },
+      records: {
+        orderBy: [{ priorityRank: "asc" }, { diagnosisCode: "asc" }],
+        select: {
+          archivedAt: true,
+          approvalStatus: true,
+          capacityPracticeArea: true,
+          coreCapacityArea: true,
+          courseFitDecision: true,
+          diagnosisCode: true,
+          diagnosisTitle: true,
+          id: true,
+          isActive: true,
+          isLocked: true,
+          ksmeRoute: true,
+          region: true,
+          subCapacity: true,
+          targetAudience: true,
+        },
+      },
+      selectedCourseSetups: {
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          title: true,
+          updatedAt: true,
+          courseVersion: {
+            select: {
+              id: true,
+              status: true,
+              versionNumber: true,
+              course: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      updatedBy: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    where: {
+      id: datasetId,
+    },
+  });
+
+  if (!dataset) {
+    return null;
+  }
+
+  const records = dataset.records.map((record) => ({
+    id: record.id,
+    diagnosisCode: record.diagnosisCode,
+    diagnosisTitle: record.diagnosisTitle,
+    coreCapacityArea: record.coreCapacityArea,
+    capacityPracticeArea: record.capacityPracticeArea,
+    subCapacity: record.subCapacity,
+    targetAudience: record.targetAudience,
+    region: record.region,
+    ksmeRoute: record.ksmeRoute,
+    courseFitDecision: record.courseFitDecision,
+    approvalStatus: record.approvalStatus,
+    isLocked: record.isLocked,
+    isActive: record.isActive,
+    archivedAt: record.archivedAt,
+  }));
+
+  return {
+    id: dataset.id,
+    datasetCode: dataset.datasetCode,
+    datasetTitle: dataset.datasetTitle,
+    programOrProject: dataset.programOrProject,
+    assessmentPurpose: dataset.assessmentPurpose,
+    assessmentPeriod: formatPeriod(
+      dataset.assessmentPeriodStart,
+      dataset.assessmentPeriodEnd,
+    ),
+    regionsCovered: parseList(dataset.regionsCovered),
+    organizationGroup: dataset.organizationGroup,
+    dataCollectionMethods: parseList(dataset.dataCollectionMethods),
+    approvalStatus: dataset.approvalStatus,
+    visibilityScope: dataset.visibilityScope,
+    approvedByName: dataset.approvedBy?.name ?? null,
+    approvedAt: dataset.approvedAt,
+    archivedAt: dataset.archivedAt,
+    recordCount: records.length,
+    notes: dataset.notes,
+    createdByName: dataset.createdBy?.name ?? null,
+    updatedByName: dataset.updatedBy?.name ?? null,
+    createdAt: dataset.createdAt,
+    updatedAt: dataset.updatedAt,
+    linkedCourseSetups: dataset.selectedCourseSetups.map(formatCourseUsage),
+    records,
+    totals: {
+      approvedRecords: records.filter((record) =>
+        isStatus(record.approvalStatus, "APPROVED"),
+      ).length,
+      lockedRecords: records.filter((record) => record.isLocked).length,
+      activeRecords: records.filter(
+        (record) => record.isActive && !record.archivedAt,
+      ).length,
+      archivedRecords: records.filter((record) => record.archivedAt).length,
+      selectedCourseSetups: dataset.selectedCourseSetups.length,
     },
   };
 }
@@ -252,6 +467,154 @@ export async function getAdminDiagnosisRecordBrowser({
   };
 }
 
+export async function getAdminDiagnosisRecordDetail(
+  recordId: string,
+): Promise<AdminDiagnosisRecordDetail | null> {
+  const record = await prisma.diagnosisRecord.findUnique({
+    include: {
+      approvedBy: {
+        select: {
+          name: true,
+        },
+      },
+      createdBy: {
+        select: {
+          name: true,
+        },
+      },
+      dataset: {
+        select: {
+          archivedAt: true,
+          approvalStatus: true,
+          assessmentPeriodEnd: true,
+          assessmentPeriodStart: true,
+          datasetCode: true,
+          datasetTitle: true,
+          id: true,
+        },
+      },
+      lockedBy: {
+        select: {
+          name: true,
+        },
+      },
+      organization: {
+        select: {
+          name: true,
+        },
+      },
+      selectedCourseSetups: {
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          title: true,
+          updatedAt: true,
+          courseVersion: {
+            select: {
+              id: true,
+              status: true,
+              versionNumber: true,
+              course: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      updatedBy: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    where: {
+      id: recordId,
+    },
+  });
+
+  if (!record) {
+    return null;
+  }
+
+  return {
+    id: record.id,
+    diagnosisCode: record.diagnosisCode,
+    diagnosisTitle: record.diagnosisTitle,
+    datasetId: record.dataset.id,
+    datasetCode: record.dataset.datasetCode,
+    datasetTitle: record.dataset.datasetTitle,
+    assessmentPeriod: formatPeriod(
+      record.dataset.assessmentPeriodStart,
+      record.dataset.assessmentPeriodEnd,
+    ),
+    datasetApprovalStatus: record.dataset.approvalStatus,
+    datasetArchivedAt: record.dataset.archivedAt,
+    organizationName: record.organization?.name ?? null,
+    organizationGroup: record.organizationGroup,
+    region: record.region,
+    sectorThematicArea: record.sectorThematicArea,
+    coreCapacityArea: record.coreCapacityArea,
+    capacityPracticeArea: record.capacityPracticeArea,
+    subCapacity: record.subCapacity,
+    indicatorStandardLink: record.indicatorStandardLink,
+    targetAudience: record.targetAudience,
+    currentBaseline: record.currentBaseline,
+    desiredPractice: record.desiredPractice,
+    capacityGapStatement: record.capacityGapStatement,
+    evidenceSource: record.evidenceSource,
+    rootCauseSummary: record.rootCauseSummary,
+    ksmeRoute: record.ksmeRoute,
+    separableKnowledgeSkillComponent: record.separableKnowledgeSkillComponent,
+    nonCourseBarrierSummary: record.nonCourseBarrierSummary,
+    courseFitDecision: record.courseFitDecision,
+    recommendedInterventionRoute: record.recommendedInterventionRoute,
+    recommendedCourseOrSupportTitle: record.recommendedCourseOrSupportTitle,
+    priorityLabel: formatPriority(record.priorityLevel, record.priorityRank),
+    priorityLevel: record.priorityLevel,
+    priorityRank: record.priorityRank,
+    safeguardingRiskLevel: record.safeguardingRiskLevel,
+    dataSensitivityLevel: record.dataSensitivityLevel,
+    noHarmNote: record.noHarmNote,
+    safeSummaryForDashboard: record.safeSummaryForDashboard,
+    evaluationAnchor: record.evaluationAnchor,
+    monitoringSignal: record.monitoringSignal,
+    possiblePracticalProof: record.possiblePracticalProof,
+    verifiedAchievementExample: record.verifiedAchievementExample,
+    approvalStatus: record.approvalStatus,
+    visibilityScope: record.visibilityScope,
+    courseCreationStatus: record.courseCreationStatus,
+    isLocked: record.isLocked,
+    isActive: record.isActive,
+    approvedByName: record.approvedBy?.name ?? null,
+    approvedAt: record.approvedAt,
+    lockedByName: record.lockedBy?.name ?? null,
+    lockedAt: record.lockedAt,
+    archivedAt: record.archivedAt,
+    createdByName: record.createdBy?.name ?? null,
+    updatedByName: record.updatedBy?.name ?? null,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    changeReason: record.changeReason,
+    linkedCourseSetups: record.selectedCourseSetups.map(formatCourseUsage),
+    courseEligibility: evaluateCourseEligibility({
+      courseFitDecision: record.courseFitDecision,
+      datasetArchivedAt: record.dataset.archivedAt,
+      datasetApprovalStatus: record.dataset.approvalStatus,
+      isActive: record.isActive,
+      isLocked: record.isLocked,
+      ksmeRoute: record.ksmeRoute,
+      recordArchivedAt: record.archivedAt,
+      recordApprovalStatus: record.approvalStatus,
+      separableKnowledgeSkillComponent:
+        record.separableKnowledgeSkillComponent,
+    }),
+  };
+}
+
 function buildRecordWhere({
   activeState,
   approvalStatus,
@@ -326,8 +689,139 @@ function formatPriority(priorityLevel: string, priorityRank: number | null) {
   return priorityRank !== null ? `Rank ${priorityRank}` : "Not set";
 }
 
+function formatCourseUsage(
+  setup: {
+    title: string;
+    updatedAt: Date;
+    courseVersion: {
+      id: string;
+      status: string;
+      versionNumber: number;
+      course: {
+        id: string;
+        title: string;
+      };
+    };
+  },
+): AdminDiagnosisCourseUsage {
+  return {
+    courseId: setup.courseVersion.course.id,
+    courseTitle: setup.courseVersion.course.title,
+    courseVersionId: setup.courseVersion.id,
+    setupTitle: setup.title,
+    setupUpdatedAt: setup.updatedAt,
+    versionNumber: setup.courseVersion.versionNumber,
+    versionStatus: setup.courseVersion.status,
+  };
+}
+
+function evaluateCourseEligibility({
+  courseFitDecision,
+  datasetArchivedAt,
+  datasetApprovalStatus,
+  isActive,
+  isLocked,
+  ksmeRoute,
+  recordArchivedAt,
+  recordApprovalStatus,
+  separableKnowledgeSkillComponent,
+}: {
+  courseFitDecision: string;
+  datasetArchivedAt: Date | null;
+  datasetApprovalStatus: string;
+  isActive: boolean;
+  isLocked: boolean;
+  ksmeRoute: string;
+  recordArchivedAt: Date | null;
+  recordApprovalStatus: string;
+  separableKnowledgeSkillComponent: string;
+}): AdminDiagnosisCourseEligibility {
+  const reasons: string[] = [];
+  const hasKnowledgeSkillComponent = hasText(separableKnowledgeSkillComponent);
+
+  if (!isStatus(datasetApprovalStatus, "APPROVED")) {
+    reasons.push("The linked dataset is not approved.");
+  }
+
+  if (datasetArchivedAt) {
+    reasons.push("The linked dataset is archived.");
+  }
+
+  if (!isStatus(recordApprovalStatus, "APPROVED")) {
+    reasons.push("The diagnosis record is not approved.");
+  }
+
+  if (!isLocked) {
+    reasons.push("The diagnosis record is not locked.");
+  }
+
+  if (!isActive || recordArchivedAt) {
+    reasons.push("The diagnosis record is not active.");
+  }
+
+  const fit = normalizeLabel(courseFitDecision);
+  if (fit === "course addressable") {
+    // Fully course-addressable records pass the course-fit rule.
+  } else if (
+    fit === "partly course addressable" ||
+    fit === "blended support recommended"
+  ) {
+    if (!hasKnowledgeSkillComponent) {
+      reasons.push(
+        "A partly course-addressable record needs an explicit Knowledge or Skill component.",
+      );
+    }
+  } else if (fit === "non course support required") {
+    reasons.push("This record is marked for non-course support.");
+  } else if (fit === "further diagnosis needed") {
+    reasons.push("This record needs further diagnosis before course creation.");
+  } else if (fit === "not prioritized for phase 1") {
+    reasons.push("This record is not prioritized for Phase 1 course creation.");
+  } else {
+    reasons.push("The course-fit decision is not ready for course creation.");
+  }
+
+  const route = normalizeLabel(ksmeRoute);
+  if (route === "knowledge" || route === "skill") {
+    // Knowledge and Skill routes can proceed when course-fit rules pass.
+  } else if (
+    route === "mixed" ||
+    route === "motivation" ||
+    route === "environment"
+  ) {
+    if (!hasKnowledgeSkillComponent) {
+      reasons.push(
+        "This K/S/M/E route needs a separable Knowledge or Skill component.",
+      );
+    }
+  } else {
+    reasons.push("The K/S/M/E route is not ready for course creation.");
+  }
+
+  return {
+    isEligible: reasons.length === 0,
+    label: reasons.length === 0 ? "Course setup eligible" : "Not selectable",
+    reasons:
+      reasons.length > 0
+        ? reasons
+        : ["This record can be selected during Course Setup."],
+  };
+}
+
 function isStatus(value: string, status: string) {
   return value.toLowerCase() === status.toLowerCase();
+}
+
+function hasText(value: string) {
+  return value.trim().length > 0;
+}
+
+function normalizeLabel(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[/-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseList(value: string) {
