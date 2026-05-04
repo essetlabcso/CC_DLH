@@ -1,4 +1,8 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
+import {
+  approveDiagnosisRecordAction,
+  lockDiagnosisRecordForCourseSetupAction,
+} from "@/app/(admin)/admin/diagnosis-records/actions";
 import { getAdminDiagnosisRecordDetail } from "@/lib/admin/diagnosis";
 import {
   getDiagnosisRecordApprovalReadiness,
@@ -11,12 +15,20 @@ type AdminDiagnosisRecordDetailPageProps = {
   params?: Promise<{
     recordId?: string;
   }>;
+  searchParams?: Promise<{
+    approved?: string;
+    error?: string;
+    locked?: string;
+    updated?: string;
+  }>;
 };
 
 export default async function AdminDiagnosisRecordDetailPage({
   params,
+  searchParams,
 }: AdminDiagnosisRecordDetailPageProps) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const recordId = resolvedParams?.recordId;
 
   if (!recordId) {
@@ -54,6 +66,20 @@ export default async function AdminDiagnosisRecordDetailPage({
     separableKnowledgeSkillComponent: record.separableKnowledgeSkillComponent,
     targetAudience: record.targetAudience,
   });
+  const canApprove =
+    readiness.approvalReady &&
+    !isApproved(record.approvalStatus) &&
+    !record.isLocked &&
+    !record.archivedAt &&
+    record.isActive &&
+    record.selectedCourseSetupCount === 0;
+  const canLock =
+    readiness.lockReady &&
+    isApproved(record.approvalStatus) &&
+    !record.isLocked &&
+    !record.archivedAt &&
+    record.isActive &&
+    record.selectedCourseSetupCount === 0;
 
   return (
     <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Record">
@@ -65,8 +91,8 @@ export default async function AdminDiagnosisRecordDetailPage({
             </p>
             <h2>{record.diagnosisTitle}</h2>
             <p>
-              Read-only view of the approved diagnosis evidence, course-fit
-              decision, safety context, and Course Setup usage for this record.
+              Governed view of the diagnosis evidence, course-fit decision,
+              safety context, and Course Setup usage for this record.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -89,6 +115,8 @@ export default async function AdminDiagnosisRecordDetailPage({
             ) : null}
           </div>
         </section>
+
+        <StatusMessage searchParams={resolvedSearchParams} />
 
         <section className="admin-section" aria-labelledby="record-status-title">
           <div className="admin-section-heading">
@@ -181,6 +209,39 @@ export default async function AdminDiagnosisRecordDetailPage({
               }
               title="Lock readiness"
               warnings={readiness.lockWarnings}
+            />
+          </div>
+          <div className="diagnosis-preview-grid">
+            <GovernanceActionCard
+              action={approveDiagnosisRecordAction.bind(null, record.id)}
+              buttonLabel="Approve diagnosis record"
+              disabledHelp={
+                isApproved(record.approvalStatus)
+                  ? "This record is already approved."
+                  : "Resolve approval readiness issues before approval."
+              }
+              enabled={canApprove}
+              fieldName="approvalReason"
+              helpText="Approval confirms that the diagnosis record has enough reviewed evidence to become governed source material."
+              label="Approval reason"
+              title="Approve record"
+            />
+            <GovernanceActionCard
+              action={lockDiagnosisRecordForCourseSetupAction.bind(
+                null,
+                record.id,
+              )}
+              buttonLabel="Lock for Course Setup"
+              disabledHelp={
+                record.isLocked
+                  ? "This record is already locked for Course Setup."
+                  : "Resolve lock readiness issues before making this record selectable during Course Setup."
+              }
+              enabled={canLock}
+              fieldName="lockReason"
+              helpText="Locking makes an approved, eligible diagnosis record read-only and available for Course Setup selection."
+              label="Lock reason"
+              title="Lock for Course Setup"
             />
           </div>
           <div className="diagnosis-preview-grid">
@@ -401,6 +462,52 @@ export default async function AdminDiagnosisRecordDetailPage({
   );
 }
 
+function StatusMessage({
+  searchParams,
+}: {
+  searchParams:
+    | {
+        approved?: string;
+        error?: string;
+        locked?: string;
+        updated?: string;
+      }
+    | undefined;
+}) {
+  if (searchParams?.error) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-blocked">
+          Action needed
+        </span>
+        <p>{searchParams.error}</p>
+      </section>
+    );
+  }
+
+  if (searchParams?.approved) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-ready">Approved</span>
+        <p>This diagnosis record has been approved.</p>
+      </section>
+    );
+  }
+
+  if (searchParams?.locked) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-ready">
+          Locked for Course Setup
+        </span>
+        <p>This diagnosis record is now available for eligible Course Setup use.</p>
+      </section>
+    );
+  }
+
+  return null;
+}
+
 function ReadinessCard({
   blockedLabel,
   blockingIssues,
@@ -437,6 +544,61 @@ function ReadinessCard({
         title="Blocking issues"
       />
       <IssueList emptyText="No warnings found." items={warnings} title="Warnings" />
+    </div>
+  );
+}
+
+function GovernanceActionCard({
+  action,
+  buttonLabel,
+  disabledHelp,
+  enabled,
+  fieldName,
+  helpText,
+  label,
+  title,
+}: {
+  action: (formData: FormData) => Promise<void>;
+  buttonLabel: string;
+  disabledHelp: string;
+  enabled: boolean;
+  fieldName: string;
+  helpText: string;
+  label: string;
+  title: string;
+}) {
+  return (
+    <div>
+      <div className="diagnosis-card-heading">
+        <div>
+          <p>Admin action</p>
+          <h3>{title}</h3>
+        </div>
+        <span
+          className={`status-badge ${
+            enabled ? "status-badge-ready" : "status-badge-published"
+          }`}
+        >
+          {enabled ? "Available" : "Not available"}
+        </span>
+      </div>
+      <p>{enabled ? helpText : disabledHelp}</p>
+      {enabled ? (
+        <form action={action} className="admin-inline-form">
+          <label>
+            <span>{label}</span>
+            <textarea
+              name={fieldName}
+              placeholder="Explain the governance reason for this action."
+              required
+              rows={3}
+            />
+          </label>
+          <button className="workspace-link" type="submit">
+            {buttonLabel}
+          </button>
+        </form>
+      ) : null}
     </div>
   );
 }
@@ -503,17 +665,21 @@ function PreviewBlock({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ label }: { label: string }) {
-  const isApproved = label.toLowerCase().includes("approved");
+  const isApprovedStatus = label.toLowerCase().includes("approved");
 
   return (
     <span
       className={`status-badge ${
-        isApproved ? "status-badge-ready" : "status-badge-published"
+        isApprovedStatus ? "status-badge-ready" : "status-badge-published"
       }`}
     >
       {label}
     </span>
   );
+}
+
+function isApproved(value: string) {
+  return value.trim().toLowerCase() === "approved";
 }
 
 function UsageSection({

@@ -625,6 +625,31 @@ select {
   color: var(--dec-color-muted-text);
 }
 
+.admin-inline-form {
+  display: grid;
+  gap: var(--dec-space-3);
+}
+
+.admin-inline-form label {
+  display: grid;
+  gap: var(--dec-space-2);
+  color: var(--dec-color-text);
+  font-weight: 700;
+}
+
+.admin-inline-form textarea {
+  width: 100%;
+  min-height: 6rem;
+  resize: vertical;
+  padding: var(--dec-space-3);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-sm);
+  background: var(--dec-color-surface);
+  color: var(--dec-color-text);
+  font: inherit;
+  font-weight: 500;
+}
+
 .admin-draft-form {
   width: min(100%, 56rem);
 }
