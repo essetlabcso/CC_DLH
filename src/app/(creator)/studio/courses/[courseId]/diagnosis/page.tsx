@@ -21,6 +21,10 @@ import {
   diagnosisFieldLabels,
   parseEvidenceSources,
 } from "@/lib/studio/diagnosis";
+import {
+  resolveCourseSetupDiagnosisSnapshot,
+  type CourseSetupDiagnosisSnapshot,
+} from "@/lib/studio/diagnosis-selection";
 import { CourseWorkflowStep, WorkflowStepStatus } from "@prisma/client";
 
 import {
@@ -98,6 +102,20 @@ export default async function DiagnosisPage({
 
   const diagnosis = editable.version.diagnosis;
   const handover = editable.version.analysisHandover;
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const inheritedDiagnosisSnapshot = resolveCourseSetupDiagnosisSnapshot({
+    linkedRecord: linkedDiagnosisRecord,
+    snapshotValue: editable.version.setup?.diagnosisSnapshot,
+  });
   const handoverLocked = isAnalysisHandoverLocked(handover);
   const evidenceSources = parseEvidenceSources(diagnosis?.evidenceSources);
   const saveAction = saveCourseDiagnosisAction.bind(null, courseId);
@@ -196,6 +214,11 @@ export default async function DiagnosisPage({
           and the course-fit decision must confirm course design is appropriate.
         </p>
       ) : null}
+
+      <ApprovedDiagnosisEvidencePanel
+        courseId={courseId}
+        snapshot={inheritedDiagnosisSnapshot}
+      />
 
       {handoverLocked && handover ? (
         <>
@@ -588,5 +611,143 @@ export default async function DiagnosisPage({
         </>
       )}
     </WorkspaceShell>
+  );
+}
+
+function ApprovedDiagnosisEvidencePanel({
+  courseId,
+  snapshot,
+}: {
+  courseId: string;
+  snapshot: CourseSetupDiagnosisSnapshot | null;
+}) {
+  if (!snapshot) {
+    return (
+      <section
+        className="approved-diagnosis-panel approved-diagnosis-panel-warning"
+        aria-labelledby="approved-diagnosis-title"
+      >
+        <div className="section-heading-row">
+          <div>
+            <h2 id="approved-diagnosis-title">
+              Approved diagnosis evidence
+            </h2>
+            <p className="section-subcopy">
+              No approved diagnosis evidence is linked to this course. Return to
+              Course Setup and select a valid diagnosis record before
+              continuing.
+            </p>
+          </div>
+          <span className="status-badge status-badge-blocked">
+            Evidence missing
+          </span>
+        </div>
+        <Link
+          className="workspace-link primary"
+          href={`/studio/courses/${courseId}/setup`}
+        >
+          Return to Course Setup
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className="approved-diagnosis-panel"
+      aria-labelledby="approved-diagnosis-title"
+    >
+      <div className="section-heading-row">
+        <div>
+          <h2 id="approved-diagnosis-title">Approved diagnosis evidence</h2>
+          <p className="section-subcopy">
+            This course starts from the approved diagnosis record selected
+            during Course Setup. Use this as the evidence anchor for
+            course-specific analysis.
+          </p>
+        </div>
+        <div className="review-hero-status" aria-label="Inherited evidence badges">
+          <span className="status-badge status-badge-ready">Read-only</span>
+          <span className="status-badge">{snapshot.record.ksmeRoute}</span>
+          <span className="status-badge status-badge-ready">
+            {snapshot.record.courseFitDecision}
+          </span>
+          <span className="status-badge">
+            {snapshot.record.dataSensitivityLevel || "Sensitivity not set"}
+          </span>
+        </div>
+      </div>
+
+      <div className="approved-diagnosis-title-card">
+        <div>
+          <span className="status-badge status-badge-ready">
+            Locked evidence
+          </span>
+          <h3>{snapshot.record.title}</h3>
+          <p>
+            {snapshot.record.code} · {snapshot.dataset.code} ·{" "}
+            {snapshot.dataset.title}
+          </p>
+        </div>
+      </div>
+
+      <dl className="approved-diagnosis-facts">
+        <EvidenceFact label="Core capacity area" value={snapshot.record.coreCapacityArea} />
+        <EvidenceFact
+          label="Capacity Practice Area"
+          value={
+            snapshot.record.capacityPracticeArea || snapshot.record.subCapacity
+          }
+        />
+        <EvidenceFact label="Target Audience" value={snapshot.record.targetAudience} />
+        <EvidenceFact label="Region" value={snapshot.record.region} />
+        <EvidenceFact label="Current baseline" value={snapshot.record.currentBaseline} />
+        <EvidenceFact
+          label="Capacity gap statement"
+          value={snapshot.record.capacityGapStatement}
+        />
+        <EvidenceFact label="Desired practice" value={snapshot.record.desiredPractice} />
+        <EvidenceFact
+          label="Evidence source summary"
+          value={snapshot.record.evidenceSourceSummary}
+        />
+        <EvidenceFact label="K/S/M/E route" value={snapshot.record.ksmeRoute} />
+        <EvidenceFact
+          label="Separable Knowledge/Skill component"
+          value={snapshot.record.separableKnowledgeSkillComponent}
+        />
+        <EvidenceFact
+          label="Course-Fit Decision"
+          value={snapshot.record.courseFitDecision}
+        />
+        <EvidenceFact
+          label="Safeguarding / no-harm note"
+          value={snapshot.record.noHarmNote}
+        />
+        <EvidenceFact
+          label="Data sensitivity level"
+          value={snapshot.record.dataSensitivityLevel}
+        />
+        <EvidenceFact label="Evaluation anchor" value={snapshot.record.evaluationAnchor} />
+        <EvidenceFact label="Monitoring signal" value={snapshot.record.monitoringSignal} />
+        <EvidenceFact
+          label="Possible practical proof"
+          value={snapshot.record.possiblePracticalProof}
+        />
+        <EvidenceFact
+          label="Verified achievement example"
+          value={snapshot.record.verifiedAchievementExample}
+        />
+      </dl>
+    </section>
+  );
+}
+
+function EvidenceFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value || "Not specified"}</dd>
+    </div>
   );
 }

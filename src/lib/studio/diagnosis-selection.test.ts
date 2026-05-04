@@ -5,6 +5,7 @@ import {
   buildCourseSetupDiagnosisSnapshot,
   getDiagnosisRecordEligibility,
   parseCourseSetupDiagnosisSnapshot,
+  resolveCourseSetupDiagnosisSnapshot,
   serializeCourseSetupDiagnosisSnapshot,
 } from "./diagnosis-selection";
 
@@ -105,6 +106,40 @@ describe("course setup diagnosis snapshot helpers", () => {
     expect(parseCourseSetupDiagnosisSnapshot(serialized)).toEqual(snapshot);
     expect(parseCourseSetupDiagnosisSnapshot("{bad json")).toBeNull();
     expect(parseCourseSetupDiagnosisSnapshot("{}")).toBeNull();
+  });
+
+  it("uses the stored snapshot first and falls back to the linked record", () => {
+    const linkedRecord = buildRecordWithDataset({
+      diagnosisCode: "MEAL-002",
+      id: "record-2",
+    });
+    const storedSnapshot = buildCourseSetupDiagnosisSnapshot(
+      linkedRecord.dataset,
+      {
+        ...linkedRecord,
+        diagnosisCode: "STORED-001",
+        diagnosisTitle: "Stored diagnosis title",
+      },
+    );
+
+    expect(
+      resolveCourseSetupDiagnosisSnapshot({
+        linkedRecord,
+        snapshotValue: serializeCourseSetupDiagnosisSnapshot(storedSnapshot),
+      })?.record.code,
+    ).toBe("STORED-001");
+    expect(
+      resolveCourseSetupDiagnosisSnapshot({
+        linkedRecord,
+        snapshotValue: "{bad json",
+      })?.record.code,
+    ).toBe("MEAL-002");
+    expect(
+      resolveCourseSetupDiagnosisSnapshot({
+        linkedRecord: null,
+        snapshotValue: "{bad json",
+      }),
+    ).toBeNull();
   });
 
   it("keeps course setup selection data scoped to the selected diagnosis record", () => {

@@ -183,6 +183,24 @@ export function parseCourseSetupDiagnosisSnapshot(
   }
 }
 
+export function resolveCourseSetupDiagnosisSnapshot({
+  linkedRecord,
+  snapshotValue,
+}: {
+  linkedRecord?: DiagnosisRecordWithDataset | null;
+  snapshotValue?: string | null;
+}) {
+  const parsedSnapshot = parseCourseSetupDiagnosisSnapshot(snapshotValue);
+
+  if (parsedSnapshot) {
+    return parsedSnapshot;
+  }
+
+  return linkedRecord
+    ? buildCourseSetupDiagnosisSnapshot(linkedRecord.dataset, linkedRecord)
+    : null;
+}
+
 export function getDiagnosisRecordEligibility(input: {
   courseFitDecision: string;
   ksmeRoute: string;
