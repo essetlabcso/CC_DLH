@@ -1,5 +1,9 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { getAdminDiagnosisRecordDetail } from "@/lib/admin/diagnosis";
+import {
+  getDiagnosisRecordApprovalReadiness,
+  type DiagnosisRecordApprovalReadiness,
+} from "@/lib/admin/diagnosis-record-approval";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -24,6 +28,32 @@ export default async function AdminDiagnosisRecordDetailPage({
   if (!record) {
     notFound();
   }
+
+  const readiness = getDiagnosisRecordApprovalReadiness({
+    capacityGapStatement: record.capacityGapStatement,
+    capacityPracticeArea: record.capacityPracticeArea,
+    coreCapacityArea: record.coreCapacityArea,
+    courseFitDecision: record.courseFitDecision,
+    currentBaseline: record.currentBaseline,
+    dataSensitivityLevel: record.dataSensitivityLevel,
+    datasetApprovalStatus: record.datasetApprovalStatus,
+    datasetArchivedAt: record.datasetArchivedAt,
+    desiredPractice: record.desiredPractice,
+    diagnosisCode: record.diagnosisCode,
+    diagnosisTitle: record.diagnosisTitle,
+    evidenceSource: record.evidenceSource,
+    evaluationAnchor: record.evaluationAnchor,
+    isActive: record.isActive,
+    isLocked: record.isLocked,
+    ksmeRoute: record.ksmeRoute,
+    monitoringSignal: record.monitoringSignal,
+    noHarmNote: record.noHarmNote,
+    recordApprovalStatus: record.approvalStatus,
+    recordArchivedAt: record.archivedAt,
+    safeguardingRiskLevel: record.safeguardingRiskLevel,
+    separableKnowledgeSkillComponent: record.separableKnowledgeSkillComponent,
+    targetAudience: record.targetAudience,
+  });
 
   return (
     <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Record">
@@ -116,6 +146,48 @@ export default async function AdminDiagnosisRecordDetailPage({
             ) : (
               <span className="status-badge status-badge-published">Read only</span>
             )}
+          </div>
+        </section>
+
+        <section
+          className="admin-section"
+          aria-labelledby="record-readiness-title"
+        >
+          <div className="admin-section-heading">
+            <h2 id="record-readiness-title">Approval and lock readiness</h2>
+            <p>
+              Read-only guidance for Admin review. Approval confirms the record
+              is complete evidence; locking makes an approved, eligible record
+              available for Course Setup.
+            </p>
+          </div>
+          <div className="diagnosis-preview-grid">
+            <ReadinessCard
+              blockedLabel="Not ready for approval"
+              blockingIssues={readiness.approvalBlockingIssues}
+              ready={readiness.approvalReady}
+              readyLabel="Ready for approval review"
+              title="Approval readiness"
+              warnings={readiness.approvalWarnings}
+            />
+            <ReadinessCard
+              blockedLabel="Not eligible for Course Setup"
+              blockingIssues={readiness.lockBlockingIssues}
+              ready={readiness.lockReady}
+              readyLabel={
+                record.isLocked
+                  ? "Locked and Course Setup eligible"
+                  : "Ready to lock for Course Setup"
+              }
+              title="Lock readiness"
+              warnings={readiness.lockWarnings}
+            />
+          </div>
+          <div className="diagnosis-preview-grid">
+            <div>
+              <strong>Readiness summary</strong>
+              <p>{readiness.summary}</p>
+            </div>
           </div>
         </section>
 
@@ -326,6 +398,71 @@ export default async function AdminDiagnosisRecordDetailPage({
         <UsageSection usages={record.linkedCourseSetups} />
       </div>
     </WorkspaceShell>
+  );
+}
+
+function ReadinessCard({
+  blockedLabel,
+  blockingIssues,
+  ready,
+  readyLabel,
+  title,
+  warnings,
+}: {
+  blockedLabel: string;
+  blockingIssues: DiagnosisRecordApprovalReadiness["approvalBlockingIssues"];
+  ready: boolean;
+  readyLabel: string;
+  title: string;
+  warnings: DiagnosisRecordApprovalReadiness["approvalWarnings"];
+}) {
+  return (
+    <div>
+      <div className="diagnosis-card-heading">
+        <div>
+          <p>Read-only check</p>
+          <h3>{title}</h3>
+        </div>
+        <span
+          className={`status-badge ${
+            ready ? "status-badge-ready" : "status-badge-blocked"
+          }`}
+        >
+          {ready ? readyLabel : blockedLabel}
+        </span>
+      </div>
+      <IssueList
+        emptyText="No blocking issues found."
+        items={blockingIssues}
+        title="Blocking issues"
+      />
+      <IssueList emptyText="No warnings found." items={warnings} title="Warnings" />
+    </div>
+  );
+}
+
+function IssueList({
+  emptyText,
+  items,
+  title,
+}: {
+  emptyText: string;
+  items: string[];
+  title: string;
+}) {
+  return (
+    <div>
+      <strong>{title}</strong>
+      {items.length > 0 ? (
+        <ul>
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>{emptyText}</p>
+      )}
+    </div>
   );
 }
 
