@@ -63,10 +63,12 @@ export type EvidenceContextDisplayModel = {
 
 export function buildEvidenceContextDisplayModel({
   analysisHandover,
+  currentStageLabel = "Design / Build context",
   diagnosisSnapshotValue,
   linkedDiagnosisRecord,
 }: {
   analysisHandover?: EvidenceContextAnalysisInput | null;
+  currentStageLabel?: string;
   diagnosisSnapshotValue?: string | null;
   linkedDiagnosisRecord?: DiagnosisRecordWithDataset | null;
 }): EvidenceContextDisplayModel {
@@ -94,7 +96,7 @@ export function buildEvidenceContextDisplayModel({
         ? "Approved diagnosis"
         : "Diagnosis evidence missing",
       lockedAnalysis: hasLockedAnalysis ? "Locked Analysis" : "Analysis not locked",
-      designContext: "Design context not linked yet",
+      designContext: currentStageLabel,
     },
     badges: buildEvidenceContextBadges(snapshot, hasLockedAnalysis),
     diagnosis: snapshot ? buildDiagnosisDisplay(snapshot) : null,

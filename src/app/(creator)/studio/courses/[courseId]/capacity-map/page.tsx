@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { AnalysisSummaryPanel } from "@/components/studio/AnalysisSummaryPanel";
 import { DesignAnchorPanel } from "@/components/studio/DesignAnchorPanel";
+import { EvidenceContextPanel } from "@/components/studio/EvidenceContextPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -13,6 +14,7 @@ import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
+import { buildEvidenceContextDisplayModel } from "@/lib/studio/evidence-context";
 
 import { saveCourseCapacityMapAction } from "../../../actions";
 
@@ -114,6 +116,22 @@ export default async function CapacityMapPage({
   }
 
   const capacityMap = editable.version.capacityMap;
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const evidenceContext = buildEvidenceContextDisplayModel({
+    analysisHandover: handover,
+    currentStageLabel: "Capacity Map",
+    diagnosisSnapshotValue: editable.version.setup?.diagnosisSnapshot,
+    linkedDiagnosisRecord,
+  });
   const saveAction = saveCourseCapacityMapAction.bind(null, courseId);
   const missingFields = resolvedSearchParams?.fields
     ? resolvedSearchParams.fields
@@ -168,6 +186,7 @@ export default async function CapacityMapPage({
 
       {handover ? (
         <>
+          <EvidenceContextPanel context={evidenceContext} />
           <AnalysisSummaryPanel
             handover={handover}
             courseFitDecision={diagnosis?.courseFitDecision}
