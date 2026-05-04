@@ -613,6 +613,20 @@ select {
   align-items: stretch;
 }
 
+.admin-user-list {
+  display: grid;
+  gap: var(--dec-space-4);
+}
+
+.admin-user-card {
+  display: grid;
+  gap: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-lg);
+  background: var(--dec-color-surface);
+}
+
 .diagnosis-preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));

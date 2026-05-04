@@ -48,6 +48,13 @@ const taskCards = [
       "Trace of future Admin reference-data and governance changes.",
   },
   {
+    title: "Users and Roles",
+    href: "/admin/users",
+    status: "Manage",
+    summary:
+      "Review current users and manage existing platform role assignments.",
+  },
+  {
     title: "Certificate Oversight",
     href: "/admin/certificates",
     status: "Available",
