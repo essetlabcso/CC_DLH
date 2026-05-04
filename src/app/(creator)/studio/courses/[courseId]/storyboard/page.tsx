@@ -82,6 +82,13 @@ export default async function StoryboardPage({
     CourseWorkflowStep.ACTION_MAP,
   );
   const handover = editable.version.analysisHandover;
+  const evidenceReadinessIssues =
+    resolvedSearchParams?.error === "evidence-readiness"
+      ? (resolvedSearchParams.items || "")
+          .split(",")
+          .filter(Boolean)
+          .map(formatEvidenceReadinessIssue)
+      : [];
 
   if (
     !isAnalysisHandoverLocked(handover) ||
@@ -93,6 +100,16 @@ export default async function StoryboardPage({
           Lock Analysis for Design and complete Action Map before turning this
           course into a lesson build plan.
         </p>
+        {evidenceReadinessIssues.length > 0 ? (
+          <div className="workspace-error">
+            <p>Design cannot be locked for Build yet.</p>
+            <ul>
+              {evidenceReadinessIssues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <nav className="workspace-nav" aria-label="Storyboard recovery">
           <Link
             className="workspace-link primary"
@@ -204,6 +221,16 @@ export default async function StoryboardPage({
           The Design Handover changed locked Analysis anchors. Restore:{" "}
           {missingFields.join(", ")}.
         </p>
+      ) : null}
+      {evidenceReadinessIssues.length > 0 ? (
+        <div className="workspace-error">
+          <p>Design cannot be locked for Build yet.</p>
+          <ul>
+            {evidenceReadinessIssues.map((issue) => (
+              <li key={issue}>{issue}</li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {handover ? (
@@ -608,4 +635,19 @@ function formatLearningMode(mode: string) {
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.substring(1))
     .join(" ");
+}
+
+function formatEvidenceReadinessIssue(code: string) {
+  switch (code) {
+    case "missing-approved-diagnosis-evidence":
+      return "Approved diagnosis evidence is missing. Return to Course Setup and select a valid diagnosis record.";
+    case "missing-locked-analysis":
+      return "Locked Analysis is missing. Lock Analysis before Design can move into Build.";
+    case "storyboard-dropped-safeguards":
+      return "The Design Handover changed the locked Analysis safeguards. Restore the approved safeguards before locking Design.";
+    case "storyboard-dropped-evaluationAnchor":
+      return "The Design Handover changed the locked Analysis evaluation anchor. Restore the approved evaluation anchor before locking Design.";
+    default:
+      return "Resolve the evidence readiness issue before locking Design for Build.";
+  }
 }

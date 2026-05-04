@@ -74,9 +74,10 @@ import {
 } from "@/lib/studio/design-handover";
 import {
   getAnalysisDesignAnchors,
-  getDesignHandoverAnchorDriftFields,
   getIncompleteDesignPrerequisites,
 } from "@/lib/studio/design-anchors";
+import { evaluateDownstreamEvidenceReadiness } from "@/lib/studio/downstream-evidence-readiness";
+import { buildEvidenceContextDisplayModel } from "@/lib/studio/evidence-context";
 import {
   buildEvidenceSources,
   parseCourseDiagnosisFormData,
@@ -1034,10 +1035,6 @@ export async function lockDesignHandoverForBuildAction(courseId: string) {
     notFound();
   }
 
-  if (!isAnalysisHandoverLocked(editable.version.analysisHandover)) {
-    redirect(`/studio/courses/${courseId}/diagnosis`);
-  }
-
   const capacityMapStatus =
     editable.version.workflowSteps.find(
       (step) => step.step === CourseWorkflowStep.CAPACITY_MAP,
@@ -1052,6 +1049,22 @@ export async function lockDesignHandoverForBuildAction(courseId: string) {
     )?.status ?? WorkflowStepStatus.LOCKED;
   const storyboard = editable.version.storyboard;
   const designHandover = editable.version.designHandover;
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const evidenceContext = buildEvidenceContextDisplayModel({
+    analysisHandover: editable.version.analysisHandover,
+    currentStageLabel: "Storyboard",
+    diagnosisSnapshotValue: editable.version.setup?.diagnosisSnapshot,
+    linkedDiagnosisRecord,
+  });
   const validation = designHandover
     ? validateDesignHandoverInput({
         coursePurpose: designHandover.coursePurpose,
@@ -1074,27 +1087,29 @@ export async function lockDesignHandoverForBuildAction(courseId: string) {
     storyboardApprovedForBuild: Boolean(storyboard?.approvedForBuild),
     designHandoverComplete: validation.ok,
   });
+  const evidenceReadiness = evaluateDownstreamEvidenceReadiness({
+    analysisHandover: editable.version.analysisHandover,
+    designHandover: designHandover
+      ? {
+          safeguards: designHandover.safeguards,
+          evaluationAnchor: designHandover.evaluationAnchor,
+        }
+      : null,
+    evidenceContext,
+  });
+
+  if (evidenceReadiness.blockingIssues.length > 0) {
+    redirect(
+      `/studio/courses/${courseId}/storyboard?error=evidence-readiness&items=${encodeURIComponent(
+        evidenceReadiness.blockingIssues.map((issue) => issue.code).join(","),
+      )}`,
+    );
+  }
 
   if (incompletePrerequisites.length > 0) {
     redirect(
       `/studio/courses/${courseId}/storyboard?error=prerequisites&items=${encodeURIComponent(
         incompletePrerequisites.join(","),
-      )}`,
-    );
-  }
-
-  const anchorDriftFields = getDesignHandoverAnchorDriftFields(
-    {
-      safeguards: designHandover?.safeguards || "",
-      evaluationAnchor: designHandover?.evaluationAnchor || "",
-    },
-    editable.version.analysisHandover,
-  );
-
-  if (anchorDriftFields.length > 0) {
-    redirect(
-      `/studio/courses/${courseId}/storyboard?error=anchor-drift&fields=${encodeURIComponent(
-        anchorDriftFields.join(","),
       )}`,
     );
   }
