@@ -68,6 +68,13 @@ const taskCards = [
     summary:
       "Review issued certificates and certificate verification records.",
   },
+  {
+    title: "Monitoring & Evidence",
+    href: "/admin/monitoring",
+    status: "Available",
+    summary:
+      "High-level insights into learning progress and organizational capacity achievements.",
+  },
 ];
 
 export default async function AdminWorkspacePage() {
