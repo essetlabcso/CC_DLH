@@ -8,14 +8,14 @@ const governanceRules = [
   "Review approves readiness; Publish releases approved versions.",
   "Raw proof remains private by default.",
   "Course creators cannot publish courses.",
-  "Course creators should eventually begin from approved diagnosis records.",
+  "Course setup is anchored to approved diagnosis records and capacity evidence.",
 ];
 
 const taskCards = [
   {
     title: "Reference Data",
     href: "/admin/reference-data",
-    status: "View only",
+    status: "Manage",
     summary:
       "Lookup categories and values used across setup, review, publishing, proof, and monitoring.",
   },
@@ -29,14 +29,14 @@ const taskCards = [
   {
     title: "Diagnosis Datasets",
     href: "/admin/diagnosis-datasets",
-    status: "Not configured",
+    status: "Manage",
     summary:
       "Approved source datasets that will anchor future course setup and analysis work.",
   },
   {
     title: "Diagnosis Records",
     href: "/admin/diagnosis-records",
-    status: "Not configured",
+    status: "Manage",
     summary:
       "Approved diagnosis records that future course creators will select before building.",
   },
@@ -46,6 +46,13 @@ const taskCards = [
     status: "View only",
     summary:
       "Trace of future Admin reference-data and governance changes.",
+  },
+  {
+    title: "Organizations",
+    href: "/admin/organizations",
+    status: "View only",
+    summary:
+      "Review registered organizations (CSOs) and safe organizational learning summaries.",
   },
   {
     title: "Users and Roles",
@@ -97,6 +104,11 @@ export default async function AdminWorkspacePage() {
       value: counts.auditLogs,
       detail: "Governance events recorded",
     },
+    {
+      label: "Organizations",
+      value: counts.organizations,
+      detail: "Registered CSOs",
+    },
   ];
 
   const readinessCards = [
@@ -145,17 +157,17 @@ export default async function AdminWorkspacePage() {
     },
     {
       label: "Course Setup connection",
-      status: "Not yet enabled",
-      tone: "status-badge-blocked",
+      status: "Partially enabled",
+      tone: "status-badge-ready",
       detail:
-        "Course creators still use the existing setup flow until approved diagnosis selection is connected.",
+        "Course setup is anchored to Admin diagnosis records and selected lookup fields.",
     },
     {
       label: "Admin editing",
-      status: "Not yet enabled",
-      tone: "status-badge-blocked",
+      status: "Enabled",
+      tone: "status-badge-ready",
       detail:
-        "This area is read-only for now; editing screens will be added after the foundation is verified.",
+        "Administrative management is enabled for reference data and diagnosis records.",
     },
   ];
 
@@ -211,7 +223,7 @@ export default async function AdminWorkspacePage() {
         <section className="admin-section" aria-labelledby="admin-tasks-title">
           <div className="admin-section-heading">
             <h2 id="admin-tasks-title">Admin areas</h2>
-            <p>Read-only entry points for the platform control center.</p>
+            <p>Governance and management entry points for the platform control center.</p>
           </div>
           <div className="admin-task-grid">
             {taskCards.map((card) => (
