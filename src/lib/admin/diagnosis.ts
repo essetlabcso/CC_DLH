@@ -87,6 +87,8 @@ export type AdminDiagnosisCourseEligibility = {
 export type AdminDiagnosisDatasetDetail = AdminDiagnosisDatasetCard & {
   assessmentPeriodEnd: Date | null;
   assessmentPeriodStart: Date | null;
+  canApprove: boolean;
+  canArchive: boolean;
   dataCollectionMethods: string[];
   notes: string;
   createdByName: string | null;
@@ -393,6 +395,15 @@ export async function getAdminDiagnosisDatasetDetail(
     recordCount: records.length,
     selectedCourseSetupCount: dataset.selectedCourseSetups.length,
     canEdit: canEditDataset({
+      approvalStatus: dataset.approvalStatus,
+      archivedAt: dataset.archivedAt,
+      selectedCourseSetupCount: dataset.selectedCourseSetups.length,
+    }),
+    canApprove: canApproveDataset({
+      approvalStatus: dataset.approvalStatus,
+      archivedAt: dataset.archivedAt,
+    }),
+    canArchive: canArchiveDataset({
       approvalStatus: dataset.approvalStatus,
       archivedAt: dataset.archivedAt,
       selectedCourseSetupCount: dataset.selectedCourseSetups.length,
@@ -1003,6 +1014,32 @@ function canEditDataset({
   return (
     isStatus(approvalStatus, "DRAFT") &&
     !archivedAt &&
+    selectedCourseSetupCount === 0
+  );
+}
+
+function canApproveDataset({
+  approvalStatus,
+  archivedAt,
+}: {
+  approvalStatus: string;
+  archivedAt: Date | null;
+}) {
+  return !archivedAt && !isStatus(approvalStatus, "APPROVED");
+}
+
+function canArchiveDataset({
+  approvalStatus,
+  archivedAt,
+  selectedCourseSetupCount,
+}: {
+  approvalStatus: string;
+  archivedAt: Date | null;
+  selectedCourseSetupCount: number;
+}) {
+  return (
+    !archivedAt &&
+    !isStatus(approvalStatus, "ARCHIVED") &&
     selectedCourseSetupCount === 0
   );
 }

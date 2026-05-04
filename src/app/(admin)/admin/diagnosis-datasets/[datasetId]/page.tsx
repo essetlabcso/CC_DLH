@@ -1,4 +1,8 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
+import {
+  approveDiagnosisDatasetAction,
+  archiveDiagnosisDatasetAction,
+} from "@/app/(admin)/admin/diagnosis-datasets/actions";
 import { getAdminDiagnosisDatasetDetail } from "@/lib/admin/diagnosis";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,12 +11,21 @@ type AdminDiagnosisDatasetDetailPageProps = {
   params?: Promise<{
     datasetId?: string;
   }>;
+  searchParams?: Promise<{
+    approved?: string;
+    archived?: string;
+    created?: string;
+    error?: string;
+    updated?: string;
+  }>;
 };
 
 export default async function AdminDiagnosisDatasetDetailPage({
   params,
+  searchParams,
 }: AdminDiagnosisDatasetDetailPageProps) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const datasetId = resolvedParams?.datasetId;
 
   if (!datasetId) {
@@ -33,9 +46,8 @@ export default async function AdminDiagnosisDatasetDetailPage({
             <p className="workspace-kicker">{dataset.datasetCode}</p>
             <h2>{dataset.datasetTitle}</h2>
             <p>
-              Read-only view of this approved diagnosis source dataset,
-              its coverage, governance state, linked diagnosis records, and
-              Course Setup usage.
+              Governed view of this diagnosis source dataset, its coverage,
+              approval state, linked diagnosis records, and Course Setup usage.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -63,6 +75,8 @@ export default async function AdminDiagnosisDatasetDetailPage({
             </Link>
           </div>
         </section>
+
+        <StatusMessage searchParams={resolvedSearchParams} />
 
         <section className="admin-section" aria-labelledby="dataset-status-title">
           <div className="admin-section-heading">
@@ -114,6 +128,49 @@ export default async function AdminDiagnosisDatasetDetailPage({
                 Read only
               </span>
             )}
+          </div>
+        </section>
+
+        <section
+          className="admin-section"
+          aria-labelledby="dataset-governance-title"
+        >
+          <div className="admin-section-heading">
+            <h2 id="dataset-governance-title">Dataset governance actions</h2>
+            <p>
+              Approve datasets for diagnosis record locking, or archive datasets
+              that should no longer support new Course Setup selection.
+            </p>
+          </div>
+          <div className="diagnosis-preview-grid">
+            <GovernanceActionCard
+              action={approveDiagnosisDatasetAction.bind(null, dataset.id)}
+              buttonLabel="Approve dataset"
+              disabledHelp={
+                isApproved(dataset.approvalStatus)
+                  ? "This dataset is already approved."
+                  : "Archived datasets cannot be approved."
+              }
+              enabled={dataset.canApprove}
+              fieldName="approvalReason"
+              helpText="Approval confirms that this dataset can support approved diagnosis records."
+              label="Approval reason"
+              title="Approve dataset"
+            />
+            <GovernanceActionCard
+              action={archiveDiagnosisDatasetAction.bind(null, dataset.id)}
+              buttonLabel="Archive dataset"
+              disabledHelp={
+                dataset.selectedCourseSetupCount > 0
+                  ? "This dataset is selected by Course Setup and cannot be archived in this phase."
+                  : "This dataset is already archived."
+              }
+              enabled={dataset.canArchive}
+              fieldName="archiveReason"
+              helpText="Archiving keeps the dataset for traceability but removes it from future course-selection use."
+              label="Archive reason"
+              title="Archive dataset"
+            />
           </div>
         </section>
 
@@ -261,6 +318,54 @@ export default async function AdminDiagnosisDatasetDetailPage({
   );
 }
 
+function StatusMessage({
+  searchParams,
+}: {
+  searchParams:
+    | {
+        approved?: string;
+        archived?: string;
+        created?: string;
+        error?: string;
+        updated?: string;
+      }
+    | undefined;
+}) {
+  if (searchParams?.error) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-blocked">
+          Action needed
+        </span>
+        <p>{searchParams.error}</p>
+      </section>
+    );
+  }
+
+  if (searchParams?.approved) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-ready">Approved</span>
+        <p>This diagnosis dataset has been approved.</p>
+      </section>
+    );
+  }
+
+  if (searchParams?.archived) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-blocked">Archived</span>
+        <p>
+          This diagnosis dataset is archived and remains visible for historical
+          traceability.
+        </p>
+      </section>
+    );
+  }
+
+  return null;
+}
+
 function MetricCard({
   detail,
   label,
@@ -300,6 +405,65 @@ function StatusBadge({ label }: { label: string }) {
       {label}
     </span>
   );
+}
+
+function GovernanceActionCard({
+  action,
+  buttonLabel,
+  disabledHelp,
+  enabled,
+  fieldName,
+  helpText,
+  label,
+  title,
+}: {
+  action: (formData: FormData) => Promise<void>;
+  buttonLabel: string;
+  disabledHelp: string;
+  enabled: boolean;
+  fieldName: string;
+  helpText: string;
+  label: string;
+  title: string;
+}) {
+  return (
+    <div>
+      <div className="diagnosis-card-heading">
+        <div>
+          <p>Admin action</p>
+          <h3>{title}</h3>
+        </div>
+        <span
+          className={`status-badge ${
+            enabled ? "status-badge-ready" : "status-badge-published"
+          }`}
+        >
+          {enabled ? "Available" : "Not available"}
+        </span>
+      </div>
+      <p>{enabled ? helpText : disabledHelp}</p>
+      {enabled ? (
+        <form action={action} className="admin-inline-form">
+          <label>
+            <span>{label}</span>
+            <textarea
+              name={fieldName}
+              placeholder="Explain the governance reason for this action."
+              required
+              rows={3}
+            />
+          </label>
+          <button className="workspace-link" type="submit">
+            {buttonLabel}
+          </button>
+        </form>
+      ) : null}
+    </div>
+  );
+}
+
+function isApproved(value: string) {
+  return value.trim().toLowerCase() === "approved";
 }
 
 function TextPanel({ label, value }: { label: string; value: string }) {

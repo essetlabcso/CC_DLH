@@ -168,12 +168,193 @@ export async function updateDiagnosisDatasetDraftAction(
   redirect(`/admin/diagnosis-datasets/${updated.id}?updated=1`);
 }
 
+export async function approveDiagnosisDatasetAction(
+  datasetId: string,
+  formData: FormData,
+) {
+  const identity = await requireWorkspaceIdentity(
+    `/admin/diagnosis-datasets/${datasetId}`,
+  );
+  const reason = parseActionReason(formData, "approvalReason");
+
+  if (!reason) {
+    redirectWithDatasetError(
+      datasetId,
+      "Add an approval reason before approving this diagnosis dataset.",
+    );
+  }
+
+  const current = await prisma.diagnosisDataset.findUnique({
+    include: {
+      _count: {
+        select: {
+          selectedCourseSetups: true,
+        },
+      },
+    },
+    where: {
+      id: datasetId,
+    },
+  });
+
+  if (!current) {
+    notFound();
+  }
+
+  if (current.archivedAt) {
+    redirectWithDatasetError(
+      datasetId,
+      "Archived diagnosis datasets cannot be approved.",
+    );
+  }
+
+  if (isStatus(current.approvalStatus, "APPROVED")) {
+    redirect(`/admin/diagnosis-datasets/${datasetId}`);
+  }
+
+  if (!current.datasetCode.trim() || !current.datasetTitle.trim()) {
+    redirectWithDatasetError(
+      datasetId,
+      "Add a dataset code and title before approval.",
+    );
+  }
+
+  const approved = await prisma.$transaction(async (tx) => {
+    const saved = await tx.diagnosisDataset.update({
+      data: {
+        approvalStatus: "APPROVED",
+        approvedAt: new Date(),
+        approvedById: identity.user.id,
+        updatedById: identity.user.id,
+      },
+      where: {
+        id: datasetId,
+      },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "DIAGNOSIS_DATASET_APPROVED",
+        actorId: identity.user.id,
+        afterJson: JSON.stringify(toAuditDataset(saved)),
+        beforeJson: JSON.stringify(toAuditDataset(current)),
+        entityId: saved.id,
+        entityType: "DiagnosisDataset",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return saved;
+  });
+
+  revalidateDatasetPaths(approved.id);
+  redirect(`/admin/diagnosis-datasets/${approved.id}?approved=1`);
+}
+
+export async function archiveDiagnosisDatasetAction(
+  datasetId: string,
+  formData: FormData,
+) {
+  const identity = await requireWorkspaceIdentity(
+    `/admin/diagnosis-datasets/${datasetId}`,
+  );
+  const reason = parseActionReason(formData, "archiveReason");
+
+  if (!reason) {
+    redirectWithDatasetError(
+      datasetId,
+      "Add an archive reason before archiving this diagnosis dataset.",
+    );
+  }
+
+  const current = await prisma.diagnosisDataset.findUnique({
+    include: {
+      _count: {
+        select: {
+          selectedCourseSetups: true,
+        },
+      },
+    },
+    where: {
+      id: datasetId,
+    },
+  });
+
+  if (!current) {
+    notFound();
+  }
+
+  if (current.archivedAt || isStatus(current.approvalStatus, "ARCHIVED")) {
+    redirect(`/admin/diagnosis-datasets/${datasetId}`);
+  }
+
+  if (current._count.selectedCourseSetups > 0) {
+    redirectWithDatasetError(
+      datasetId,
+      "This diagnosis dataset is currently selected by Course Setup and cannot be archived in this phase.",
+    );
+  }
+
+  const archived = await prisma.$transaction(async (tx) => {
+    const saved = await tx.diagnosisDataset.update({
+      data: {
+        approvalStatus: "ARCHIVED",
+        archivedAt: new Date(),
+        updatedById: identity.user.id,
+      },
+      where: {
+        id: datasetId,
+      },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "DIAGNOSIS_DATASET_ARCHIVED",
+        actorId: identity.user.id,
+        afterJson: JSON.stringify(toAuditDataset(saved)),
+        beforeJson: JSON.stringify(toAuditDataset(current)),
+        entityId: saved.id,
+        entityType: "DiagnosisDataset",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return saved;
+  });
+
+  revalidateDatasetPaths(archived.id);
+  revalidatePath("/studio/courses/[courseId]/setup", "page");
+  redirect(`/admin/diagnosis-datasets/${archived.id}?archived=1`);
+}
+
 function revalidateDatasetPaths(datasetId: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/audit-log");
   revalidatePath("/admin/diagnosis-datasets");
   revalidatePath(`/admin/diagnosis-datasets/${datasetId}`);
   revalidatePath(`/admin/diagnosis-datasets/${datasetId}/edit`);
+}
+
+function parseActionReason(formData: FormData, fieldName: string) {
+  const reason = formData.get(fieldName);
+
+  if (typeof reason !== "string") {
+    return "";
+  }
+
+  return reason.trim();
+}
+
+function redirectWithDatasetError(datasetId: string, message: string): never {
+  redirect(
+    `/admin/diagnosis-datasets/${datasetId}?error=${encodeURIComponent(message)}`,
+  );
+}
+
+function isStatus(value: string, status: string) {
+  return value.trim().toLowerCase() === status.trim().toLowerCase();
 }
 
 function toAuditDataset(dataset: {
