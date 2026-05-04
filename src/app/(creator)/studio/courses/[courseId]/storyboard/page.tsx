@@ -24,6 +24,7 @@ import {
   getDesignHandoverStatusLabel,
   isDesignHandoverLocked,
 } from "@/lib/studio/design-handover";
+import { evaluateDownstreamEvidenceReadiness } from "@/lib/studio/downstream-evidence-readiness";
 import {
   learningModeOptions,
   parseStoryboardLessonPlan,
@@ -165,6 +166,23 @@ export default async function StoryboardPage({
     actionMap?.essentialInformation,
   )[0] as { item?: string; format?: string } | undefined;
   const difMatrix = parseDifMatrix(actionMap?.difMatrix);
+  const evidenceReadiness = evaluateDownstreamEvidenceReadiness({
+    evidenceContext,
+    capacityMap: {
+      diagnosisLink: capacityMap?.diagnosisLink,
+      monitoringRelevance: capacityMap?.monitoringRelevance,
+    },
+    actionMap: {
+      actionEvidenceLink: observableAction?.evidenceLink,
+    },
+    designHandover: designHandover
+      ? {
+          safeguards: designHandover.safeguards,
+          evaluationAnchor: designHandover.evaluationAnchor,
+        }
+      : null,
+    analysisHandover: handover,
+  });
   const saveAction = saveCourseStoryboardAction.bind(null, courseId);
   const lockDesignAction = lockDesignHandoverForBuildAction.bind(null, courseId);
   const missingFields = resolvedSearchParams?.fields
@@ -617,6 +635,24 @@ export default async function StoryboardPage({
               <span>{designHandover.learningPathway}</span>
             </article>
           </div>
+          {evidenceReadiness.warnings.length > 0 ? (
+            <div className="workspace-note">
+              <p>
+                <strong>Evidence notes to review</strong>
+              </p>
+              <p>
+                These notes do not stop Design from locking, but they should be
+                checked before review.
+              </p>
+              <ul>
+                {evidenceReadiness.warnings.map((warning) => (
+                  <li key={`${warning.source}-${warning.code}`}>
+                    {formatEvidenceReadinessWarning(warning.code)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <form action={lockDesignAction} className="studio-actions">
             <button className="workspace-button" type="submit">
               Lock Design for Build
@@ -649,5 +685,18 @@ function formatEvidenceReadinessIssue(code: string) {
       return "The Design Handover changed the locked Analysis evaluation anchor. Restore the approved evaluation anchor before locking Design.";
     default:
       return "Resolve the evidence readiness issue before locking Design for Build.";
+  }
+}
+
+function formatEvidenceReadinessWarning(code: string) {
+  switch (code) {
+    case "capacity-map-missing-diagnosis-link":
+      return "Capacity Map should explain how the outcome links back to the approved diagnosis evidence.";
+    case "capacity-map-missing-monitoring-relevance":
+      return "Capacity Map should explain why this outcome matters for monitoring and learning.";
+    case "action-map-weak-evidence-link":
+      return "Action Map should point clearly to the diagnosis gap, baseline, or monitoring signal.";
+    default:
+      return "Review this evidence note before submitting the course for formal review.";
   }
 }
