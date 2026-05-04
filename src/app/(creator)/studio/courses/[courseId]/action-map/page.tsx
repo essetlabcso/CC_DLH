@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { AnalysisSummaryPanel } from "@/components/studio/AnalysisSummaryPanel";
 import { DesignAnchorPanel } from "@/components/studio/DesignAnchorPanel";
+import { EvidenceContextPanel } from "@/components/studio/EvidenceContextPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -16,6 +17,7 @@ import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
+import { buildEvidenceContextDisplayModel } from "@/lib/studio/evidence-context";
 import { isAnalysisHandoverLocked } from "@/lib/studio/analysis-handover";
 
 import { saveCourseActionMapAction } from "../../../actions";
@@ -99,6 +101,22 @@ export default async function ActionMapPage({
   }
 
   const actionMap = editable.version.actionMap;
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const evidenceContext = buildEvidenceContextDisplayModel({
+    analysisHandover: handover,
+    currentStageLabel: "Action Map",
+    diagnosisSnapshotValue: editable.version.setup?.diagnosisSnapshot,
+    linkedDiagnosisRecord,
+  });
   const observableAction = parseJsonArrayField(
     actionMap?.observableActions,
   )[0] as { action?: string; evidenceLink?: string } | undefined;
@@ -148,6 +166,7 @@ export default async function ActionMapPage({
 
       {handover ? (
         <>
+          <EvidenceContextPanel context={evidenceContext} />
           <AnalysisSummaryPanel
             handover={handover}
             courseFitDecision={editable.version.diagnosis?.courseFitDecision}

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AnalysisSummaryPanel } from "@/components/studio/AnalysisSummaryPanel";
 import { DesignAnchorPanel } from "@/components/studio/DesignAnchorPanel";
 import { DesignSummaryPanel } from "@/components/studio/DesignSummaryPanel";
+import { EvidenceContextPanel } from "@/components/studio/EvidenceContextPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -17,6 +18,7 @@ import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
+import { buildEvidenceContextDisplayModel } from "@/lib/studio/evidence-context";
 import {
   designHandoverFieldLabels,
   getDesignHandoverStatusLabel,
@@ -117,6 +119,22 @@ export default async function StoryboardPage({
   const storyboard = editable.version.storyboard;
   const designHandover = editable.version.designHandover;
   const designLocked = isDesignHandoverLocked(designHandover);
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const evidenceContext = buildEvidenceContextDisplayModel({
+    analysisHandover: handover,
+    currentStageLabel: "Storyboard",
+    diagnosisSnapshotValue: editable.version.setup?.diagnosisSnapshot,
+    linkedDiagnosisRecord,
+  });
   const lesson = parseStoryboardLessonPlan(storyboard?.lessonPlan)[0];
   const observableAction = parseJsonArrayField(
     actionMap?.observableActions,
@@ -190,6 +208,7 @@ export default async function StoryboardPage({
 
       {handover ? (
         <>
+          <EvidenceContextPanel context={evidenceContext} />
           <AnalysisSummaryPanel
             handover={handover}
             courseFitDecision={editable.version.diagnosis?.courseFitDecision}
