@@ -16,9 +16,14 @@ export default async function AdminOrganizationsPage() {
               performance indicators.
             </p>
           </div>
-          <Link className="workspace-link secondary" href="/admin">
-            Back to Admin
-          </Link>
+          <div className="admin-hero-actions">
+            <Link className="workspace-link" href="/admin/organizations/new">
+              New Organization
+            </Link>
+            <Link className="workspace-link secondary" href="/admin">
+              Back to Admin
+            </Link>
+          </div>
         </section>
 
         <section className="admin-section" aria-labelledby="org-health-title">

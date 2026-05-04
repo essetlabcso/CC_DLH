@@ -43,16 +43,16 @@ const taskCards = [
   {
     title: "Audit Log",
     href: "/admin/audit-log",
-    status: "View only",
+    status: "Available",
     summary:
-      "Trace of future Admin reference-data and governance changes.",
+      "Detailed trace of administrative changes, including reference data, organizations, and diagnosis records.",
   },
   {
     title: "Organizations",
     href: "/admin/organizations",
-    status: "View only",
+    status: "Manage",
     summary:
-      "Review registered organizations (CSOs) and safe organizational learning summaries.",
+      "Register and manage partner CSOs, including metadata, status, and system record protections.",
   },
   {
     title: "Users and Roles",

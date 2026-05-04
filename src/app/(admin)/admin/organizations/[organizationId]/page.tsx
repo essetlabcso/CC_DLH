@@ -27,9 +27,17 @@ export default async function OrganizationDetailPage({
             <h2>{org.name}</h2>
             <p>Slug: {org.slug}</p>
           </div>
-          <Link className="workspace-link secondary" href="/admin/organizations">
-            Back to Organizations
-          </Link>
+          <div className="admin-hero-actions">
+            <Link 
+              className="workspace-link" 
+              href={`/admin/organizations/${org.id}/edit`}
+            >
+              Edit Organization
+            </Link>
+            <Link className="workspace-link secondary" href="/admin/organizations">
+              Back to Organizations
+            </Link>
+          </div>
         </section>
 
         <section className="admin-section" aria-labelledby="org-stats-title">
