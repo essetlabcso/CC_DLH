@@ -601,6 +601,18 @@ select {
   justify-content: start;
 }
 
+.reference-action-row,
+.reference-visibility-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dec-space-2);
+  align-items: center;
+}
+
+.reference-visibility-grid {
+  align-items: stretch;
+}
+
 .diagnosis-preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));

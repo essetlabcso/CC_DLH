@@ -5,7 +5,10 @@ import Link from "next/link";
 type AdminReferenceDataPageProps = {
   searchParams?: Promise<{
     category?: string;
+    created?: string;
+    error?: string;
     search?: string;
+    updated?: string;
   }>;
 };
 
@@ -36,10 +39,26 @@ export default async function AdminReferenceDataPage({
               Course Setup, diagnosis, review, publishing, proof, and monitoring.
             </p>
           </div>
-          <Link className="workspace-link secondary" href="/admin">
-            Back to Admin
-          </Link>
+          <div className="admin-hero-actions">
+            <Link
+              className="workspace-link"
+              href="/admin/reference-data/values/new"
+            >
+              Add value
+            </Link>
+            <Link
+              className="workspace-link secondary"
+              href="/admin/reference-data/categories/new"
+            >
+              Add category
+            </Link>
+            <Link className="workspace-link secondary" href="/admin">
+              Back to Admin
+            </Link>
+          </div>
         </section>
+
+        <StatusMessage searchParams={params} />
 
         <section className="admin-section" aria-labelledby="reference-health-title">
           <div className="admin-section-heading">
@@ -149,12 +168,30 @@ export default async function AdminReferenceDataPage({
                       </dd>
                     </div>
                   </dl>
-                  <Link
-                    className="workspace-link secondary"
-                    href={categoryLink(category.categoryKey, search)}
-                  >
-                    View category
-                  </Link>
+                  <div className="reference-action-row">
+                    <Link
+                      className="workspace-link secondary"
+                      href={categoryLink(category.categoryKey, search)}
+                    >
+                      View category
+                    </Link>
+                    {category.canAddValue ? (
+                      <Link
+                        className="workspace-link secondary"
+                        href={`/admin/reference-data/values/new?categoryId=${category.id}`}
+                      >
+                        Add value
+                      </Link>
+                    ) : null}
+                    {category.canEdit ? (
+                      <Link
+                        className="workspace-link secondary"
+                        href={`/admin/reference-data/categories/${category.id}/edit`}
+                      >
+                        Edit category
+                      </Link>
+                    ) : null}
+                  </div>
                 </article>
               ))}
             </div>
@@ -254,6 +291,16 @@ export default async function AdminReferenceDataPage({
                               <dd>{visibilityLabel(value)}</dd>
                             </div>
                           </dl>
+                          {value.canEdit ? (
+                            <div className="reference-action-row">
+                              <Link
+                                className="workspace-link secondary"
+                                href={`/admin/reference-data/values/${value.id}/edit`}
+                              >
+                                Edit value
+                              </Link>
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -276,6 +323,49 @@ export default async function AdminReferenceDataPage({
       </div>
     </WorkspaceShell>
   );
+}
+
+function StatusMessage({
+  searchParams,
+}: {
+  searchParams:
+    | {
+        created?: string;
+        error?: string;
+        updated?: string;
+      }
+    | undefined;
+}) {
+  if (searchParams?.error) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-blocked">
+          Action needed
+        </span>
+        <p>{searchParams.error}</p>
+      </section>
+    );
+  }
+
+  if (searchParams?.created) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-ready">Created</span>
+        <p>The reference data entry has been created.</p>
+      </section>
+    );
+  }
+
+  if (searchParams?.updated) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-ready">Updated</span>
+        <p>The reference data entry has been updated.</p>
+      </section>
+    );
+  }
+
+  return null;
 }
 
 function MetricCard({
