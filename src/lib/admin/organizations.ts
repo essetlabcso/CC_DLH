@@ -4,6 +4,10 @@ export type OrganizationSummary = {
   id: string;
   name: string;
   slug: string;
+  organizationType: string | null;
+  geographicFocus: string | null;
+  status: string;
+  isSystem: boolean;
   memberCount: number;
   courseCount: number;
   certificateCount: number;
@@ -55,6 +59,10 @@ export async function getOrganizationsOverview(): Promise<OrganizationsOverview>
       id: org.id,
       name: org.name,
       slug: org.slug,
+      organizationType: org.organizationType,
+      geographicFocus: org.geographicFocus,
+      status: org.status,
+      isSystem: org.isSystem,
       memberCount: org._count.users + org._count.memberships,
       courseCount: org._count.courses,
       certificateCount,
@@ -77,6 +85,14 @@ export type OrganizationDetail = {
   id: string;
   name: string;
   slug: string;
+  organizationType: string | null;
+  geographicFocus: string | null;
+  description: string | null;
+  contactEmail: string | null;
+  website: string | null;
+  phone: string | null;
+  status: string;
+  isSystem: boolean;
   members: {
     id: string;
     name: string;
@@ -165,6 +181,14 @@ export async function getOrganizationDetail(
     id: org.id,
     name: org.name,
     slug: org.slug,
+    organizationType: org.organizationType,
+    geographicFocus: org.geographicFocus,
+    description: org.description,
+    contactEmail: org.contactEmail,
+    website: org.website,
+    phone: org.phone,
+    status: org.status,
+    isSystem: org.isSystem,
     members: allMembers,
     stats: {
       courses: org._count.courses,

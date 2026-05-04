@@ -83,17 +83,109 @@ export default async function OrganizationDetailPage({
 
         <section className="admin-section" aria-labelledby="org-info-title">
           <div className="admin-section-heading">
-            <h2 id="org-info-title">Metadata</h2>
+            <h2 id="org-info-title">Administrative metadata</h2>
+            <p>Core organizational profile and contact information.</p>
           </div>
-          <article className="admin-user-card">
+
+          <div className="admin-user-list" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "1rem" }}>
+            <article className="admin-user-card">
+              <div className="admin-section-heading" style={{ marginBottom: "1rem" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 600 }}>Identity & classification</h3>
+              </div>
+              <dl className="reference-meta-list">
+                <div>
+                  <dt>Organization type</dt>
+                  <dd>{org.organizationType || "Not specified"}</dd>
+                </div>
+                <div>
+                  <dt>Geographic focus</dt>
+                  <dd>{org.geographicFocus || "Not specified"}</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>
+                    <span
+                      className={`status-badge ${
+                        org.status === "ACTIVE"
+                          ? "status-badge-published"
+                          : "status-badge-blocked"
+                      }`}
+                    >
+                      {org.status}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Description</dt>
+                  <dd style={{ whiteSpace: "pre-wrap" }}>
+                    {org.description || "No description provided."}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+
+            <article className="admin-user-card">
+              <div className="admin-section-heading" style={{ marginBottom: "1rem" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 600 }}>Contact & online presence</h3>
+              </div>
+              <dl className="reference-meta-list">
+                <div>
+                  <dt>Contact email</dt>
+                  <dd>
+                    {org.contactEmail ? (
+                      <a href={`mailto:${org.contactEmail}`} className="admin-link">
+                        {org.contactEmail}
+                      </a>
+                    ) : (
+                      "Not specified"
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Phone</dt>
+                  <dd>{org.phone || "Not specified"}</dd>
+                </div>
+                <div>
+                  <dt>Website</dt>
+                  <dd>
+                    {org.website ? (
+                      <a
+                        href={
+                          org.website.startsWith("http")
+                            ? org.website
+                            : `https://${org.website}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="admin-link"
+                      >
+                        {org.website}
+                      </a>
+                    ) : (
+                      "Not specified"
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          </div>
+
+          <article className="admin-user-card" style={{ marginTop: "1rem" }}>
+            <div className="admin-section-heading" style={{ marginBottom: "1rem" }}>
+              <h3 style={{ fontSize: "1rem", fontWeight: 600 }}>System properties</h3>
+            </div>
             <dl className="reference-meta-list">
               <div>
                 <dt>Organization ID</dt>
-                <dd>{org.id}</dd>
+                <dd className="admin-record-code">{org.id}</dd>
               </div>
               <div>
-                <dt>Slug</dt>
-                <dd>{org.slug}</dd>
+                <dt>System record</dt>
+                <dd>
+                  <span className={`status-badge ${org.isSystem ? 'status-badge-published' : ''}`}>
+                    {org.isSystem ? "Yes" : "No"}
+                  </span>
+                </dd>
               </div>
               <div>
                 <dt>Created at</dt>

@@ -75,13 +75,34 @@ function OrganizationSummaryCard({ org }: { org: OrganizationSummary }) {
       <div className="reference-card-heading">
         <div>
           <h3>{org.name}</h3>
-          <p>{org.slug}</p>
+          <p className="admin-record-code">{org.slug}</p>
         </div>
         <div className="reference-badge-row">
+          {org.isSystem && (
+            <span className="status-badge status-badge-published">System</span>
+          )}
+          <span
+            className={`status-badge ${
+              org.status === "ACTIVE"
+                ? "status-badge-published"
+                : "status-badge-blocked"
+            }`}
+          >
+            {org.status}
+          </span>
           <span className="status-badge status-badge-published">
             {org.memberCount} Members
           </span>
         </div>
+      </div>
+
+      <div className="reference-badge-row" style={{ marginTop: "0.5rem" }}>
+        <span className="status-badge">
+          {org.organizationType || "Not specified"}
+        </span>
+        <span className="status-badge">
+          {org.geographicFocus || "Not specified"}
+        </span>
       </div>
 
       <dl className="reference-meta-list">
