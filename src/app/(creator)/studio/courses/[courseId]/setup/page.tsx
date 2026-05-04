@@ -8,6 +8,10 @@ import { prisma } from "@/lib/db/client";
 import { getEditableCourseVersion } from "@/lib/studio/courses";
 import { parseCourseSetupDiagnosisSnapshot } from "@/lib/studio/diagnosis-selection";
 import { getCourseSetupDiagnosisOptions } from "@/lib/studio/diagnosis-options";
+import {
+  getCourseSetupReferenceOptions,
+  type CourseSetupReferenceOption,
+} from "@/lib/studio/setup-reference-options";
 
 import { saveCourseSetupAction } from "../../../actions";
 
@@ -54,6 +58,7 @@ export default async function CourseSetupPage({
   const setup = editable.version.setup;
   const learnerReality = parseLearnerReality(setup?.learnerReality);
   const diagnosisOptions = await getCourseSetupDiagnosisOptions(prisma);
+  const referenceOptions = await getCourseSetupReferenceOptions(prisma);
   const selectedDiagnosis = setup?.selectedDiagnosisRecordId
     ? diagnosisOptions.find(
         (option) => option.id === setup.selectedDiagnosisRecordId,
@@ -280,40 +285,54 @@ export default async function CourseSetupPage({
             </p>
           </div>
           <label>
-            <span>Primary learner group</span>
-            <input
+            <span>Target Audience</span>
+            <SelectWithCurrentOption
+              currentValue={setup?.primaryLearnerGroup}
               name="primaryLearnerGroup"
+              options={referenceOptions.targetAudienceGroups}
+              placeholder="Choose a Target Audience"
               required
-              defaultValue={setup?.primaryLearnerGroup}
             />
           </label>
           <div className="form-grid">
             <label>
               <span>Language</span>
-              <input
+              <SelectWithCurrentOption
+                currentValue={setup?.language || "English"}
                 name="language"
+                options={referenceOptions.courseLanguages}
+                placeholder="Choose a language"
                 required
-                defaultValue={setup?.language || "English"}
               />
             </label>
             <label>
-              <span>Format and time expectation</span>
-              <input
+              <span>Delivery format</span>
+              <SelectWithCurrentOption
+                currentValue={setup?.formatAndTime}
                 name="formatAndTime"
+                options={referenceOptions.deliveryFormats}
+                placeholder="Choose a delivery format"
                 required
-                defaultValue={setup?.formatAndTime}
               />
             </label>
             <label>
-              <span>Level</span>
-              <input name="level" required defaultValue={setup?.level} />
+              <span>Participant experience level</span>
+              <SelectWithCurrentOption
+                currentValue={setup?.level}
+                name="level"
+                options={referenceOptions.participantExperienceLevels}
+                placeholder="Choose an experience level"
+                required
+              />
             </label>
             <label>
               <span>Broad capacity area</span>
-              <input
+              <SelectWithCurrentOption
+                currentValue={setup?.capacityArea}
                 name="capacityArea"
+                options={referenceOptions.capacityAreas}
+                placeholder="Choose a capacity area"
                 required
-                defaultValue={setup?.capacityArea}
               />
             </label>
           </div>
@@ -407,6 +426,45 @@ export default async function CourseSetupPage({
         </nav>
       </div>
     </WorkspaceShell>
+  );
+}
+
+function SelectWithCurrentOption({
+  currentValue,
+  name,
+  options,
+  placeholder,
+  required,
+}: {
+  currentValue: string | null | undefined;
+  name: string;
+  options: CourseSetupReferenceOption[];
+  placeholder: string;
+  required?: boolean;
+}) {
+  const normalizedCurrentValue = currentValue?.trim() ?? "";
+  const hasCurrentOption =
+    !normalizedCurrentValue ||
+    options.some((option) => option.value === normalizedCurrentValue);
+
+  return (
+    <select
+      defaultValue={normalizedCurrentValue}
+      name={name}
+      required={required}
+    >
+      <option value="">{placeholder}</option>
+      {!hasCurrentOption ? (
+        <option value={normalizedCurrentValue}>
+          {normalizedCurrentValue} (saved value)
+        </option>
+      ) : null}
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
