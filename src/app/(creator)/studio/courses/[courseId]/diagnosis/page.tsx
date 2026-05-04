@@ -13,6 +13,7 @@ import {
   getAnalysisRouteDecisionLabel,
   isAnalysisHandoverLocked,
   requiresSeparableKnowledgeSkill,
+  validateAnalysisAnchorConsistency,
 } from "@/lib/studio/analysis-handover";
 import { decCapacityAreas } from "@/lib/studio/capacity-map";
 import { getEditableCourseVersion, getWorkflowStepStatus } from "@/lib/studio/courses";
@@ -150,6 +151,25 @@ export default async function DiagnosisPage({
           analysisGateDecision: handover.analysisGateDecision,
         })
       : false;
+  const anchorConsistency =
+    diagnosis && handover
+      ? validateAnalysisAnchorConsistency({
+          diagnosis: {
+            affectedLearnerGroup: diagnosis.affectedLearnerGroup,
+            courseFitDecision: diagnosis.courseFitDecision,
+          },
+          handover,
+          snapshot: inheritedDiagnosisSnapshot,
+        })
+      : {
+          ok: Boolean(inheritedDiagnosisSnapshot),
+          issues: inheritedDiagnosisSnapshot
+            ? []
+            : [
+                "No approved diagnosis evidence is linked to this course. Return to Course Setup and select a valid diagnosis record before locking Analysis for Design.",
+              ],
+        };
+  const canLockForDesign = Boolean(canProceed && anchorConsistency.ok);
 
   return (
     <WorkspaceShell eyebrow="Diagnosis" title={editable.course.title}>
@@ -212,6 +232,13 @@ export default async function DiagnosisPage({
           This Analysis cannot open Design yet. Motivation, Environment, or
           Mixed gaps need an explicit separable Knowledge or Skill component,
           and the course-fit decision must confirm course design is appropriate.
+        </p>
+      ) : null}
+      {resolvedSearchParams?.error === "anchor" ? (
+        <p className="workspace-error">
+          This Analysis handover does not yet align with the approved diagnosis
+          evidence selected in Course Setup. Please revise the Analysis fields
+          or return to Course Setup if a different diagnosis record is needed.
         </p>
       ) : null}
 
@@ -573,12 +600,26 @@ export default async function DiagnosisPage({
             </div>
             <span
               className={`status-badge ${
-                canProceed ? "status-badge-ready" : "status-badge-blocked"
+                canLockForDesign ? "status-badge-ready" : "status-badge-blocked"
               }`}
             >
-              {canProceed ? "Ready to lock" : "Not ready"}
+              {canLockForDesign ? "Ready to lock" : "Not ready"}
             </span>
           </div>
+          {!anchorConsistency.ok ? (
+            <div className="analysis-consistency-panel" role="alert">
+              <h3>Evidence alignment needed</h3>
+              <p>
+                This Analysis handover does not yet align with the approved
+                diagnosis evidence selected in Course Setup.
+              </p>
+              <ul>
+                {anchorConsistency.issues.map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="context-grid">
             <article>
               <strong>Handover status</strong>
@@ -601,7 +642,7 @@ export default async function DiagnosisPage({
             <button
               className="workspace-button"
               type="submit"
-              disabled={!canProceed}
+              disabled={!canLockForDesign}
             >
               Lock Analysis for Design
             </button>

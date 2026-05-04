@@ -1074,6 +1074,37 @@ select {
   font-weight: 700;
 }
 
+.analysis-consistency-panel {
+  display: grid;
+  gap: var(--dec-space-2);
+  padding: var(--dec-space-4);
+  border: 1px solid rgba(164, 66, 24, 0.24);
+  border-left: 4px solid var(--dec-color-warning);
+  border-radius: var(--dec-radius-sm);
+  background: #fff6ee;
+}
+
+.analysis-consistency-panel h3,
+.analysis-consistency-panel p {
+  margin: 0;
+}
+
+.analysis-consistency-panel h3 {
+  color: var(--dec-color-text);
+  font-size: 1rem;
+}
+
+.analysis-consistency-panel p,
+.analysis-consistency-panel li {
+  color: var(--dec-color-muted-text);
+  line-height: 1.55;
+}
+
+.analysis-consistency-panel ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
 .setup-form-section {
   display: grid;
   gap: var(--dec-space-4);

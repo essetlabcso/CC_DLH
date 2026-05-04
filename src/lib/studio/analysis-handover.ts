@@ -2,6 +2,10 @@ import type { CourseAnalysisHandover } from "@prisma/client";
 
 import { taxonomyLabels } from "@/lib/analysis-import/taxonomy-alignment";
 import { isDecCapacityArea } from "@/lib/studio/capacity-map";
+import {
+  getDiagnosisRecordEligibility,
+  type CourseSetupDiagnosisSnapshot,
+} from "@/lib/studio/diagnosis-selection";
 
 export const analysisHandoverStatuses = ["DRAFT", "LOCKED"] as const;
 
@@ -43,6 +47,20 @@ export type AnalysisHandoverValidationResult =
       ok: false;
       missingFields: string[];
     };
+
+export type AnalysisAnchorConsistencyInput = {
+  snapshot: CourseSetupDiagnosisSnapshot | null;
+  diagnosis: {
+    affectedLearnerGroup: string;
+    courseFitDecision: string;
+  } | null;
+  handover: AnalysisHandoverInput | null;
+};
+
+export type AnalysisAnchorConsistencyResult = {
+  ok: boolean;
+  issues: string[];
+};
 
 const requiredFields: readonly (keyof AnalysisHandoverInput)[] = [
   "capacityArea",
@@ -189,6 +207,114 @@ export function canAnalysisProceedToDesign(
   );
 }
 
+export function validateAnalysisAnchorConsistency({
+  diagnosis,
+  handover,
+  snapshot,
+}: AnalysisAnchorConsistencyInput): AnalysisAnchorConsistencyResult {
+  const issues: string[] = [];
+
+  if (!snapshot) {
+    return {
+      ok: false,
+      issues: [
+        "No approved diagnosis evidence is linked to this course. Return to Course Setup and select a valid diagnosis record before locking Analysis for Design.",
+      ],
+    };
+  }
+
+  if (!diagnosis || !handover) {
+    return {
+      ok: false,
+      issues: [
+        "Save the course-specific Diagnosis and Analysis Handover before locking Analysis for Design.",
+      ],
+    };
+  }
+
+  const anchor = snapshot.record;
+  const anchorEligibility = getDiagnosisRecordEligibility({
+    courseFitDecision: anchor.courseFitDecision,
+    ksmeRoute: anchor.ksmeRoute,
+    separableKnowledgeSkillComponent:
+      anchor.separableKnowledgeSkillComponent,
+  });
+
+  if (!anchorEligibility.selectable) {
+    issues.push(
+      "The selected diagnosis evidence is not currently eligible to anchor course production. Return to Course Setup and select a course-eligible diagnosis record.",
+    );
+  }
+
+  if (!sameMeaning(handover.capacityArea, anchor.coreCapacityArea)) {
+    issues.push(
+      "Capacity area must match the approved diagnosis evidence selected in Course Setup.",
+    );
+  }
+
+  if (
+    contradictsText(
+      handover.subCapacityArea,
+      anchor.capacityPracticeArea || anchor.subCapacity,
+    )
+  ) {
+    issues.push(
+      "Capacity Practice Area should align with the approved diagnosis evidence selected in Course Setup.",
+    );
+  }
+
+  if (
+    contradictsParticipantGroup(
+      diagnosis.affectedLearnerGroup,
+      anchor.targetAudience,
+    )
+  ) {
+    issues.push(
+      "Target Audience or Participant group should align with the approved diagnosis evidence selected in Course Setup.",
+    );
+  }
+
+  if (!ksmeRoutesCompatible(handover.ksmeRoute, anchor.ksmeRoute)) {
+    issues.push(
+      "K/S/M/E route must match or remain compatible with the approved diagnosis evidence.",
+    );
+  }
+
+  if (
+    requiresSeparableKnowledgeSkill(anchor.ksmeRoute.toLowerCase()) &&
+    !anchor.separableKnowledgeSkillComponent.trim()
+  ) {
+    issues.push(
+      "The approved diagnosis evidence needs a separable Knowledge or Skill component before it can move into Design.",
+    );
+  }
+
+  if (
+    courseFitContradictsAnchor(
+      diagnosis.courseFitDecision,
+      anchor.courseFitDecision,
+    )
+  ) {
+    issues.push(
+      "Course-fit decision must remain compatible with the approved diagnosis evidence selected in Course Setup.",
+    );
+  }
+
+  if (
+    anchor.noHarmNote.trim() &&
+    !containsMeaning(handover.safeguardsNote, anchor.noHarmNote)
+  ) {
+    issues.push(
+      "Safeguarding and no-harm guidance from the approved diagnosis evidence must remain visible in the Analysis Handover.",
+    );
+  }
+
+  return {
+    ok: issues.length === 0,
+    issues,
+  };
+}
+
 export function getAnalysisRouteDecisionLabel(
   input:
     | (Pick<
@@ -291,4 +417,96 @@ function normalizeAnalysisGateDecision(value: string): AnalysisGateDecision | ""
 
 function getTextValue(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim();
+}
+
+function sameMeaning(left: string, right: string) {
+  return normalizeComparableText(left) === normalizeComparableText(right);
+}
+
+function contradictsText(value: string, anchorValue: string) {
+  const normalizedValue = normalizeComparableText(value);
+  const normalizedAnchor = normalizeComparableText(anchorValue);
+
+  if (!normalizedValue || !normalizedAnchor) {
+    return true;
+  }
+
+  return (
+    normalizedValue !== normalizedAnchor &&
+    !normalizedValue.includes(normalizedAnchor) &&
+    !normalizedAnchor.includes(normalizedValue)
+  );
+}
+
+function contradictsParticipantGroup(value: string, anchorValue: string) {
+  const valueParts = splitComparableParts(value);
+  const anchorParts = splitComparableParts(anchorValue);
+
+  if (valueParts.length === 0 || anchorParts.length === 0) {
+    return true;
+  }
+
+  return !valueParts.some((part) =>
+    anchorParts.some(
+      (anchorPart) =>
+        part === anchorPart ||
+        part.includes(anchorPart) ||
+        anchorPart.includes(part),
+    ),
+  );
+}
+
+function ksmeRoutesCompatible(value: string, anchorValue: string) {
+  const normalizedValue = normalizeComparableText(value);
+  const normalizedAnchor = normalizeComparableText(anchorValue);
+
+  if (!normalizedValue || !normalizedAnchor) {
+    return false;
+  }
+
+  return normalizedValue === normalizedAnchor;
+}
+
+function courseFitContradictsAnchor(value: string, anchorValue: string) {
+  const normalizedValue = normalizeComparableText(value);
+  const normalizedAnchor = normalizeComparableText(anchorValue);
+  const anchorAllowsCourse =
+    normalizedAnchor === "course addressable" ||
+    normalizedAnchor === "partly course addressable" ||
+    normalizedAnchor === "blended support recommended";
+
+  if (!anchorAllowsCourse) {
+    return true;
+  }
+
+  return normalizedValue !== "course fit";
+}
+
+function containsMeaning(value: string, requiredValue: string) {
+  const normalizedValue = normalizeComparableText(value);
+  const normalizedRequiredValue = normalizeComparableText(requiredValue);
+
+  if (!normalizedRequiredValue) {
+    return true;
+  }
+
+  return normalizedValue.includes(normalizedRequiredValue);
+}
+
+function splitComparableParts(value: string) {
+  return normalizeComparableText(value)
+    .split(/\s+(?:and|or)\s+|\/|,|;/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function normalizeComparableText(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[-–—]/g, " ")
+    .replace(/[^a-z0-9/,\s;]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }

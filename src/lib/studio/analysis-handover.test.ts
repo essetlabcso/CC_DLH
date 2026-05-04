@@ -6,6 +6,7 @@ import {
   isAnalysisHandoverLocked,
   parseAnalysisHandoverFormData,
   requiresSeparableKnowledgeSkill,
+  validateAnalysisAnchorConsistency,
 } from "./analysis-handover";
 
 describe("analysis handover gate", () => {
@@ -157,6 +158,96 @@ describe("analysis handover gate", () => {
       }),
     ).toBe(false);
   });
+
+  it("passes anchor consistency when Analysis fields align with approved diagnosis evidence", () => {
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover: buildValidHandoverInput(),
+      snapshot: buildDiagnosisSnapshot(),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it("blocks lock readiness when capacity area contradicts the approved diagnosis evidence", () => {
+    const handover = buildValidHandoverInput();
+    handover.capacityArea = "Internal Governance and Leadership";
+
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover,
+      snapshot: buildDiagnosisSnapshot(),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain(
+      "Capacity area must match the approved diagnosis evidence selected in Course Setup.",
+    );
+  });
+
+  it("blocks lock readiness when the K/S/M/E route contradicts the approved diagnosis evidence", () => {
+    const handover = buildValidHandoverInput();
+    handover.ksmeRoute = "knowledge";
+
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover,
+      snapshot: buildDiagnosisSnapshot(),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain(
+      "K/S/M/E route must match or remain compatible with the approved diagnosis evidence.",
+    );
+  });
+
+  it("blocks lock readiness when approved diagnosis evidence is missing", () => {
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover: buildValidHandoverInput(),
+      snapshot: null,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues[0]).toContain("No approved diagnosis evidence");
+  });
+
+  it("blocks non-course-support diagnosis evidence from locking into Design", () => {
+    const snapshot = buildDiagnosisSnapshot({
+      courseFitDecision: "Non-course support required",
+      ksmeRoute: "Environment",
+      separableKnowledgeSkillComponent: "",
+    });
+    const handover = buildValidHandoverInput();
+    handover.ksmeRoute = "environment";
+
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover,
+      snapshot,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain(
+      "The selected diagnosis evidence is not currently eligible to anchor course production. Return to Course Setup and select a course-eligible diagnosis record.",
+    );
+  });
 });
 
 function buildValidHandoverFormData() {
@@ -197,4 +288,83 @@ function buildValidHandoverFormData() {
   );
 
   return formData;
+}
+
+function buildValidHandoverInput() {
+  const formData = buildValidHandoverFormData();
+  formData.set(
+    "capacityArea",
+    "Monitoring, Evaluation, Accountability, and Learning",
+  );
+  formData.set(
+    "subCapacityArea",
+    "Outcome evidence and learning documentation",
+  );
+  formData.set("ksmeGap", "skill");
+  formData.set(
+    "safeguardsNote",
+    "Use fictionalized examples and avoid identifiable participant data.",
+  );
+  const result = parseAnalysisHandoverFormData(formData);
+
+  if (!result.ok) {
+    throw new Error("Expected valid handover input in test fixture.");
+  }
+
+  return result.value;
+}
+
+function buildDiagnosisSnapshot(
+  overrides: Partial<{
+    courseFitDecision: string;
+    ksmeRoute: string;
+    separableKnowledgeSkillComponent: string;
+  }> = {},
+) {
+  return {
+    dataset: {
+      id: "dataset-1",
+      code: "DEC-CSF-2026-R1",
+      title: "CSF+ Partner CSO Capacity Diagnosis - Round 1",
+      programOrProject: "EU CSF+",
+      assessmentPeriodStart: null,
+      assessmentPeriodEnd: null,
+      regionsCovered: "Addis Ababa, Oromia",
+      organizationGroup: "Selected local CSO partners / CSF+ cohort",
+    },
+    record: {
+      id: "record-1",
+      code: "MEAL-001",
+      title: "MEAL outcome evidence",
+      coreCapacityArea:
+        "Monitoring, Evaluation, Accountability, and Learning",
+      capacityPracticeArea: "Outcome evidence and learning documentation",
+      subCapacity: "Outcome evidence and learning documentation",
+      targetAudience: "MEAL staff / Program staff",
+      region: "Addis Ababa",
+      currentBaseline:
+        "Staff understand reporting requirements but cannot prepare concise outcome evidence statements.",
+      capacityGapStatement:
+        "Staff cannot prepare concise outcome evidence statements from routine monitoring data.",
+      desiredPractice:
+        "Staff prepare a short outcome evidence note that links outputs, observed change, evidence source, and learning implication.",
+      evidenceSourceSummary:
+        "Workshop, survey, interview, document review, facilitated validation",
+      ksmeRoute: overrides.ksmeRoute ?? "Skill",
+      separableKnowledgeSkillComponent:
+        overrides.separableKnowledgeSkillComponent ?? "",
+      courseFitDecision: overrides.courseFitDecision ?? "Course-addressable",
+      safeguardingRiskLevel: "Low",
+      dataSensitivityLevel: "Internal",
+      noHarmNote:
+        "Use fictionalized examples and avoid identifiable participant data.",
+      evaluationAnchor:
+        "Participant prepares a concise outcome evidence statement.",
+      monitoringSignal:
+        "Improved quality of outcome evidence notes in course activities.",
+      possiblePracticalProof: "Outcome evidence note",
+      verifiedAchievementExample:
+        "Verified achievement shows a safe outcome evidence note.",
+    },
+  };
 }

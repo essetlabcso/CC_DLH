@@ -15,6 +15,7 @@ import {
   canAnalysisProceedToDesign,
   isAnalysisHandoverLocked,
   parseAnalysisHandoverFormData,
+  validateAnalysisAnchorConsistency,
   validateAnalysisHandoverInput,
 } from "@/lib/studio/analysis-handover";
 import {
@@ -58,6 +59,7 @@ import { buildInitialWorkflowStepRecords } from "@/lib/studio/course-workflow-re
 import { getEditableCourseVersion } from "@/lib/studio/courses";
 import {
   buildCourseSetupDiagnosisSelectionData,
+  resolveCourseSetupDiagnosisSnapshot,
 } from "@/lib/studio/diagnosis-selection";
 import { getSelectableDiagnosisRecordById } from "@/lib/studio/diagnosis-options";
 import {
@@ -494,6 +496,37 @@ export async function lockAnalysisHandoverForDesignAction(courseId: string) {
     })
   ) {
     redirect(`/studio/courses/${courseId}/diagnosis?error=route`);
+  }
+
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const diagnosisSnapshot = resolveCourseSetupDiagnosisSnapshot({
+    linkedRecord: linkedDiagnosisRecord,
+    snapshotValue: editable.version.setup?.diagnosisSnapshot,
+  });
+  const anchorConsistency = validateAnalysisAnchorConsistency({
+    diagnosis: {
+      affectedLearnerGroup: diagnosis.affectedLearnerGroup,
+      courseFitDecision: diagnosis.courseFitDecision,
+    },
+    handover: validation.value,
+    snapshot: diagnosisSnapshot,
+  });
+
+  if (!anchorConsistency.ok) {
+    redirect(
+      `/studio/courses/${courseId}/diagnosis?error=anchor&fields=${encodeURIComponent(
+        anchorConsistency.issues.join("|"),
+      )}`,
+    );
   }
 
   const lockedAt = new Date();
