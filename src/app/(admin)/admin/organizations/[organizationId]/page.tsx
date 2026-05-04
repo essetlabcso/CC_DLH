@@ -1,5 +1,6 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { getOrganizationDetail } from "@/lib/admin/organizations";
+import { MembershipManager } from "../MembershipManager";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -7,11 +8,17 @@ type OrganizationDetailPageProps = {
   params: Promise<{
     organizationId: string;
   }>;
+  searchParams?: Promise<{
+    error?: string;
+    updated?: string;
+  }>;
 };
 
 export default async function OrganizationDetailPage({
   params,
+  searchParams,
 }: OrganizationDetailPageProps) {
+  const resolvedSearchParams = await searchParams;
   const { organizationId } = await params;
   const org = await getOrganizationDetail(organizationId);
 
@@ -40,6 +47,8 @@ export default async function OrganizationDetailPage({
           </div>
         </section>
 
+        <StatusMessage searchParams={resolvedSearchParams} />
+
         <section className="admin-section" aria-labelledby="org-stats-title">
           <div className="admin-section-heading">
             <h2 id="org-stats-title">Safe performance summary</h2>
@@ -64,29 +73,8 @@ export default async function OrganizationDetailPage({
           </div>
         </section>
 
-        <section className="admin-section" aria-labelledby="org-members-title">
-          <div className="admin-section-heading">
-            <h2 id="org-members-title">Organization members</h2>
-            <p>
-              Users associated with this organization and their platform roles.
-            </p>
-          </div>
-
-          {org.members.length > 0 ? (
-            <div className="admin-user-list">
-              {org.members.map((member) => (
-                <MemberCard key={member.id} member={member} />
-              ))}
-            </div>
-          ) : (
-            <section className="admin-empty-panel">
-              <span className="status-badge status-badge-blocked">
-                No members
-              </span>
-              <h2>No members found</h2>
-              <p>No users are currently associated with this organization.</p>
-            </section>
-          )}
+        <section className="admin-section">
+          <MembershipManager organizationId={org.id} members={org.members} />
         </section>
 
         <section className="admin-section" aria-labelledby="org-info-title">
@@ -211,45 +199,37 @@ export default async function OrganizationDetailPage({
   );
 }
 
-function MemberCard({
-  member,
+function StatusMessage({
+  searchParams,
 }: {
-  member: {
-    id: string;
-    name: string;
-    email: string;
-    roles: string[];
-    isHomeOrg: boolean;
-  };
+  searchParams:
+    | {
+        error?: string;
+        updated?: string;
+      }
+    | undefined;
 }) {
-  return (
-    <article className="admin-user-card">
-      <div className="reference-card-heading">
-        <div>
-          <h3>{member.name}</h3>
-          <p>{member.email}</p>
-        </div>
-        <div className="reference-badge-row">
-          {member.isHomeOrg ? (
-            <span className="status-badge status-badge-published">Home Org</span>
-          ) : (
-            <span className="status-badge status-badge-ready">Member</span>
-          )}
-        </div>
-      </div>
+  if (searchParams?.error) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-blocked">
+          Action needed
+        </span>
+        <p>{searchParams.error}</p>
+      </section>
+    );
+  }
 
-      <dl className="reference-meta-list">
-        <div>
-          <dt>Roles</dt>
-          <dd>
-            {member.roles.length > 0
-              ? member.roles.map(formatLabel).join(", ")
-              : "None"}
-          </dd>
-        </div>
-      </dl>
-    </article>
-  );
+  if (searchParams?.updated) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-ready">Updated</span>
+        <p>Organization membership updated.</p>
+      </section>
+    );
+  }
+
+  return null;
 }
 
 function MetricCard({
@@ -268,13 +248,4 @@ function MetricCard({
       <p>{detail}</p>
     </article>
   );
-}
-
-function formatLabel(value: string) {
-  return value
-    .toLowerCase()
-    .split(/[-_]/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }

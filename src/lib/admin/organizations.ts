@@ -95,9 +95,11 @@ export type OrganizationDetail = {
   isSystem: boolean;
   members: {
     id: string;
+    membershipId: string;
     name: string;
     email: string;
     roles: string[];
+    status: string;
     isHomeOrg: boolean;
   }[];
   stats: {
@@ -149,22 +151,29 @@ export async function getOrganizationDetail(
 
   // Compile members list
   // 1. Users whose home org is this one
-  const homeMembers = org.users.map((user) => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    roles: user.memberships[0]?.roles.map((r) => r.role.toString()) ?? [],
-    isHomeOrg: true,
-  }));
+  const homeMembers = org.users.map((user) => {
+    const membership = user.memberships[0];
+    return {
+      id: user.id,
+      membershipId: membership.id,
+      name: user.name,
+      email: user.email,
+      roles: membership.roles.map((r) => r.role.toString()),
+      status: membership.status,
+      isHomeOrg: true,
+    };
+  });
 
   // 2. Users who have a membership here but home org is different
   const externalMembers = org.memberships
     .filter((m) => m.user.organizationId !== id)
     .map((m) => ({
       id: m.user.id,
+      membershipId: m.id,
       name: m.user.name,
       email: m.user.email,
       roles: m.roles.map((r) => r.role.toString()),
+      status: m.status,
       isHomeOrg: false,
     }));
 
