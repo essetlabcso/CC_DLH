@@ -75,6 +75,13 @@ const taskCards = [
     summary:
       "High-level insights into learning progress and organizational capacity achievements.",
   },
+  {
+    title: "Data Safety & Visibility",
+    href: "/admin/data-safety",
+    status: "Manage",
+    summary:
+      "Oversee sensitive practical proof submissions and verified achievements with external visibility.",
+  },
 ];
 
 export default async function AdminWorkspacePage() {
@@ -115,6 +122,16 @@ export default async function AdminWorkspacePage() {
       label: "Organizations",
       value: counts.organizations,
       detail: "Registered CSOs",
+    },
+    {
+      label: "Specialist flags",
+      value: counts.specialistFlags,
+      detail: "Proof needing Admin review",
+    },
+    {
+      label: "Externally visible",
+      value: counts.externallyVisibleAchievements,
+      detail: "Achievements safely shared",
     },
   ];
 
@@ -170,11 +187,11 @@ export default async function AdminWorkspacePage() {
         "Course setup is anchored to Admin diagnosis records and selected lookup fields.",
     },
     {
-      label: "Admin editing",
+      label: "Data safety oversight",
       status: "Enabled",
       tone: "status-badge-ready",
       detail:
-        "Administrative management is enabled for reference data and diagnosis records.",
+        "Administrative oversight for sensitive proof submissions and external visibility is active.",
     },
   ];
 

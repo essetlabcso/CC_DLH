@@ -8,6 +8,8 @@ export type AdminDashboardCounts = {
   diagnosisRecords: number;
   auditLogs: number;
   organizations: number;
+  specialistFlags: number;
+  externallyVisibleAchievements: number;
 };
 
 export type AdminReferenceCategorySummary = {
@@ -35,6 +37,8 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     diagnosisRecords,
     auditLogs,
     organizations,
+    specialistFlags,
+    externallyVisibleAchievements,
   ] = await Promise.all([
     prisma.adminLookupCategory.count(),
     prisma.adminLookupValue.count(),
@@ -43,6 +47,22 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     prisma.diagnosisRecord.count(),
     prisma.adminAuditLog.count(),
     prisma.organization.count(),
+    prisma.learnerPracticalProofSubmission.count({
+      where: {
+        OR: [
+          { specialistReviewRequired: true },
+          { redactionRequired: true },
+        ],
+      },
+    }),
+    prisma.learnerVerifiedAchievement.count({
+      where: {
+        OR: [
+          { donorVisibilityEnabled: true },
+          { publicBadgeEnabled: true },
+        ],
+      },
+    }),
   ]);
 
   return {
@@ -53,6 +73,8 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     diagnosisRecords,
     auditLogs,
     organizations,
+    specialistFlags,
+    externallyVisibleAchievements,
   };
 }
 
