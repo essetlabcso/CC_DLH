@@ -409,6 +409,9 @@ export default async function LearnerCoursePage({
           This course has {countLearnerCourseBlocks(version.modules)} learner
           blocks prepared for web learning.
         </p>
+        <div className="workspace-note" style={{ marginTop: "1rem" }}>
+          <strong>Note:</strong> A course certificate confirms you have met the learning threshold. It does not signify full organizational transformation or independently verified practice.
+        </div>
       </div>
 
       {finalTestBlock && finalTest.ok ? (
@@ -477,6 +480,12 @@ export default async function LearnerCoursePage({
                   <strong>Latest score</strong>
                   <span>{latestFinalTestAttempt.scorePercent}%</span>
                 </article>
+                {version.finalTestAttempts.length > 1 && bestFinalTestAttempt ? (
+                  <article>
+                    <strong>Best score</strong>
+                    <span>{bestFinalTestAttempt.scorePercent}%</span>
+                  </article>
+                ) : null}
                 <article>
                   <strong>Status</strong>
                   <span

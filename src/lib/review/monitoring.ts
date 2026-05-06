@@ -14,6 +14,9 @@ export type MonitoringCourseInput = {
   totalLessons: number;
   progressRecords: readonly MonitoringProgressRecord[];
   finalTestAttempts?: readonly MonitoringFinalTestAttempt[];
+  certificateCount?: number;
+  proofSubmissionCount?: number;
+  verifiedAchievementCount?: number;
 };
 
 export type MonitoringCourseSummary = {
@@ -28,6 +31,9 @@ export type MonitoringCourseSummary = {
   finalTestPasses: number;
   finalTestPassRate: number;
   finalTestAverageScore: number;
+  certificateCount: number;
+  proofSubmissionCount: number;
+  verifiedAchievementCount: number;
   statusLabel: string;
 };
 
@@ -55,6 +61,9 @@ export type MonitoringCapacityGroup = {
   finalTestPasses: number;
   finalTestPassRate: number;
   finalTestAverageScore: number;
+  certificateCount: number;
+  proofSubmissionCount: number;
+  verifiedAchievementCount: number;
 };
 
 export type MonitoringEvidenceSnapshot = {
@@ -67,6 +76,9 @@ export type MonitoringEvidenceSnapshot = {
   finalTestPasses: number;
   finalTestPassRate: number;
   finalTestAverageScore: number;
+  certificateCount: number;
+  proofSubmissionCount: number;
+  verifiedAchievementCount: number;
   capacityGroups: MonitoringCapacityGroup[];
 };
 
@@ -74,6 +86,9 @@ export function buildMonitoringCourseSummary({
   totalLessons,
   progressRecords,
   finalTestAttempts = [],
+  certificateCount = 0,
+  proofSubmissionCount = 0,
+  verifiedAchievementCount = 0,
 }: MonitoringCourseInput): MonitoringCourseSummary {
   const safeTotalLessons = Math.max(totalLessons, 0);
   const startedLearners = new Set(
@@ -137,6 +152,9 @@ export function buildMonitoringCourseSummary({
     finalTestPasses,
     finalTestPassRate,
     finalTestAverageScore,
+    certificateCount,
+    proofSubmissionCount,
+    verifiedAchievementCount,
     statusLabel: getMonitoringStatusLabel(startedLearners.size, completionRate),
   };
 }
@@ -163,6 +181,9 @@ export function buildMonitoringEvidenceSnapshot(
       signals,
       "finalTestAverageScore",
     ),
+    certificateCount: sumGroupMetric(signals, "certificateCount"),
+    proofSubmissionCount: sumGroupMetric(signals, "proofSubmissionCount"),
+    verifiedAchievementCount: sumGroupMetric(signals, "verifiedAchievementCount"),
     capacityGroups: buildMonitoringCapacityGroups(signals),
   };
 }
@@ -236,6 +257,9 @@ export function buildMonitoringCapacityGroups(
           groupSignals,
           "finalTestAverageScore",
         ),
+        certificateCount: sumGroupMetric(groupSignals, "certificateCount"),
+        proofSubmissionCount: sumGroupMetric(groupSignals, "proofSubmissionCount"),
+        verifiedAchievementCount: sumGroupMetric(groupSignals, "verifiedAchievementCount"),
       };
     })
     .sort(
@@ -304,6 +328,9 @@ function sumGroupMetric(
     | "finalTestAttempts"
     | "finalTestLearners"
     | "finalTestPasses"
+    | "certificateCount"
+    | "proofSubmissionCount"
+    | "verifiedAchievementCount"
   >,
 ) {
   return signals.reduce((total, signal) => total + signal.summary[field], 0);

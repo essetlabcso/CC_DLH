@@ -7,6 +7,7 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { isLessonComplete } from "@/lib/learner/progress";
+import { getLearnerLessonNavigation } from "@/lib/learner/course-access";
 import {
   getBlockTypeLabel,
   parseBuildBlockContent,
@@ -115,6 +116,7 @@ export default async function LearnerLessonPage({
     },
   });
   const complete = isLessonComplete(lessonProgress);
+  const navigation = getLearnerLessonNavigation(version.modules, lessonId);
 
   return (
     <WorkspaceShell eyebrow={lesson.moduleTitle} title={lesson.title}>
@@ -155,30 +157,38 @@ export default async function LearnerLessonPage({
                       {getBlockTypeLabel(block.type)}
                     </p>
                     <h3>{content.title || getBlockTypeLabel(block.type)}</h3>
-                    {content.body ? <p>{content.body}</p> : null}
-                    {content.prompt ? (
+                    {block.type === "FINAL_TEST" ? (
                       <div className="preview-prompt">
-                        <strong>
-                          {block.type === "FINAL_TEST"
-                            ? "Final test question"
-                            : "Question"}
-                        </strong>
-                        <p>{content.prompt}</p>
-                        {content.choices ? (
-                          <ol className="preview-choice-list" type="A">
-                            {content.choices.map((choice) => (
-                              <li key={choice}>{choice}</li>
-                            ))}
-                          </ol>
+                        <strong>Final test preview</strong>
+                        <p>
+                          Final test assessment is available from the course
+                          overview page.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        {content.body ? <p>{content.body}</p> : null}
+                        {content.prompt ? (
+                          <div className="preview-prompt">
+                            <strong>Question</strong>
+                            <p>{content.prompt}</p>
+                            {content.choices ? (
+                              <ol className="preview-choice-list" type="A">
+                                {content.choices.map((choice) => (
+                                  <li key={choice}>{choice}</li>
+                                ))}
+                              </ol>
+                            ) : null}
+                          </div>
                         ) : null}
-                      </div>
-                    ) : null}
-                    {content.feedback ? (
-                      <div className="preview-prompt">
-                        <strong>Feedback</strong>
-                        <p>{content.feedback}</p>
-                      </div>
-                    ) : null}
+                        {content.feedback ? (
+                          <div className="preview-prompt">
+                            <strong>Feedback</strong>
+                            <p>{content.feedback}</p>
+                          </div>
+                        ) : null}
+                      </>
+                    )}
                   </section>
                 );
               })}
@@ -207,7 +217,23 @@ export default async function LearnerLessonPage({
       </div>
 
       <nav className="workspace-nav" aria-label="Lesson actions">
-        <Link className="workspace-link primary" href={`/learn/courses/${courseId}`}>
+        {navigation.previousLesson ? (
+          <Link
+            className="workspace-link"
+            href={`/learn/courses/${courseId}/lessons/${navigation.previousLesson.lessonId}`}
+          >
+            Previous lesson
+          </Link>
+        ) : null}
+        {navigation.nextLesson ? (
+          <Link
+            className="workspace-link primary"
+            href={`/learn/courses/${courseId}/lessons/${navigation.nextLesson.lessonId}`}
+          >
+            Next lesson
+          </Link>
+        ) : null}
+        <Link className="workspace-link" href={`/learn/courses/${courseId}`}>
           Course overview
         </Link>
         <Link className="workspace-link" href="/learn">

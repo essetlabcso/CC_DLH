@@ -9,7 +9,46 @@ export type ReviewQueueItem = {
   blockCount: number;
 };
 
-export function getReviewQueueStatusLabel(status: CourseVersionStatus) {
+export function getReviewQueueStatusLabel(
+  status: CourseVersionStatus,
+  checklist?: string | null,
+) {
+  if (status === CourseVersionStatus.SUBMITTED && checklist) {
+    try {
+      const parsed = JSON.parse(checklist);
+      if (parsed.reviewerReview?.specialistReviewRequired) {
+        return "Specialist review pending";
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  if (status === CourseVersionStatus.RETURNED && checklist) {
+    try {
+      const parsed = JSON.parse(checklist);
+      const decisionType = parsed.reviewerReview?.decisionType;
+
+      if (decisionType === "not-approved-pause") {
+        return "Paused / Not Approved";
+      }
+
+      if (decisionType === "return-to-analysis") {
+        return "Returned to Analysis";
+      }
+
+      if (decisionType === "return-to-design") {
+        return "Returned to Design";
+      }
+
+      if (decisionType === "return-to-build") {
+        return "Returned to Build";
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
   switch (status) {
     case CourseVersionStatus.SUBMITTED:
       return "Submitted for review";

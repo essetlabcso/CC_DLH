@@ -1,3 +1,6 @@
+import { CourseVersionStatus } from "@prisma/client";
+import { getBuildToReviewHandoverFromChecklist } from "@/lib/studio/build-review-handover";
+
 export type ReviewerApprovalChecksInput = {
   runtimePreviewConfirmed: boolean;
   actionAlignmentConfirmed: boolean;
@@ -149,7 +152,9 @@ export function parseReviewerApprovalFormData(
   };
   const missingFields = Object.entries(value)
     .filter(([, fieldValue]) =>
-      typeof fieldValue === "boolean" ? !fieldValue : fieldValue.length === 0,
+      typeof fieldValue === "boolean"
+        ? !fieldValue
+        : fieldValue.trim().length < 20,
     )
     .map(([field]) => field);
 
@@ -189,13 +194,13 @@ export function parseReviewerReturnFormData(
   if (!severityValue || !severity) {
     missingFields.push("severity");
   }
-  if (!value.affectedArea) {
+  if (!value.affectedArea || value.affectedArea.length < 5) {
     missingFields.push("affectedArea");
   }
-  if (!value.reviewerComment) {
+  if (!value.reviewerComment || value.reviewerComment.length < 20) {
     missingFields.push("reviewerComment");
   }
-  if (!value.requiredAction) {
+  if (!value.requiredAction || value.requiredAction.length < 20) {
     missingFields.push("requiredAction");
   }
 
@@ -218,11 +223,13 @@ export function parseReviewerSpecialistReviewFormData(
     reviewerComment: getTrimmedFormValue(formData, "reviewerComment"),
     requiredAction: getTrimmedFormValue(formData, "requiredAction"),
   };
-  const missingFields = getMissingTextFields(value, [
-    "affectedArea",
-    "reviewerComment",
-    "requiredAction",
-  ]);
+  const missingFields = Object.entries(value)
+    .filter(([field, fieldValue]) => {
+      if (field === "affectedItem") return false;
+      if (field === "affectedArea") return fieldValue.length < 5;
+      return fieldValue.length < 20;
+    })
+    .map(([field]) => field);
 
   if (missingFields.length > 0) {
     return { ok: false, missingFields };
@@ -240,11 +247,13 @@ export function parseReviewerPauseFormData(
     reviewerComment: getTrimmedFormValue(formData, "reviewerComment"),
     requiredAction: getTrimmedFormValue(formData, "requiredAction"),
   };
-  const missingFields = getMissingTextFields(value, [
-    "affectedArea",
-    "reviewerComment",
-    "requiredAction",
-  ]);
+  const missingFields = Object.entries(value)
+    .filter(([field, fieldValue]) => {
+      if (field === "affectedItem") return false;
+      if (field === "affectedArea") return fieldValue.length < 5;
+      return fieldValue.length < 20;
+    })
+    .map(([field]) => field);
 
   if (missingFields.length > 0) {
     return { ok: false, missingFields };
@@ -579,13 +588,6 @@ function buildStructuredComment(input: {
   };
 }
 
-function getMissingTextFields<T extends Record<string, string>>(
-  value: T,
-  fields: (keyof T)[],
-) {
-  return fields.filter((field) => !value[field]).map((field) => String(field));
-}
-
 function parseChecklist(
   checklist: string | null | undefined,
 ): Record<string, unknown> {
@@ -605,3 +607,96 @@ function parseChecklist(
 
   return {};
 }
+
+export type ApprovalBlocker = {
+  code: string;
+  label: string;
+};
+
+export function getReviewerApprovalBlockers(
+  versionStatus: CourseVersionStatus,
+  checklist: string | null | undefined,
+): ApprovalBlocker[] {
+  const blockers: ApprovalBlocker[] = [];
+
+  if (versionStatus !== CourseVersionStatus.SUBMITTED) {
+    blockers.push({
+      code: "invalid-status",
+      label: "Course version is not currently submitted for review",
+    });
+  }
+
+  const handover = getBuildToReviewHandoverFromChecklist(checklist);
+
+  if (!handover) {
+    blockers.push({
+      code: "missing-handover",
+      label: "Build-to-Review handover is missing",
+    });
+    return blockers;
+  }
+
+  if (handover.blockingWarnings && handover.blockingWarnings.length > 0) {
+    blockers.push({
+      code: "handover-blockers",
+      label: `Handover has ${handover.blockingWarnings.length} active blocking warning(s)`,
+    });
+  }
+
+  if (
+    handover.finalTest &&
+    handover.finalTest.required === true &&
+    handover.finalTest.ready !== true
+  ) {
+    blockers.push({
+      code: "final-test-not-ready",
+      label: "Final test is required for this certificate-bearing course but is not ready.",
+    });
+  }
+
+  if (handover.aiReview && handover.aiReview.pendingCount > 0) {
+    blockers.push({
+      code: "ai-review-pending",
+      label: `There are ${handover.aiReview.pendingCount} AI draft block(s) pending human review`,
+    });
+  }
+
+  if (handover.practicalProof && handover.practicalProof.enabled === true) {
+    const hasStructuredReady = typeof handover.practicalProof.ready === "boolean";
+    const hasStructuredBlockers = Array.isArray(handover.practicalProof.blockers);
+
+    if (hasStructuredReady || hasStructuredBlockers) {
+      const isUnready = hasStructuredReady && handover.practicalProof.ready === false;
+      const hasBlockers = hasStructuredBlockers && handover.practicalProof.blockers.length > 0;
+
+      if (isUnready || hasBlockers) {
+        blockers.push({
+          code: "practical-proof-unsafe",
+          label: "Practical proof configuration is not safely configured",
+        });
+      }
+    } else {
+      const statusText = (handover.practicalProof.status || "").toLowerCase();
+      if (
+        statusText.includes("blocked") ||
+        statusText.includes("unsafe") ||
+        statusText.includes("missing")
+      ) {
+        blockers.push({
+          code: "practical-proof-unsafe",
+          label: "Practical proof configuration is not safely configured",
+        });
+      }
+    }
+  }
+
+  if (hasUnresolvedSpecialistReview(checklist)) {
+    blockers.push({
+      code: "specialist-review-unresolved",
+      label: "Approval is blocked by an unresolved specialist review",
+    });
+  }
+
+  return blockers;
+}
+

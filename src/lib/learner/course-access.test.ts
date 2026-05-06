@@ -4,6 +4,7 @@ import {
   countLearnerCourseBlocks,
   formatLearnerCourseDuration,
   getFirstLearnerLesson,
+  getLearnerLessonNavigation,
   type LearnerCourseModule,
 } from "./course-access";
 
@@ -53,5 +54,32 @@ describe("learner course access helpers", () => {
   it("formats the visible lesson count", () => {
     expect(formatLearnerCourseDuration(modules)).toBe("2 lessons");
     expect(formatLearnerCourseDuration([])).toBe("No lessons available");
+  });
+
+  it("calculates previous and next lesson navigation", () => {
+    expect(getLearnerLessonNavigation(modules, "lesson-1")).toMatchObject({
+      previousLesson: undefined,
+      nextLesson: {
+        lessonId: "lesson-2",
+        lessonTitle: "Second lesson",
+        moduleId: "module-2",
+        moduleTitle: "Second module",
+      },
+    });
+
+    expect(getLearnerLessonNavigation(modules, "lesson-2")).toMatchObject({
+      previousLesson: {
+        lessonId: "lesson-1",
+        lessonTitle: "First lesson",
+        moduleId: "module-1",
+        moduleTitle: "First module",
+      },
+      nextLesson: undefined,
+    });
+
+    expect(getLearnerLessonNavigation(modules, "unknown")).toMatchObject({
+      previousLesson: undefined,
+      nextLesson: undefined,
+    });
   });
 });

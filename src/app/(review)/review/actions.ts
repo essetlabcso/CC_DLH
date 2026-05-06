@@ -16,7 +16,6 @@ import {
   buildReviewerApprovalChecklist,
   buildReviewerReturnChecklist,
   buildSpecialistReviewChecklist,
-  hasUnresolvedSpecialistReview,
   parseReviewerApprovalFormData,
   parseReviewerPauseFormData,
   parseReviewerReturnFormData,
@@ -25,6 +24,7 @@ import {
   summarizeReviewerPause,
   summarizeReviewerReturn,
   summarizeSpecialistReview,
+  getReviewerApprovalBlockers,
 } from "@/lib/review/decisions";
 import {
   buildPublishReadiness,
@@ -72,9 +72,10 @@ export async function approveSubmittedCourseAction(
       id: versionId,
       courseId,
       status: CourseVersionStatus.SUBMITTED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: true,
@@ -86,8 +87,14 @@ export async function approveSubmittedCourseAction(
     notFound();
   }
 
-  if (hasUnresolvedSpecialistReview(version.reviewRecord?.checklist)) {
-    redirect(`${reviewPath}?error=specialist`);
+  const blockers = getReviewerApprovalBlockers(version.status, version.reviewRecord?.checklist);
+  if (blockers.length > 0) {
+    const codes = blockers.map((b) => b.code).join(",");
+    redirect(`${reviewPath}?error=approve-blocked&blockers=${encodeURIComponent(codes)}`);
+  }
+
+  if ((result.value.decisionNotes?.length ?? 0) < 20) {
+    redirect(`${reviewPath}?error=approve&reasonShort=1`);
   }
 
   const approvedAt = new Date();
@@ -171,9 +178,10 @@ export async function returnSubmittedCourseAction(
       id: versionId,
       courseId,
       status: CourseVersionStatus.SUBMITTED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: true,
@@ -183,6 +191,14 @@ export async function returnSubmittedCourseAction(
 
   if (!version) {
     notFound();
+  }
+
+  if (
+    (result.value.reviewerComment?.length ?? 0) < 20 ||
+    (result.value.requiredAction?.length ?? 0) < 20 ||
+    (result.value.affectedArea?.length ?? 0) < 5
+  ) {
+    redirect(`${reviewPath}?error=return&reasonShort=1`);
   }
 
   const returnedAt = new Date();
@@ -267,9 +283,10 @@ export async function requireSpecialistReviewAction(
       id: versionId,
       courseId,
       status: CourseVersionStatus.SUBMITTED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: true,
@@ -279,6 +296,14 @@ export async function requireSpecialistReviewAction(
 
   if (!version) {
     notFound();
+  }
+
+  if (
+    (result.value.reviewerComment?.length ?? 0) < 20 ||
+    (result.value.requiredAction?.length ?? 0) < 20 ||
+    (result.value.affectedArea?.length ?? 0) < 5
+  ) {
+    redirect(`${reviewPath}?error=specialistReview&reasonShort=1`);
   }
 
   const checklist = buildSpecialistReviewChecklist(
@@ -350,9 +375,10 @@ export async function pauseSubmittedCourseAction(
       id: versionId,
       courseId,
       status: CourseVersionStatus.SUBMITTED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: true,
@@ -362,6 +388,14 @@ export async function pauseSubmittedCourseAction(
 
   if (!version) {
     notFound();
+  }
+
+  if (
+    (result.value.reviewerComment?.length ?? 0) < 20 ||
+    (result.value.requiredAction?.length ?? 0) < 20 ||
+    (result.value.affectedArea?.length ?? 0) < 5
+  ) {
+    redirect(`${reviewPath}?error=pause&reasonShort=1`);
   }
 
   const returnedAt = new Date();
@@ -449,9 +483,10 @@ export async function publishApprovedCourseAction(
       id: versionId,
       courseId,
       status: CourseVersionStatus.APPROVED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: true,

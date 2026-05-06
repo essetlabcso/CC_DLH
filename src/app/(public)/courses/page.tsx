@@ -19,7 +19,11 @@ export default async function CoursesPage() {
       },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       setup: true,
       modules: {
         include: {
@@ -44,17 +48,52 @@ export default async function CoursesPage() {
           <h2 id="courses-title">Available courses</h2>
           <div className="course-list course-list-spacious">
             {publishedVersions.map((version) => (
-              <article className="course-row" key={version.id}>
-                <div>
-                  <h3>{version.course.title}</h3>
-                  <p>
-                    {version.setup?.summary ||
-                      "A DEC-reviewed course for local CSO learning."}
-                  </p>
-                  <p>
-                    {countPublishableLessons(version)} lessons · Published{" "}
-                    {formatPublishedDate(version.publishedAt)}
-                  </p>
+              <article className="course-row learner-dashboard-card" key={version.id}>
+                <div className="learner-dashboard-card-main">
+                  <div className="studio-course-card-heading">
+                    <div>
+                      <h3>{version.course.title}</h3>
+                      <p>
+                        {version.setup?.summary ||
+                          "A DEC-reviewed course for local CSO learning."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="context-grid" style={{ marginBottom: "1rem" }}>
+                    <article>
+                      <strong>Organization</strong>
+                      <span>{version.course.organization.name}</span>
+                    </article>
+                    {version.setup?.capacityArea ? (
+                      <article>
+                        <strong>Capacity area</strong>
+                        <span>{version.setup.capacityArea}</span>
+                      </article>
+                    ) : null}
+                    {version.setup?.formatAndTime ? (
+                      <article>
+                        <strong>Format</strong>
+                        <span>{version.setup.formatAndTime}</span>
+                      </article>
+                    ) : null}
+                    {version.setup?.primaryLearnerGroup ? (
+                      <article>
+                        <strong>Target learners</strong>
+                        <span>{version.setup.primaryLearnerGroup}</span>
+                      </article>
+                    ) : null}
+                  </div>
+                  <div className="studio-workflow-strip">
+                    <span className="workflow-chip">
+                      {countPublishableLessons(version)} lessons
+                    </span>
+                    <span className="workflow-chip">
+                      Published {formatPublishedDate(version.publishedAt)}
+                    </span>
+                    <span className="workflow-chip workflow-chip-complete">
+                      Score 80%+ on the final test to receive your course certificate
+                    </span>
+                  </div>
                 </div>
                 <Link
                   href={`/sign-in?next=${encodeURIComponent(

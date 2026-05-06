@@ -13,7 +13,6 @@ import {
   getMonitoringStatusLabel,
 } from "@/lib/review/monitoring";
 import {
-  countPublishableLessons,
   formatPublishedDate,
 } from "@/lib/review/publishing";
 import { revisionRequestFieldLabels } from "@/lib/review/revisions";
@@ -32,31 +31,85 @@ export default async function MonitoringPage({
 }: MonitoringPageProps) {
   const resolvedSearchParams = await searchParams;
   const identity = await requireWorkspaceIdentity("/review/monitoring");
+  const isAdmin = identity.session.role === "admin";
+  
   const publishedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course: isAdmin
+        ? {}
+        : { organizationId: identity.user.organizationId },
     },
-    include: {
-      course: true,
-      capacityMap: true,
-      monitoringRecord: true,
-      modules: {
-        include: {
-          lessons: true,
+    select: {
+      id: true,
+      courseId: true,
+      versionNumber: true,
+      publishedAt: true,
+      course: {
+        select: {
+          id: true,
+          title: true,
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
-      lessonProgress: true,
-      finalTestAttempts: true,
+      capacityMap: {
+        select: {
+          capacityArea: true,
+          linkedStandard: true,
+          monitoringRelevance: true,
+        },
+      },
+      monitoringRecord: {
+        select: {
+          improvementNotes: true,
+        },
+      },
+      modules: {
+        select: {
+          lessons: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
+      lessonProgress: {
+        select: {
+          userId: true,
+          completedAt: true,
+        },
+      },
+      finalTestAttempts: {
+        select: {
+          userId: true,
+          scorePercent: true,
+          passed: true,
+          submittedAt: true,
+        },
+      },
+      _count: {
+        select: {
+          certificates: true,
+          practicalProofSubmissions: true,
+          verifiedAchievements: true,
+        },
+      },
     },
     orderBy: {
       publishedAt: "desc",
     },
   });
+  
   const summaries = publishedVersions.map((version) => {
-    const totalLessons = countPublishableLessons(version);
+    const totalLessons = version.modules.reduce(
+      (total, mod) => total + mod.lessons.length,
+      0,
+    );
 
     return {
       version,
@@ -66,9 +119,13 @@ export default async function MonitoringPage({
         totalLessons,
         progressRecords: version.lessonProgress,
         finalTestAttempts: version.finalTestAttempts,
+        certificateCount: version._count.certificates,
+        proofSubmissionCount: version._count.practicalProofSubmissions,
+        verifiedAchievementCount: version._count.verifiedAchievements,
       }),
     };
   });
+  
   const filterOptions = getMonitoringFilterOptions(summaries);
   const activeFilters = {
     capacityArea: resolvedSearchParams?.capacityArea?.trim() || "",
@@ -80,6 +137,7 @@ export default async function MonitoringPage({
   );
   const capacityGroups = buildMonitoringCapacityGroups(filteredSummaries);
   const snapshotHref = buildSnapshotHref(activeFilters);
+  
   const totalLearnerStarts = summaries.reduce(
     (total, item) => total + item.summary.learnersStarted,
     0,
@@ -97,22 +155,25 @@ export default async function MonitoringPage({
             0,
           ) / summaries.length,
         );
-  const totalFinalTestAttempts = summaries.reduce(
-    (total, item) => total + item.summary.finalTestAttempts,
-    0,
-  );
-  const totalFinalTestLearners = summaries.reduce(
-    (total, item) => total + item.summary.finalTestLearners,
-    0,
-  );
+
   const totalFinalTestPasses = summaries.reduce(
     (total, item) => total + item.summary.finalTestPasses,
     0,
   );
-  const finalTestPassRate =
-    totalFinalTestLearners === 0
-      ? 0
-      : Math.round((totalFinalTestPasses / totalFinalTestLearners) * 100);
+
+
+  const totalCertificates = summaries.reduce(
+    (total, item) => total + item.summary.certificateCount,
+    0,
+  );
+  const totalProofs = summaries.reduce(
+    (total, item) => total + item.summary.proofSubmissionCount,
+    0,
+  );
+  const totalAchievements = summaries.reduce(
+    (total, item) => total + item.summary.verifiedAchievementCount,
+    0,
+  );
 
   return (
     <WorkspaceShell eyebrow="Monitoring" title="Published course signals">
@@ -152,12 +213,20 @@ export default async function MonitoringPage({
             <span>{getMonitoringStatusLabel(totalLearnerStarts, averageCompletionRate)}</span>
           </article>
           <article>
-            <strong>{totalFinalTestAttempts}</strong>
-            <span>Final test attempts</span>
+            <strong>{totalFinalTestPasses}</strong>
+            <span>Test passes (80%+)</span>
           </article>
           <article>
-            <strong>{finalTestPassRate}%</strong>
-            <span>Final test pass rate</span>
+            <strong>{totalCertificates}</strong>
+            <span>Certificates issued</span>
+          </article>
+          <article>
+            <strong>{totalProofs}</strong>
+            <span>Practical proofs</span>
+          </article>
+          <article>
+            <strong>{totalAchievements}</strong>
+            <span>Verified badges</span>
           </article>
         </div>
       </section>
@@ -257,7 +326,8 @@ export default async function MonitoringPage({
                 <div>
                   <h3>{version.course.title}</h3>
                   <p>
-                    Published {formatPublishedDate(version.publishedAt)} ·{" "}
+                    {version.course.organization.name} · Published{" "}
+                    {formatPublishedDate(version.publishedAt)} ·{" "}
                     {summary.totalLessons}{" "}
                     {summary.totalLessons === 1 ? "lesson" : "lessons"} ·{" "}
                     {summary.statusLabel}
@@ -280,16 +350,20 @@ export default async function MonitoringPage({
                       <span>Lesson completion rate</span>
                     </article>
                     <article>
-                      <strong>{summary.finalTestAttempts}</strong>
-                      <span>Final test attempts</span>
+                      <strong>{summary.finalTestPasses}</strong>
+                      <span>Test passes (80%+)</span>
                     </article>
                     <article>
-                      <strong>{summary.finalTestPassRate}%</strong>
-                      <span>Final test pass rate</span>
+                      <strong>{summary.certificateCount}</strong>
+                      <span>Certificates</span>
                     </article>
                     <article>
-                      <strong>{summary.finalTestAverageScore}%</strong>
-                      <span>Average final test score</span>
+                      <strong>{summary.proofSubmissionCount}</strong>
+                      <span>Proofs</span>
+                    </article>
+                    <article>
+                      <strong>{summary.verifiedAchievementCount}</strong>
+                      <span>Badges</span>
                     </article>
                   </div>
                   {version.capacityMap?.monitoringRelevance ? (
@@ -311,15 +385,30 @@ export default async function MonitoringPage({
                     <h4>Request revision</h4>
                     <label>
                       <span>Reason for revision</span>
-                      <textarea name="revisionReason" />
+                      <textarea
+                        name="revisionReason"
+                        required
+                        minLength={20}
+                        placeholder="Provide at least 20 characters explaining the monitoring-driven reason for this revision request."
+                      />
+                      <small className="help-text">
+                        Minimum 20 characters required for audit trail.
+                      </small>
                     </label>
                     <button className="workspace-button" type="submit">
                       Request revision
                     </button>
                   </form>
                 </div>
-                <Link href="/courses">View discovery</Link>
-              </article>
+                  <nav className="workspace-nav">
+                    <Link
+                      className="workspace-link"
+                      href={`/review/monitoring/${version.course.id}/versions/${version.id}`}
+                    >
+                      View monitoring detail
+                    </Link>
+                  </nav>
+                </article>
             ))}
           </div>
         ) : (

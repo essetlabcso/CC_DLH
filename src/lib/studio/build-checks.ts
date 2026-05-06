@@ -106,12 +106,17 @@ export function hasFinalTestContent(
 
         try {
           const content = JSON.parse(block.content) as {
+            purpose?: unknown;
             prompt?: unknown;
             choices?: unknown;
             correctAnswer?: unknown;
+            feedback?: unknown;
+            reviewReadinessNote?: unknown;
           };
 
           return (
+            typeof content.purpose === "string" &&
+            content.purpose.trim().length > 0 &&
             typeof content.prompt === "string" &&
             content.prompt.trim().length > 0 &&
             Array.isArray(content.choices) &&
@@ -121,7 +126,11 @@ export function hasFinalTestContent(
                 typeof choice === "string" && choice.trim().length > 0,
             ) &&
             typeof content.correctAnswer === "string" &&
-            ["A", "B", "C", "D"].includes(content.correctAnswer)
+            ["A", "B", "C", "D"].includes(content.correctAnswer) &&
+            typeof content.feedback === "string" &&
+            content.feedback.trim().length > 0 &&
+            typeof content.reviewReadinessNote === "string" &&
+            content.reviewReadinessNote.toLowerCase().includes("80%")
           );
         } catch {
           return false;
@@ -182,6 +191,13 @@ export function getBuildGovernanceIssues(
           message: `${blockLabel} is missing its Storyboard source reference.`,
         });
       }
+
+      if (!content.body && !content.prompt && block.type !== "IMAGE" && block.type !== "VIDEO") {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing its learner-facing content sequence.`,
+        });
+      }
     }
 
     if (block.origin === "CREATOR_ADDED") {
@@ -198,12 +214,49 @@ export function getBuildGovernanceIssues(
           message: `${blockLabel} is missing its purpose link in block content.`,
         });
       }
+
+      if (!content.title) {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing a learner-facing title.`,
+        });
+      }
+
+      if (!content.body && !content.prompt && block.type !== "IMAGE" && block.type !== "VIDEO") {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing its learner-facing content or prompt.`,
+        });
+      }
+
+      if (!content.reviewReadinessNote) {
+        issues.push({
+          field: "blockGovernanceReady",
+          message: `${blockLabel} is missing a review readiness note.`,
+        });
+      }
     }
 
     if (content.aiReviewStatus === "human-review-pending") {
       issues.push({
         field: "blockGovernanceReady",
         message: `${blockLabel} has AI-assisted draft content awaiting human review.`,
+      });
+    }
+
+    if (content.aiReviewStatus === "human-reviewed" && !content.aiReviewNote) {
+      issues.push({
+        field: "blockGovernanceReady",
+        message: `${blockLabel} has been marked as human-reviewed but is missing the human review notes.`,
+      });
+    }
+
+    const restrictedAiWords = ["approv", "publish", "verif", "certif", "badge"];
+    const noteLower = (content.aiReviewNote || "").toLowerCase();
+    if (content.aiReviewStatus !== "not-used" && restrictedAiWords.some((word) => noteLower.includes(word))) {
+      issues.push({
+        field: "blockGovernanceReady",
+        message: `${blockLabel} contains human review notes representing AI as performing restricted actions (approving, publishing, verifying proof, certifying, or awarding badges).`,
       });
     }
   });

@@ -2190,6 +2190,182 @@ export async function savePracticalProofConfigAction(
   redirect(`/studio/courses/${courseId}/build?proof=1`);
 }
 
+export async function deleteBuildBlockAction(
+  courseId: string,
+  blockId: string,
+) {
+  const identity = await requireWorkspaceIdentity(
+    `/studio/courses/${courseId}/build`,
+  );
+  const editable = await getEditableCourseVersion(
+    prisma,
+    {
+      userId: identity.user.id,
+      organizationId: identity.user.organizationId,
+      role: identity.session.role,
+    },
+    courseId,
+  );
+
+  if (!editable) {
+    notFound();
+  }
+
+  const storyboardStatus =
+    editable.version.workflowSteps.find(
+      (step) => step.step === CourseWorkflowStep.STORYBOARD,
+    )?.status ?? WorkflowStepStatus.LOCKED;
+
+  if (
+    storyboardStatus !== WorkflowStepStatus.COMPLETE ||
+    !isDesignHandoverLocked(editable.version.designHandover)
+  ) {
+    redirect(`/studio/courses/${courseId}/storyboard`);
+  }
+
+  const block = editable.version.modules
+    .flatMap((module) => module.lessons)
+    .flatMap((lesson) => lesson.blocks)
+    .find((lessonBlock) => lessonBlock.id === blockId);
+
+  if (!block) {
+    notFound();
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.lessonBlock.delete({
+      where: {
+        id: blockId,
+      },
+    });
+
+    const remainingBlocks = await tx.lessonBlock.findMany({
+      where: {
+        lessonId: block.lessonId,
+      },
+      orderBy: {
+        sortOrder: "asc",
+      },
+    });
+
+    for (let i = 0; i < remainingBlocks.length; i++) {
+      await tx.lessonBlock.update({
+        where: {
+          id: remainingBlocks[i].id,
+        },
+        data: {
+          sortOrder: i + 1,
+        },
+      });
+    }
+
+    await tx.courseWorkflowStepRecord.upsert({
+      where: {
+        courseVersionId_step: {
+          courseVersionId: editable.version.id,
+          step: CourseWorkflowStep.BUILD,
+        },
+      },
+      update: {
+        status: WorkflowStepStatus.IN_PROGRESS,
+        completedAt: null,
+        lockedReason: null,
+        updatedById: identity.user.id,
+      },
+      create: {
+        courseVersionId: editable.version.id,
+        step: CourseWorkflowStep.BUILD,
+        status: WorkflowStepStatus.IN_PROGRESS,
+        updatedById: identity.user.id,
+      },
+    });
+
+    await tx.courseWorkflowStepRecord.upsert({
+      where: {
+        courseVersionId_step: {
+          courseVersionId: editable.version.id,
+          step: CourseWorkflowStep.PREVIEW,
+        },
+      },
+      update: {
+        status: WorkflowStepStatus.LOCKED,
+        completedAt: null,
+        lockedReason:
+          "Complete Build Studio checks after deleting a lesson block.",
+        updatedById: identity.user.id,
+      },
+      create: {
+        courseVersionId: editable.version.id,
+        step: CourseWorkflowStep.PREVIEW,
+        status: WorkflowStepStatus.LOCKED,
+        lockedReason:
+          "Complete Build Studio checks after deleting a lesson block.",
+        updatedById: identity.user.id,
+      },
+    });
+
+    await tx.courseWorkflowStepRecord.upsert({
+      where: {
+        courseVersionId_step: {
+          courseVersionId: editable.version.id,
+          step: CourseWorkflowStep.CREATOR_REVIEW,
+        },
+      },
+      update: {
+        status: WorkflowStepStatus.LOCKED,
+        completedAt: null,
+        lockedReason:
+          "Complete Preview again after deleting a lesson block.",
+        updatedById: identity.user.id,
+      },
+      create: {
+        courseVersionId: editable.version.id,
+        step: CourseWorkflowStep.CREATOR_REVIEW,
+        status: WorkflowStepStatus.LOCKED,
+        lockedReason:
+          "Complete Preview again after deleting a lesson block.",
+        updatedById: identity.user.id,
+      },
+    });
+
+    const reopenedStatus = editable.version.sourceVersionId
+      ? CourseVersionStatus.REVISION_DRAFT
+      : CourseVersionStatus.DRAFT;
+
+    if (editable.version.status === CourseVersionStatus.CREATOR_REVIEW) {
+      await tx.courseVersion.update({
+        where: {
+          id: editable.version.id,
+        },
+        data: {
+          status: reopenedStatus,
+        },
+      });
+    }
+
+    const content = parseBuildBlockContent(block.content);
+    await tx.courseLifecycleEvent.create({
+      data: {
+        courseVersionId: editable.version.id,
+        actorId: identity.user.id,
+        fromStatus: editable.version.status,
+        toStatus:
+          editable.version.status === CourseVersionStatus.CREATOR_REVIEW
+            ? reopenedStatus
+            : editable.version.status,
+        note: `Build block deleted: ${content.title || block.type}.`,
+      },
+    });
+  });
+
+  revalidatePath("/studio");
+  revalidatePath("/studio/courses");
+  revalidatePath(`/studio/courses/${courseId}/build`);
+  revalidatePath(`/studio/courses/${courseId}/preview`);
+  revalidatePath(`/studio/courses/${courseId}/creator-review`);
+  redirect(`/studio/courses/${courseId}/build?deleted=1`);
+}
+
 export async function completeBuildChecksAction(
   courseId: string,
   formData: FormData,

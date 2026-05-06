@@ -11,7 +11,6 @@ import {
   filterMonitoringCourseSignals,
 } from "@/lib/review/monitoring";
 import {
-  countPublishableLessons,
   formatPublishedDate,
 } from "@/lib/review/publishing";
 
@@ -27,6 +26,7 @@ export default async function MonitoringSnapshotPage({
 }: MonitoringSnapshotPageProps) {
   const resolvedSearchParams = await searchParams;
   const identity = await requireWorkspaceIdentity("/review/monitoring/snapshot");
+  const isAdmin = identity.session.role === "admin";
   const activeFilters = {
     capacityArea: resolvedSearchParams?.capacityArea?.trim() || "",
     linkedStandard: resolvedSearchParams?.linkedStandard?.trim() || "",
@@ -34,27 +34,67 @@ export default async function MonitoringSnapshotPage({
   const publishedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course: isAdmin
+        ? {}
+        : { organizationId: identity.user.organizationId },
     },
-    include: {
-      course: true,
-      capacityMap: true,
-      modules: {
-        include: {
-          lessons: true,
+    select: {
+      id: true,
+      courseId: true,
+      versionNumber: true,
+      publishedAt: true,
+      course: {
+        select: {
+          id: true,
+          title: true,
         },
       },
-      lessonProgress: true,
-      finalTestAttempts: true,
+      capacityMap: {
+        select: {
+          capacityArea: true,
+          linkedStandard: true,
+        },
+      },
+      modules: {
+        select: {
+          lessons: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
+      lessonProgress: {
+        select: {
+          userId: true,
+          completedAt: true,
+        },
+      },
+      finalTestAttempts: {
+        select: {
+          userId: true,
+          scorePercent: true,
+          passed: true,
+          submittedAt: true,
+        },
+      },
+      _count: {
+        select: {
+          certificates: true,
+          practicalProofSubmissions: true,
+          verifiedAchievements: true,
+        },
+      },
     },
     orderBy: {
       publishedAt: "desc",
     },
   });
   const courseSignals = publishedVersions.map((version) => {
-    const totalLessons = countPublishableLessons(version);
+    const totalLessons = version.modules.reduce(
+      (total, mod) => total + mod.lessons.length,
+      0,
+    );
 
     return {
       version,
@@ -64,6 +104,9 @@ export default async function MonitoringSnapshotPage({
         totalLessons,
         progressRecords: version.lessonProgress,
         finalTestAttempts: version.finalTestAttempts,
+        certificateCount: version._count.certificates,
+        proofSubmissionCount: version._count.practicalProofSubmissions,
+        verifiedAchievementCount: version._count.verifiedAchievements,
       }),
     };
   });
@@ -151,6 +194,18 @@ export default async function MonitoringSnapshotPage({
               <strong>{snapshot.finalTestAverageScore}%</strong>
               <span>Average final test score</span>
             </article>
+            <article>
+              <strong>{snapshot.certificateCount}</strong>
+              <span>Certificates issued</span>
+            </article>
+            <article>
+              <strong>{snapshot.proofSubmissionCount}</strong>
+              <span>Proof submissions</span>
+            </article>
+            <article>
+              <strong>{snapshot.verifiedAchievementCount}</strong>
+              <span>Verified achievements</span>
+            </article>
           </div>
         </section>
 
@@ -179,6 +234,18 @@ export default async function MonitoringSnapshotPage({
                       <article>
                         <strong>{group.finalTestPassRate}%</strong>
                         <span>Final test pass rate</span>
+                      </article>
+                      <article>
+                        <strong>{group.certificateCount}</strong>
+                        <span>Certificates</span>
+                      </article>
+                      <article>
+                        <strong>{group.proofSubmissionCount}</strong>
+                        <span>Proofs</span>
+                      </article>
+                      <article>
+                        <strong>{group.verifiedAchievementCount}</strong>
+                        <span>Achievements</span>
                       </article>
                     </div>
                   </div>
@@ -225,6 +292,18 @@ export default async function MonitoringSnapshotPage({
                       <article>
                         <strong>{summary.finalTestAverageScore}%</strong>
                         <span>Average final test score</span>
+                      </article>
+                      <article>
+                        <strong>{summary.certificateCount}</strong>
+                        <span>Certificates</span>
+                      </article>
+                      <article>
+                        <strong>{summary.proofSubmissionCount}</strong>
+                        <span>Proofs</span>
+                      </article>
+                      <article>
+                        <strong>{summary.verifiedAchievementCount}</strong>
+                        <span>Achievements</span>
                       </article>
                     </div>
                   </div>

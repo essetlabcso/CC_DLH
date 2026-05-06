@@ -59,3 +59,41 @@ export function formatLearnerCourseDuration(
 
   return lessonCount === 1 ? "1 lesson" : `${lessonCount} lessons`;
 }
+
+export function getLearnerLessonNavigation(
+  modules: readonly LearnerCourseModule[],
+  currentLessonId: string,
+) {
+  const allLessons = modules
+    .flatMap((module) =>
+      module.lessons.map((lesson) => ({
+        moduleId: module.id,
+        moduleTitle: module.title,
+        lessonId: lesson.id,
+        lessonTitle: lesson.title,
+        moduleOrder: module.sortOrder,
+        lessonOrder: lesson.sortOrder,
+      })),
+    )
+    .sort(
+      (left, right) =>
+        left.moduleOrder - right.moduleOrder ||
+        left.lessonOrder - right.lessonOrder,
+    );
+
+  const currentIndex = allLessons.findIndex(
+    (lesson) => lesson.lessonId === currentLessonId,
+  );
+
+  if (currentIndex === -1) {
+    return { previousLesson: undefined, nextLesson: undefined };
+  }
+
+  return {
+    previousLesson: currentIndex > 0 ? allLessons[currentIndex - 1] : undefined,
+    nextLesson:
+      currentIndex < allLessons.length - 1
+        ? allLessons[currentIndex + 1]
+        : undefined,
+  };
+}

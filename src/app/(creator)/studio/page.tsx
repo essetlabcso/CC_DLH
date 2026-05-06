@@ -79,7 +79,7 @@ export default async function StudioWorkspacePage() {
                 <article className="course-row" key={course.id}>
                   <div>
                     <h3>{course.title}</h3>
-                    <p>{getCourseStatusLabel(version?.status)}</p>
+                    <p>{getCourseStatusLabel(version?.status, version?.reviewRecord?.checklist)}</p>
                   </div>
                   <Link href={`/studio/courses/${course.id}/setup`}>
                     Open setup

@@ -63,6 +63,9 @@ export default async function LearnerCertificateDetailPage({
           For completing{" "}
           <strong>{certificate.courseVersion.course.title}</strong>
         </p>
+        <p className="certificate-basis" style={{ fontSize: "0.9rem", color: "#666", marginTop: "1rem" }}>
+          This certificate is awarded based on achieving 80% or above on the course final test, confirming that the learning threshold has been met. It does not signify full organizational transformation. Practical proof and verified achievement pathways are separate from certification.
+        </p>
         <div className="context-grid">
           <article>
             <strong>Certificate ID</strong>

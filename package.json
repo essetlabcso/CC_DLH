@@ -11,6 +11,7 @@
     "db:apply:local": "node scripts/apply-local-sqlite.mjs",
     "db:migrate": "prisma migrate dev",
     "db:seed:admin-reference": "node scripts/seed-admin-reference-data.mjs",
+    "db:seed:golden-path": "node scripts/seed-golden-path.mjs",
     "db:setup:local": "npm run db:apply:local && npm run db:generate",
     "db:validate": "prisma validate",
     "lint": "eslint .",

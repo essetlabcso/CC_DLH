@@ -11,12 +11,17 @@ export default async function ReviewWorkspacePage() {
   const submittedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.SUBMITTED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       createdBy: true,
       modules: {
         include: {
@@ -35,12 +40,17 @@ export default async function ReviewWorkspacePage() {
   const approvedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.APPROVED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       modules: {
         include: {
           lessons: {
@@ -58,12 +68,17 @@ export default async function ReviewWorkspacePage() {
   const publishedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       lessonProgress: true,
       finalTestAttempts: true,
     },
@@ -75,9 +90,10 @@ export default async function ReviewWorkspacePage() {
     where: {
       courseVersion: {
         status: CourseVersionStatus.PUBLISHED,
-        course: {
-          organizationId: identity.user.organizationId,
-        },
+        course:
+          identity.session.role === "admin"
+            ? {}
+            : { organizationId: identity.user.organizationId },
       },
     },
   });

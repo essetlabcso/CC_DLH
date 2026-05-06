@@ -148,19 +148,41 @@ export default async function CreatorReviewPage({
         </p>
       ) : null}
 
+      <section className="studio-section" aria-labelledby="anchors-title">
+        <h2 id="anchors-title">Analysis & Design Anchors</h2>
+        <div className="context-grid">
+          <article>
+            <strong>Capacity Area</strong>
+            <span>{editable.version.analysisHandover?.capacityArea || "Not specified"}</span>
+          </article>
+          <article>
+            <strong>Validated Gap</strong>
+            <span>{editable.version.analysisHandover?.validatedCapacityGap || "Not specified"}</span>
+          </article>
+          <article>
+            <strong>K/S/M/E Route</strong>
+            <span>{editable.version.analysisHandover?.ksmeRoute || "Not specified"}</span>
+          </article>
+        </div>
+      </section>
+
       <section className="studio-section" aria-labelledby="creator-review-summary">
         <h2 id="creator-review-summary">Review summary</h2>
         <div className="context-grid">
+          <article>
+            <strong>Course version</strong>
+            <span>Version {editable.version.versionNumber} ({editable.version.sourceVersionId ? "Revision version" : "New course version"})</span>
+          </article>
           <article>
             <strong>Course status</strong>
             <span>{getCourseStatusLabel(editable.version.status)}</span>
           </article>
           <article>
-            <strong>Preview</strong>
+            <strong>Preview status</strong>
             <span>{formatStepStatus(previewStatus)}</span>
           </article>
           <article>
-            <strong>Content</strong>
+            <strong>Content summary</strong>
             <span>
               {moduleCount} module, {lessonCount} lesson, {blockCount} blocks
             </span>
@@ -299,7 +321,7 @@ export default async function CreatorReviewPage({
             </label>
             <label className="checkbox-row">
               <input name="submissionReadinessConfirmed" type="checkbox" />
-              <span>The course is ready for formal review submission</span>
+              <span>The course is ready for formal review submission (with no raw proof or learner data)</span>
             </label>
             <button className="workspace-button" type="submit">
               Complete Creator Review

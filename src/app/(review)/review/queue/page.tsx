@@ -5,15 +5,12 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import {
-  countReviewBlocks,
   formatSubmittedDate,
   getReviewQueueStatusLabel,
-  getReviewVersionTypeLabel,
 } from "@/lib/review/queue";
 import { getReviewerReviewFromChecklist } from "@/lib/review/decisions";
 import {
   getBuildToReviewHandoverFromChecklist,
-  summarizeBuildToReviewHandover,
 } from "@/lib/studio/build-review-handover";
 
 type ReviewQueuePageProps = {
@@ -33,12 +30,17 @@ export default async function ReviewQueuePage({
   const submittedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.SUBMITTED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       createdBy: true,
       reviewRecord: true,
       modules: {
@@ -96,47 +98,120 @@ export default async function ReviewQueuePage({
             );
 
             return (
-              <article className="course-row" key={version.id}>
-                <div>
-                  <h2>{version.course.title}</h2>
-                  <p>
-                    {getReviewQueueStatusLabel(version.status)} ·{" "}
-                    {getReviewVersionTypeLabel(version)} · Version{" "}
-                    {version.versionNumber} · Submitted{" "}
-                    {formatSubmittedDate(version.submittedAt)} · Creator{" "}
-                    {version.createdBy.name} ·{" "}
-                    {countReviewBlocks(version.modules)} blocks
-                  </p>
-                  <p>{summarizeBuildToReviewHandover(handover)}</p>
-                  {handover ? (
-                    <p>
-                      Final test{" "}
-                      {handover.finalTest.ready ? "ready" : "not ready"} · AI{" "}
-                      {handover.aiReview.status} · Practical proof{" "}
-                      {handover.practicalProof?.status || "not recorded"} ·{" "}
-                      {handover.certificateRule}
-                    </p>
+              <article className="course-row review-queue-card" key={version.id}>
+                <div className="review-queue-card-main" style={{ width: "100%" }}>
+                  <div className="review-queue-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                    <h2 style={{ margin: 0 }}>{version.course.title}</h2>
+                    <span className="status-badge status-badge-published">
+                      {getReviewQueueStatusLabel(version.status, version.reviewRecord?.checklist)}
+                    </span>
+                  </div>
+                  
+                  <div className="context-grid review-queue-card-grid" style={{ marginBottom: "1rem" }}>
+                    <article>
+                      <strong>Organization</strong>
+                      <span>{version.course.organization.name}</span>
+                    </article>
+                    <article>
+                      <strong>Version & Submission</strong>
+                      <span>
+                        Version {version.versionNumber} · {version.sourceVersionId ? "Revision submission" : "New course submission"}
+                      </span>
+                    </article>
+                    <article>
+                      <strong>Submitted By</strong>
+                      <span>{version.createdBy.name} on {formatSubmittedDate(version.submittedAt)}</span>
+                    </article>
+                    {handover ? (
+                      <>
+                        <article>
+                          <strong>Capacity Area Anchor</strong>
+                          <span>{handover.anchors.capacityArea || "Not specified"}</span>
+                        </article>
+                        <article>
+                          <strong>K/S/M/E Route Anchor</strong>
+                          <span>{handover.anchors.route || "Not specified"}</span>
+                        </article>
+                        <article>
+                          <strong>Lesson Blocks</strong>
+                          <span>
+                            {handover.summary.totalBlocks} total blocks ({handover.summary.requiredBlockCount} required, {handover.summary.creatorAddedBlockCount} creator-added)
+                          </span>
+                        </article>
+                        <article>
+                          <strong>Final Test Readiness</strong>
+                          <span className={`status-badge ${handover.finalTest.ready ? "status-badge-ready" : "status-badge-blocked"}`}>
+                            {handover.finalTest.ready ? "Ready" : "Not Ready"}
+                          </span>
+                        </article>
+                        <article>
+                          <strong>Certificate Rule</strong>
+                          <span>{handover.certificateRule}</span>
+                        </article>
+                        <article>
+                          <strong>AI Review Status</strong>
+                          <span className={getEvidenceBadgeClass(handover.aiReview.status)}>
+                            {handover.aiReview.status}
+                          </span>
+                        </article>
+                        <article>
+                          <strong>Practical Proof</strong>
+                          <span className={getEvidenceBadgeClass(handover.practicalProof?.status || "Not enabled")}>
+                            {handover.practicalProof?.enabled
+                              ? `Enabled: ${handover.practicalProof.status}`
+                              : "Disabled"}
+                          </span>
+                        </article>
+                      </>
+                    ) : (
+                      <article>
+                        <strong>Build-to-Review Handover</strong>
+                        <span className="status-badge status-badge-blocked">Not recorded</span>
+                      </article>
+                    )}
+                  </div>
+
+                  {handover?.blockingWarnings && handover.blockingWarnings.length > 0 ? (
+                    <div className="blocker-panel review-queue-card-warnings" style={{ marginBottom: "1rem" }}>
+                      <strong>Handover Blocking Warnings ({handover.blockingWarnings.length})</strong>
+                      <ul>
+                        {handover.blockingWarnings.map((warning, idx) => (
+                          <li key={idx}>{warning.message}</li>
+                        ))}
+                      </ul>
+                    </div>
                   ) : null}
+
+                  {handover?.reviewerAttentionItems && handover.reviewerAttentionItems.length > 0 ? (
+                    <div className="next-step-panel review-queue-card-attention" style={{ marginBottom: "1rem" }}>
+                      <strong>Reviewer Attention Items ({handover.reviewerAttentionItems.length})</strong>
+                      <ul>
+                        {handover.reviewerAttentionItems.map((item, idx) => (
+                          <li key={idx}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
                   {version.reviewRecord?.decisionNotes ? (
-                    <p>{version.reviewRecord.decisionNotes}</p>
+                    <p className="workspace-note"><strong>Reviewer Notes:</strong> {version.reviewRecord.decisionNotes}</p>
                   ) : null}
+
                   {reviewerReview ? (
-                    <p>
-                      Review routing:{" "}
-                      {reviewerReview.decisionLabel ||
-                        reviewerReview.decisionType ||
-                        "Decision recorded"}
-                      {reviewerReview.specialistReviewRequired
-                        ? " · specialist review required"
-                        : ""}
+                    <p className="workspace-note">
+                      <strong>Review routing:</strong> {reviewerReview.decisionLabel || reviewerReview.decisionType || "Decision recorded"}
+                      {reviewerReview.specialistReviewRequired ? " · specialist review required" : ""}
                     </p>
                   ) : null}
                 </div>
-                <Link
-                  href={`/review/courses/${version.course.id}/versions/${version.id}`}
-                >
-                  Open review
-                </Link>
+                <div className="review-queue-card-action" style={{ alignSelf: "flex-start", marginTop: "1rem" }}>
+                  <Link
+                    className="workspace-button"
+                    href={`/review/courses/${version.course.id}/versions/${version.id}`}
+                  >
+                    Open review
+                  </Link>
+                </div>
               </article>
             );
           })}
@@ -159,3 +234,30 @@ export default async function ReviewQueuePage({
     </WorkspaceShell>
   );
 }
+
+function getEvidenceBadgeClass(status: string) {
+  const normalized = status.toLowerCase();
+
+  if (
+    normalized.includes("ready") ||
+    normalized.includes("complete") ||
+    normalized.includes("approved") ||
+    normalized.includes("passed") ||
+    normalized.includes("reviewed")
+  ) {
+    return "status-badge status-badge-ready";
+  }
+
+  if (
+    normalized.includes("blocked") ||
+    normalized.includes("missing") ||
+    normalized.includes("required") ||
+    normalized.includes("pending") ||
+    normalized.includes("not ")
+  ) {
+    return "status-badge status-badge-blocked";
+  }
+
+  return "status-badge";
+}
+

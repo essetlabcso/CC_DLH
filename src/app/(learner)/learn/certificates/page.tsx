@@ -53,6 +53,7 @@ export default async function LearnerCertificatesPage() {
       certificates: {
         where: {
           userId: identity.user.id,
+          revokedAt: null,
         },
       },
     },
@@ -97,6 +98,12 @@ export default async function LearnerCertificatesPage() {
         View certificate readiness for DEC courses that include a completion
         certificate.
       </p>
+      <div className="workspace-note" style={{ marginTop: "1rem" }}>
+        <strong>Note:</strong> A course certificate confirms you have met the
+        learning threshold. It does not signify full organizational
+        transformation. Practical proof and verified achievement pathways are
+        separate from certification.
+      </div>
 
       {certificateRows.length > 0 ? (
         <div className="course-list course-list-spacious">
@@ -111,6 +118,10 @@ export default async function LearnerCertificatesPage() {
                 ) : null}
                 {row.eligibility.eligible ? (
                   <div className="context-grid">
+                    <article>
+                      <strong>Basis</strong>
+                      <span>80%+ final test score</span>
+                    </article>
                     <article>
                       <strong>Certificate ID</strong>
                       <span>

@@ -194,7 +194,35 @@ export function getWorkflowStepStatus(
   );
 }
 
-export function getCourseStatusLabel(status: CourseVersionStatus | undefined) {
+export function getCourseStatusLabel(
+  status: CourseVersionStatus | undefined,
+  checklist?: string | null,
+) {
+  if (status === CourseVersionStatus.RETURNED && checklist) {
+    try {
+      const parsed = JSON.parse(checklist);
+      const decisionType = parsed.reviewerReview?.decisionType;
+
+      if (decisionType === "not-approved-pause") {
+        return "Paused / Not Approved";
+      }
+
+      if (decisionType === "return-to-analysis") {
+        return "Returned to Analysis";
+      }
+
+      if (decisionType === "return-to-design") {
+        return "Returned to Design";
+      }
+
+      if (decisionType === "return-to-build") {
+        return "Returned to Build";
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
   switch (status) {
     case CourseVersionStatus.DRAFT:
       return "Draft";

@@ -60,6 +60,10 @@ export function parseFinalTestContent(value: string | undefined):
   }
 }
 
+export function isPassingFinalTestScore(scorePercent: number) {
+  return scorePercent >= FINAL_TEST_PASS_SCORE;
+}
+
 export function scoreFinalTestAnswer(input: {
   selectedAnswer: string;
   correctAnswer: string;
@@ -75,7 +79,7 @@ export function scoreFinalTestAnswer(input: {
     selectedAnswer,
     correctAnswer,
     scorePercent,
-    passed: scorePercent >= FINAL_TEST_PASS_SCORE,
+    passed: isPassingFinalTestScore(scorePercent),
   };
 }
 

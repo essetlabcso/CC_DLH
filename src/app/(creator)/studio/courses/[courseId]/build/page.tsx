@@ -46,6 +46,7 @@ import { parseStoryboardLessonPlan } from "@/lib/studio/storyboard";
 import {
   addCreatorBlockAction,
   completeBuildChecksAction,
+  deleteBuildBlockAction,
   generateBuildFromStoryboardAction,
   moveBuildBlockAction,
   saveBuildBlockContentAction,
@@ -919,6 +920,11 @@ export default async function BuildStudioPage({
                       block.id,
                       "down",
                     );
+                    const deleteBlockAction = deleteBuildBlockAction.bind(
+                      null,
+                      courseId,
+                      block.id,
+                    );
                     const isFirstBlock = blockIndex === 0;
                     const isLastBlock =
                       blockIndex === lesson.blocks.length - 1;
@@ -960,6 +966,32 @@ export default async function BuildStudioPage({
                                 disabled={isLastBlock}
                               >
                                 Move down
+                              </button>
+                            </form>
+                            <form
+                              action={deleteBlockAction}
+                              onSubmit={(e) => {
+                                const blockTitle =
+                                  content.title || getBlockTypeLabel(block.type);
+                                if (
+                                  !confirm(
+                                    `Are you sure you want to delete "${blockTitle}"?`
+                                  )
+                                ) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            >
+                              <button
+                                className="workspace-button danger"
+                                type="submit"
+                                style={{
+                                  backgroundColor: "var(--dec-color-danger)",
+                                  color: "var(--dec-color-surface)",
+                                  borderColor: "var(--dec-color-danger)",
+                                }}
+                              >
+                                Delete
                               </button>
                             </form>
                           </div>

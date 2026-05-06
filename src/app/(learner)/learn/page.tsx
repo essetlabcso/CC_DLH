@@ -20,7 +20,11 @@ export default async function LearnerWorkspacePage() {
       },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       setup: true,
       modules: {
         orderBy: {
@@ -48,6 +52,23 @@ export default async function LearnerWorkspacePage() {
         },
         orderBy: {
           submittedAt: "desc",
+        },
+      },
+      practicalProofConfig: true,
+      practicalProofSubmissions: {
+        where: {
+          userId: identity.user.id,
+        },
+        orderBy: {
+          submittedAt: "desc",
+        },
+      },
+      verifiedAchievements: {
+        where: {
+          userId: identity.user.id,
+        },
+        orderBy: {
+          issuedAt: "desc",
         },
       },
     },
@@ -86,6 +107,9 @@ export default async function LearnerWorkspacePage() {
       progressSummary,
       certificateEligibility,
       bestFinalTestAttempt,
+      proofConfig: version.practicalProofConfig,
+      proofSubmission: version.practicalProofSubmissions[0],
+      verifiedAchievement: version.verifiedAchievements[0],
     };
   });
   const completedCourseCount = courseSummaries.filter(
@@ -164,56 +188,145 @@ export default async function LearnerWorkspacePage() {
                 progressSummary,
                 certificateEligibility,
                 bestFinalTestAttempt,
+                proofConfig,
+                proofSubmission,
+                verifiedAchievement,
               }) => {
-              return (
-                <article className="course-row learner-dashboard-card" key={version.id}>
-                  <div className="learner-dashboard-card-main">
-                    <div className="studio-course-card-heading">
-                      <div>
-                        <h3>{version.course.title}</h3>
-                        <p>
-                          {version.setup?.summary ||
-                            "A DEC-reviewed course for practical CSO learning."}
-                        </p>
+                let proofStatusLabel = "Proof not enabled";
+                let proofClass = "workflow-chip-locked";
+
+                if (proofConfig?.enabled) {
+                  if (verifiedAchievement) {
+                    proofStatusLabel = "Verified achievement issued";
+                    proofClass = "workflow-chip-complete";
+                  } else if (!proofSubmission) {
+                    proofStatusLabel = "Proof not submitted";
+                    proofClass = "workflow-chip-active";
+                  } else {
+                    const status = proofSubmission.status;
+                    if (status === "SUBMITTED") {
+                      proofStatusLabel = "Proof submitted privately";
+                      proofClass = "workflow-chip-active";
+                    } else if (status === "REVISION_REQUESTED") {
+                      proofStatusLabel = "Revision requested privately";
+                      proofClass = "workflow-chip-locked";
+                    } else if (status === "ACCEPTED") {
+                      proofStatusLabel = "Proof accepted";
+                      proofClass = "workflow-chip-complete";
+                    } else if (status === "REJECTED") {
+                      proofStatusLabel = "Proof rejected";
+                      proofClass = "workflow-chip-locked";
+                    }
+                  }
+                }
+
+                let primaryActionLabel = "Open course";
+                let primaryActionHref = `/learn/courses/${version.course.id}`;
+
+                if (completedLessons === 0) {
+                  primaryActionLabel = "Start course";
+                  primaryActionHref = `/learn/courses/${version.course.id}`;
+                } else if (completedLessons > 0 && completedLessons < totalLessons) {
+                  primaryActionLabel = "Continue learning";
+                  primaryActionHref = `/learn/courses/${version.course.id}`;
+                } else if (completedLessons === totalLessons && (!bestFinalTestAttempt || !bestFinalTestAttempt.passed)) {
+                  primaryActionLabel = "Take final test";
+                  primaryActionHref = `/learn/courses/${version.course.id}#final-test-title`;
+                } else if (certificateEligibility.eligible) {
+                  primaryActionLabel = "View certificate";
+                  primaryActionHref = "/learn/certificates";
+                } else if (proofConfig?.enabled && !proofSubmission) {
+                  primaryActionLabel = "Submit optional proof";
+                  primaryActionHref = `/learn/courses/${version.course.id}#proof-title`;
+                } else if (proofConfig?.enabled && proofSubmission?.status === "REVISION_REQUESTED") {
+                  primaryActionLabel = "Revise private proof";
+                  primaryActionHref = `/learn/courses/${version.course.id}#proof-title`;
+                }
+
+                return (
+                  <article className="course-row learner-dashboard-card" key={version.id}>
+                    <div className="learner-dashboard-card-main">
+                      <div className="studio-course-card-heading">
+                        <div>
+                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
+                            {version.setup?.capacityArea ? (
+                              <span className="status-badge" style={{ fontSize: "0.75rem", padding: "0.1rem 0.4rem" }}>
+                                {version.setup.capacityArea}
+                              </span>
+                            ) : null}
+                            <span className="status-badge" style={{ fontSize: "0.75rem", padding: "0.1rem 0.4rem" }}>
+                              Version {version.versionNumber}
+                            </span>
+                          </div>
+                          <h3>{version.course.title}</h3>
+                          <p style={{ fontSize: "0.85rem", color: "#666", margin: "0.25rem 0" }}>
+                            Provided by {version.course.organization.name || "DEC Learning Hub"}
+                          </p>
+                          <p>
+                            {version.setup?.summary ||
+                              "A DEC-reviewed course for practical CSO learning."}
+                          </p>
+                        </div>
+                        <span
+                          className={`status-badge ${getLearnerDashboardProgressClass(
+                            progressSummary.label,
+                          )}`}
+                        >
+                          {progressSummary.label}
+                        </span>
                       </div>
-                      <span
-                        className={`status-badge ${getLearnerDashboardProgressClass(
-                          progressSummary.label,
-                        )}`}
-                      >
-                        {progressSummary.label}
-                      </span>
+                      <div className="studio-workflow-strip">
+                        <span className="workflow-chip">
+                          {formatLearnerCourseDuration(version.modules)}
+                        </span>
+                        <span className="workflow-chip workflow-chip-active">
+                          {completedLessons}/{totalLessons} lessons
+                        </span>
+                        <span
+                          className={`workflow-chip ${getLearnerDashboardCertificateClass(
+                            certificateEligibility.label,
+                          )}`}
+                        >
+                          {certificateEligibility.label}
+                        </span>
+                        <span className="workflow-chip">
+                          {bestFinalTestAttempt
+                            ? `Best score ${bestFinalTestAttempt.scorePercent}%`
+                            : "Final test not started"}
+                        </span>
+                        {proofConfig?.enabled ? (
+                          <span className={`workflow-chip ${proofClass}`}>
+                            {proofStatusLabel}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Secondary action links */}
+                      <div className="workspace-card-actions" style={{ marginTop: "1rem", display: "flex", gap: "1rem", fontSize: "0.85rem" }}>
+                        <Link className="workspace-sublink" href={`/learn/courses/${version.course.id}`} style={{ color: "#3b82f6", textDecoration: "underline" }}>
+                          Open course overview
+                        </Link>
+                        {certificateEligibility.eligible ? (
+                          <Link className="workspace-sublink" href="/learn/certificates" style={{ color: "#10b981", textDecoration: "underline" }}>
+                            My certificates
+                          </Link>
+                        ) : null}
+                        {proofConfig?.enabled ? (
+                          <Link className="workspace-sublink" href={`/learn/courses/${version.course.id}#proof-title`} style={{ color: "#6366f1", textDecoration: "underline" }}>
+                            Manage private proof
+                          </Link>
+                        ) : null}
+                      </div>
                     </div>
-                    <div className="studio-workflow-strip">
-                      <span className="workflow-chip">
-                        {formatLearnerCourseDuration(version.modules)}
-                      </span>
-                      <span className="workflow-chip workflow-chip-active">
-                        {completedLessons}/{totalLessons} lessons
-                      </span>
-                      <span
-                        className={`workflow-chip ${getLearnerDashboardCertificateClass(
-                          certificateEligibility.label,
-                        )}`}
-                      >
-                        {certificateEligibility.label}
-                      </span>
-                      <span className="workflow-chip">
-                        {bestFinalTestAttempt
-                          ? `Best score ${bestFinalTestAttempt.scorePercent}%`
-                          : "Final test not started"}
-                      </span>
-                    </div>
-                  </div>
-                  <Link
-                    className="workspace-link primary"
-                    href={`/learn/courses/${version.course.id}`}
-                  >
-                    Open course
-                  </Link>
-                </article>
-              );
-            })}
+                    <Link
+                      className="workspace-link primary"
+                      href={primaryActionHref}
+                    >
+                      {primaryActionLabel}
+                    </Link>
+                  </article>
+                );
+              })}
           </div>
         ) : (
           <div className="empty-state">

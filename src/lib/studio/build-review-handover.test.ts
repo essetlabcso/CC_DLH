@@ -204,10 +204,43 @@ describe("Build-to-Review handover", () => {
       },
     });
   });
+
+  it("handles first submission vs revision submission labeling and anchors", () => {
+    const firstHandover = buildBuildToReviewHandover({
+      courseTitle: "Safe reporting basics",
+      version: buildVersion(),
+    });
+    expect(firstHandover.submissionType).toBe("new");
+    expect(firstHandover.anchors.capacityArea).toBe("Not specified");
+
+    const revisionHandover = buildBuildToReviewHandover({
+      courseTitle: "Safe reporting basics",
+      version: buildVersion({
+        sourceVersionId: "original-v1",
+        analysisHandover: {
+          capacityArea: "Safeguarding",
+          validatedCapacityGap: "Reporting gap",
+          ksmeRoute: "Knowledge",
+        },
+      }),
+    });
+    expect(revisionHandover.submissionType).toBe("revision");
+    expect(revisionHandover.anchors).toMatchObject({
+      capacityArea: "Safeguarding",
+      gap: "Reporting gap",
+      route: "Knowledge",
+    });
+  });
 });
 
 function buildVersion(
   options: {
+    sourceVersionId?: string | null;
+    analysisHandover?: {
+      capacityArea?: string | null;
+      validatedCapacityGap?: string | null;
+      ksmeRoute?: string | null;
+    } | null;
     includeFinalTest?: boolean;
     requiredContent?: Record<string, unknown>;
     practicalProofConfig?: PracticalProofConfigInput;
@@ -225,6 +258,7 @@ function buildVersion(
   const requiredContent = {
     title: "Required guidance",
     purpose: "Teach the approved action",
+    body: "Learner-facing content goes here.",
     linkedLearnerAction: "Use the approved checklist",
     sourceStoryboardField: "learning flow",
     aiReviewStatus: "not-used",
@@ -234,6 +268,8 @@ function buildVersion(
   };
 
   return {
+    sourceVersionId: options.sourceVersionId,
+    analysisHandover: options.analysisHandover,
     setup: {
       certificateIntent: "Certificate",
     },
@@ -282,6 +318,8 @@ function buildVersion(
                         prompt: "What is the safest first step?",
                         choices: ["A", "B", "C", "D"],
                         correctAnswer: "A",
+                        feedback: "That is correct!",
+                        reviewReadinessNote: "Pass mark set to 80%",
                       }),
                     },
                   ]

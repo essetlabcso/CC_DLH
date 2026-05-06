@@ -86,9 +86,12 @@ describe("Build completion checks", () => {
                 {
                   type: "FINAL_TEST",
                   content: JSON.stringify({
+                    purpose: "Validate knowledge",
                     prompt: "What is the safest first step?",
                     choices: ["A", "B", "C", "D"],
                     correctAnswer: "A",
+                    feedback: "Good try!",
+                    reviewReadinessNote: "Pass mark set to 80%",
                   }),
                 },
               ],
@@ -189,6 +192,7 @@ describe("Build completion checks", () => {
                 content: JSON.stringify({
                   title: "Practice scenario",
                   purpose: "Practice the approved action",
+                  body: "Let's practice.",
                   linkedLearnerAction: "Use the approved action",
                   sourceStoryboardField: "planned interaction",
                   aiReviewStatus: "human-review-pending",
@@ -204,6 +208,64 @@ describe("Build completion checks", () => {
       "awaiting human review",
     );
   });
+
+  it("requires human review notes when marked as human-reviewed", () => {
+    const issues = getBuildGovernanceIssues([
+      {
+        lessons: [
+          {
+            blocks: [
+              {
+                ...buildRequiredBlock(),
+                content: JSON.stringify({
+                  title: "Practice scenario",
+                  purpose: "Practice the approved action",
+                  body: "Let's practice.",
+                  linkedLearnerAction: "Use the approved action",
+                  sourceStoryboardField: "planned interaction",
+                  aiReviewStatus: "human-reviewed",
+                  aiReviewNote: "",
+                }),
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(issues.map((issue) => issue.message).join(" ")).toContain(
+      "missing the human review notes",
+    );
+  });
+
+  it("rejects restricted AI actions in human review notes", () => {
+    const issues = getBuildGovernanceIssues([
+      {
+        lessons: [
+          {
+            blocks: [
+              {
+                ...buildRequiredBlock(),
+                content: JSON.stringify({
+                  title: "Practice scenario",
+                  purpose: "Practice the approved action",
+                  body: "Let's practice.",
+                  linkedLearnerAction: "Use the approved action",
+                  sourceStoryboardField: "planned interaction",
+                  aiReviewStatus: "human-reviewed",
+                  aiReviewNote: "I approved and published using AI",
+                }),
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(issues.map((issue) => issue.message).join(" ")).toContain(
+      "restricted actions",
+    );
+  });
 });
 
 function buildRequiredBlock() {
@@ -215,6 +277,7 @@ function buildRequiredBlock() {
     content: JSON.stringify({
       title: "Essential guidance",
       purpose: "Teach the approved action",
+      body: "Learner-facing content goes here.",
       linkedLearnerAction: "Use the approved action",
       sourceStoryboardField: "learning flow",
       aiReviewStatus: "not-used",

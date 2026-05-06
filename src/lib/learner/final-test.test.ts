@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getBestFinalTestAttempt,
   getLatestFinalTestAttempt,
+  isPassingFinalTestScore,
   parseFinalTestAnswerFormData,
   parseFinalTestContent,
   scoreFinalTestAnswer,
@@ -25,6 +26,10 @@ describe("learner final test helpers", () => {
   });
 
   it("scores final test answers against the 80 percent pass rule", () => {
+    expect(isPassingFinalTestScore(79)).toBe(false);
+    expect(isPassingFinalTestScore(80)).toBe(true);
+    expect(isPassingFinalTestScore(81)).toBe(true);
+
     expect(
       scoreFinalTestAnswer({
         selectedAnswer: "A",

@@ -29,12 +29,17 @@ export default async function PublishingPage({
   const approvedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.APPROVED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       createdBy: true,
       reviewRecord: {
         include: {
@@ -56,12 +61,17 @@ export default async function PublishingPage({
   const recentlyPublished = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-      },
+      course:
+        identity.session.role === "admin"
+          ? {}
+          : { organizationId: identity.user.organizationId },
     },
     include: {
-      course: true,
+      course: {
+        include: {
+          organization: true,
+        },
+      },
       modules: {
         include: {
           lessons: true,
@@ -149,6 +159,7 @@ export default async function PublishingPage({
                     <p>{readiness.summary}</p>
                     <div className="publishing-meta">
                       <span>{getPublishingStatusLabel(version.status)}</span>
+                      <span>Org: {version.course.organization.name}</span>
                       <span>Creator {version.createdBy.name}</span>
                       <span>
                         Reviewer{" "}
@@ -261,7 +272,7 @@ export default async function PublishingPage({
                   </div>
                   <p>
                     {getPublishingStatusLabel(version.status)} · Version{" "}
-                    {version.versionNumber} · Published{" "}
+                    {version.versionNumber} · {version.course.organization.name} · Published{" "}
                     {formatPublishedDate(version.publishedAt)} ·{" "}
                     {getPublishingVersionTypeLabel(version)} ·{" "}
                     {countPublishableLessons(version)} lessons

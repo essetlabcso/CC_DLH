@@ -10,6 +10,17 @@ import { prisma } from "@/lib/db/client";
 import { upsertLocalDevUser } from "@/lib/auth/persistence";
 
 export async function POST(request: Request) {
+  const isDemoEnabled =
+    process.env.ENABLE_DEMO_LOGIN === "true" ||
+    (process.env.ENABLE_DEMO_LOGIN === undefined &&
+      process.env.NODE_ENV === "development");
+
+  if (!isDemoEnabled) {
+    return new Response("Demo login is disabled in this environment.", {
+      status: 403,
+    });
+  }
+
   const formData = await request.formData();
   const role = String(formData.get("role") || "");
   const next = normalizeNextPath(String(formData.get("next") || "/"));

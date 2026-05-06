@@ -46,6 +46,12 @@ export type BuildToReviewHandover = {
   generatedAt: string;
   courseTitle: string;
   certificateRule: string;
+  submissionType: "revision" | "new";
+  anchors: {
+    capacityArea: string;
+    gap: string;
+    route: string;
+  };
   summary: {
     moduleCount: number;
     lessonCount: number;
@@ -96,6 +102,15 @@ export type BuildToReviewWorkflowStep = {
 };
 
 export type BuildToReviewVersion = {
+  sourceVersionId?: string | null;
+  analysisHandover?: {
+    capacityArea?: string | null;
+    validatedCapacityGap?: string | null;
+    ksmeRoute?: string | null;
+  } | null;
+  designHandover?: {
+    lockedAt?: string | Date | null;
+  } | null;
   setup?: {
     certificateIntent?: string | null;
   } | null;
@@ -223,7 +238,7 @@ export function buildBuildToReviewHandover(
     blockingWarnings.push({
       code: "final-test-not-ready",
       message:
-        "Final test must be configured before review because this course has certificate intent.",
+        "Final test must be configured with 80%+ passing mark copy before review because this course has certificate intent.",
     });
   }
 
@@ -231,6 +246,13 @@ export function buildBuildToReviewHandover(
     blockingWarnings.push({
       code: "preview-not-complete",
       message: "Preview checks must be complete before review submission.",
+    });
+  }
+
+  if (pendingAiBlocks.length > 0) {
+    blockingWarnings.push({
+      code: "ai-review-pending",
+      message: `${pendingAiBlocks.length} AI-assisted block(s) are pending human review. All AI-drafted blocks must be reviewed and confirmed before submission.`,
     });
   }
 
@@ -288,6 +310,12 @@ export function buildBuildToReviewHandover(
     generatedAt: (options.generatedAt || new Date()).toISOString(),
     courseTitle: input.courseTitle,
     certificateRule: buildToReviewCertificateRule,
+    submissionType: input.version.sourceVersionId ? "revision" : "new",
+    anchors: {
+      capacityArea: input.version.analysisHandover?.capacityArea || "Not specified",
+      gap: input.version.analysisHandover?.validatedCapacityGap || "Not specified",
+      route: input.version.analysisHandover?.ksmeRoute || "Not specified",
+    },
     summary: {
       moduleCount: input.version.modules.length,
       lessonCount: input.version.modules.reduce(

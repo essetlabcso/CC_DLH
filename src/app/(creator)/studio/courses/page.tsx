@@ -223,14 +223,14 @@ export default async function StudioCoursesPage({
                   <div className="studio-course-card-heading">
                     <div>
                       <h2>{course.title}</h2>
-                      <p>{getCourseStatusLabel(version?.status)}</p>
+                      <p>{getCourseStatusLabel(version?.status, version?.reviewRecord?.checklist)}</p>
                     </div>
                     <span
                       className={`status-badge ${getCourseBadgeClass(
                         version?.status,
                       )}`}
                     >
-                      {getCourseStatusLabel(version?.status)}
+                      {getCourseStatusLabel(version?.status, version?.reviewRecord?.checklist)}
                     </span>
                   </div>
                   <div
