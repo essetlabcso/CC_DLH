@@ -81,6 +81,37 @@ enum CertificateStatusEventType {
   REACTIVATED
 }
 
+enum ScopedRoleKey {
+  PLATFORM_ADMIN
+  COURSE_CREATOR
+  COURSE_REVIEWER
+  AUTHORIZED_PUBLISHER
+  ORG_FOCAL_PERSON
+  FACILITATOR
+  PRACTICAL_PROOF_VERIFIER
+  PROGRAM_ME_MANAGER
+  SAFE_DASHBOARD_VIEWER
+}
+
+enum PermissionScopeType {
+  PLATFORM
+  ORGANIZATION
+  COURSE
+  COURSE_VERSION
+  PRACTICAL_PROOF_SUBMISSION
+  CAPACITY_AREA
+  PROGRAM
+  PORTFOLIO
+  COHORT
+}
+
+enum ScopedRoleAssignmentStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+  EXPIRED
+}
+
 model Organization {
   id              String   @id @default(cuid())
   name            String
@@ -98,9 +129,10 @@ model Organization {
 
   users                User[]
   memberships          OrganizationMembership[]
-  courses              Course[]
-  verifiedAchievements LearnerVerifiedAchievement[]
-  diagnosisRecords     DiagnosisRecord[]
+  courses               Course[]
+  verifiedAchievements  LearnerVerifiedAchievement[]
+  diagnosisRecords      DiagnosisRecord[]
+  scopedRoleAssignments ScopedRoleAssignment[]
 }
 
 model User {
@@ -142,6 +174,8 @@ model User {
   approvedDiagnosisRecords       DiagnosisRecord[]                      @relation("DiagnosisRecordApprover")
   lockedDiagnosisRecords         DiagnosisRecord[]                      @relation("DiagnosisRecordLocker")
   adminAuditLogs                 AdminAuditLog[]                        @relation("AdminAuditActor")
+  scopedRoleAssignments          ScopedRoleAssignment[]                 @relation("ScopedRoleAssignmentUser")
+  createdScopedRoleAssignments   ScopedRoleAssignment[]                 @relation("ScopedRoleAssignmentCreator")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -186,9 +220,10 @@ model Course {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  owner        User            @relation("CourseOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  versions     CourseVersion[]
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  owner                 User                   @relation("CourseOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  versions              CourseVersion[]
+  scopedRoleAssignments ScopedRoleAssignment[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -236,6 +271,7 @@ model CourseVersion {
   certificates              LearnerCertificate[]
   practicalProofSubmissions LearnerPracticalProofSubmission[]
   verifiedAchievements      LearnerVerifiedAchievement[]
+  scopedRoleAssignments     ScopedRoleAssignment[]
 
   @@unique([courseId, versionNumber])
   @@index([courseId, status])
@@ -476,12 +512,13 @@ model LearnerPracticalProofSubmission {
   createdAt                         DateTime  @default(now())
   updatedAt                         DateTime  @updatedAt
 
-  user                 User                                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewer             User?                                  @relation("PracticalProofReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
-  courseVersion        CourseVersion                          @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
-  practicalProofConfig CoursePracticalProofConfig             @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
-  events               LearnerPracticalProofSubmissionEvent[]
-  verifiedAchievement  LearnerVerifiedAchievement?
+  user                  User                                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewer              User?                                  @relation("PracticalProofReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  courseVersion         CourseVersion                          @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  practicalProofConfig  CoursePracticalProofConfig             @relation(fields: [practicalProofConfigId], references: [id], onDelete: Cascade)
+  events                LearnerPracticalProofSubmissionEvent[]
+  verifiedAchievement   LearnerVerifiedAchievement?
+  scopedRoleAssignments ScopedRoleAssignment[]
 
   @@unique([userId, courseVersionId, practicalProofConfigId])
   @@index([userId])
@@ -490,6 +527,45 @@ model LearnerPracticalProofSubmission {
   @@index([practicalProofConfigId])
   @@index([status])
   @@index([visibilityDefault])
+}
+
+model ScopedRoleAssignment {
+  id                String                     @id @default(cuid())
+  userId            String
+  roleKey           ScopedRoleKey
+  scopeType         PermissionScopeType
+  scopeId           String                     @default("")
+  organizationId    String?
+  courseId          String?
+  courseVersionId   String?
+  proofSubmissionId String?
+  reviewTrack       String?
+  capacityArea      String?
+  status            ScopedRoleAssignmentStatus @default(ACTIVE)
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  createdById       String?
+  reason            String                     @default("")
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  user            User                             @relation("ScopedRoleAssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy       User?                            @relation("ScopedRoleAssignmentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  organization    Organization?                    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  course          Course?                          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseVersion   CourseVersion?                   @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  proofSubmission LearnerPracticalProofSubmission? @relation(fields: [proofSubmissionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([roleKey, status])
+  @@index([scopeType, scopeId])
+  @@index([organizationId])
+  @@index([courseId])
+  @@index([courseVersionId])
+  @@index([proofSubmissionId])
+  @@index([createdById])
+  @@index([reviewTrack])
+  @@index([capacityArea])
 }
 
 model LearnerPracticalProofSubmissionEvent {
