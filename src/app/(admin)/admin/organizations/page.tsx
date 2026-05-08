@@ -1,4 +1,5 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
+import { getAdminStatusLabel } from "@/lib/admin/role-labels";
 import { getOrganizationsOverview, type OrganizationSummary } from "@/lib/admin/organizations";
 import Link from "next/link";
 
@@ -12,8 +13,8 @@ export default async function AdminOrganizationsPage() {
           <div>
             <h2>CSO and organization management</h2>
             <p>
-              Review registered organizations (CSOs) and their high-level
-              performance indicators.
+              Review registered CSOs, membership links, programs, cohorts, and
+              safe grouping summaries.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -42,6 +43,16 @@ export default async function AdminOrganizationsPage() {
               label="Participants"
               value={overview.totals.participants}
             />
+            <MetricCard
+              detail="Program links across CSOs"
+              label="Programs"
+              value={overview.totals.programs}
+            />
+            <MetricCard
+              detail="Cohort groups linked to CSOs"
+              label="Cohorts"
+              value={overview.totals.cohorts}
+            />
           </div>
         </section>
 
@@ -49,7 +60,8 @@ export default async function AdminOrganizationsPage() {
           <div className="admin-section-heading">
             <h2 id="orgs-title">Registered organizations</h2>
             <p>
-              Review organization-level learning and evidence activity safely.
+              Review organization-level learning, program, and cohort grouping
+              summaries without exposing raw proof.
             </p>
           </div>
 
@@ -93,10 +105,10 @@ function OrganizationSummaryCard({ org }: { org: OrganizationSummary }) {
                 : "status-badge-blocked"
             }`}
           >
-            {org.status}
+            {getAdminStatusLabel(org.status)}
           </span>
           <span className="status-badge status-badge-published">
-            {org.memberCount} Members
+            {org.memberCount} members
           </span>
         </div>
       </div>
@@ -114,6 +126,14 @@ function OrganizationSummaryCard({ org }: { org: OrganizationSummary }) {
         <div>
           <dt>Courses</dt>
           <dd>{org.courseCount}</dd>
+        </div>
+        <div>
+          <dt>Program links</dt>
+          <dd>{org.programCount}</dd>
+        </div>
+        <div>
+          <dt>Cohorts</dt>
+          <dd>{org.cohortCount}</dd>
         </div>
         <div>
           <dt>Certificates</dt>

@@ -79,6 +79,66 @@ export default async function OrganizationDetailPage({
           </div>
         </section>
 
+        <section className="admin-section" aria-labelledby="org-programs-title">
+          <div className="admin-section-heading">
+            <h2 id="org-programs-title">Programs and cohorts</h2>
+            <p>
+              Simple grouping summaries for this organization. These summaries
+              do not expose raw proof, learner identities, or enrollment data.
+            </p>
+          </div>
+          <div className="admin-card-grid">
+            <article className="admin-readiness-card">
+              <div>
+                <h3>Program links</h3>
+                <span className="status-badge status-badge-published">
+                  {org.programs.length}
+                </span>
+              </div>
+              {org.programs.length > 0 ? (
+                <dl className="reference-meta-list">
+                  {org.programs.map((program) => (
+                    <div key={`${program.relationship}-${program.id}`}>
+                      <dt>{program.name}</dt>
+                      <dd>
+                        {program.relationship}
+                        {program.code ? ` · ${program.code}` : ""} ·{" "}
+                        {getAdminStatusLabel(program.status)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p>No program link is recorded for this organization.</p>
+              )}
+            </article>
+
+            <article className="admin-readiness-card">
+              <div>
+                <h3>Cohort groups</h3>
+                <span className="status-badge status-badge-published">
+                  {org.cohorts.length}
+                </span>
+              </div>
+              {org.cohorts.length > 0 ? (
+                <dl className="reference-meta-list">
+                  {org.cohorts.map((cohort) => (
+                    <div key={cohort.id}>
+                      <dt>{cohort.name}</dt>
+                      <dd>
+                        {cohort.programName ? `${cohort.programName} · ` : ""}
+                        {getAdminStatusLabel(cohort.status)} ·{" "}
+                        {cohort.courseCount} courses
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p>No cohort group is recorded for this organization.</p>
+              )}
+            </article>
+          </div>
+        </section>
         <section className="admin-section">
           <MembershipManager
             canManageAdminAuthority={canManageAdminAuthority}

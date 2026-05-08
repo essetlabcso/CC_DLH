@@ -10,6 +10,8 @@ export type OrganizationSummary = {
   isSystem: boolean;
   memberCount: number;
   courseCount: number;
+  programCount: number;
+  cohortCount: number;
   certificateCount: number;
   achievementCount: number;
   createdAt: Date;
@@ -21,6 +23,8 @@ export type OrganizationsOverview = {
   totals: {
     organizations: number;
     participants: number;
+    programs: number;
+    cohorts: number;
   };
 };
 
@@ -32,6 +36,9 @@ export async function getOrganizationsOverview(): Promise<OrganizationsOverview>
           users: true,
           memberships: true,
           courses: true,
+          ownedPrograms: true,
+          programOrganizations: true,
+          cohorts: true,
           verifiedAchievements: true,
         },
       },
@@ -65,6 +72,8 @@ export async function getOrganizationsOverview(): Promise<OrganizationsOverview>
       isSystem: org.isSystem,
       memberCount: org._count.users + org._count.memberships,
       courseCount: org._count.courses,
+      programCount: org._count.ownedPrograms + org._count.programOrganizations,
+      cohortCount: org._count.cohorts,
       certificateCount,
       achievementCount: org._count.verifiedAchievements,
       createdAt: org.createdAt,
@@ -77,6 +86,8 @@ export async function getOrganizationsOverview(): Promise<OrganizationsOverview>
     totals: {
       organizations: mappedOrgs.length,
       participants: mappedOrgs.reduce((sum, org) => sum + org.memberCount, 0),
+      programs: mappedOrgs.reduce((sum, org) => sum + org.programCount, 0),
+      cohorts: mappedOrgs.reduce((sum, org) => sum + org.cohortCount, 0),
     },
   };
 }
@@ -102,8 +113,24 @@ export type OrganizationDetail = {
     status: string;
     isHomeOrg: boolean;
   }[];
+  programs: {
+    id: string;
+    name: string;
+    code: string | null;
+    status: string;
+    relationship: string;
+  }[];
+  cohorts: {
+    id: string;
+    name: string;
+    status: string;
+    programName: string | null;
+    courseCount: number;
+  }[];
   stats: {
     courses: number;
+    programs: number;
+    cohorts: number;
     certificates: number;
     achievements: number;
   };
@@ -138,9 +165,49 @@ export async function getOrganizationDetail(
           roles: true,
         },
       },
+      ownedPrograms: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          status: true,
+        },
+        orderBy: { name: "asc" },
+      },
+      programOrganizations: {
+        include: {
+          program: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: { joinedAt: "desc" },
+      },
+      cohorts: {
+        include: {
+          program: {
+            select: {
+              name: true,
+            },
+          },
+          _count: {
+            select: {
+              courses: true,
+            },
+          },
+        },
+        orderBy: { name: "asc" },
+      },
       _count: {
         select: {
           courses: true,
+          ownedPrograms: true,
+          programOrganizations: true,
+          cohorts: true,
           verifiedAchievements: true,
         },
       },
@@ -181,6 +248,33 @@ export async function getOrganizationDetail(
     a.name.localeCompare(b.name),
   );
 
+  const programs = [
+    ...org.ownedPrograms.map((program) => ({
+      id: program.id,
+      name: program.name,
+      code: program.code,
+      status: program.status,
+      relationship: "Owner",
+    })),
+    ...org.programOrganizations.map((assignment) => ({
+      id: assignment.program.id,
+      name: assignment.program.name,
+      code: assignment.program.code,
+      status: assignment.program.status,
+      relationship: "Participating",
+    })),
+  ];
+  const uniquePrograms = Array.from(
+    new Map(programs.map((program) => [program.id, program])).values(),
+  ).sort((left, right) => left.name.localeCompare(right.name));
+  const cohorts = org.cohorts.map((cohort) => ({
+    id: cohort.id,
+    name: cohort.name,
+    status: cohort.status,
+    programName: cohort.program?.name ?? null,
+    courseCount: cohort._count.courses,
+  }));
+
   const certificateCount = org.users.reduce(
     (sum, user) => sum + user._count.certificates,
     0,
@@ -199,8 +293,12 @@ export async function getOrganizationDetail(
     status: org.status,
     isSystem: org.isSystem,
     members: allMembers,
+    programs: uniquePrograms,
+    cohorts,
     stats: {
       courses: org._count.courses,
+      programs: uniquePrograms.length,
+      cohorts: cohorts.length,
       certificates: certificateCount,
       achievements: org._count.verifiedAchievements,
     },
