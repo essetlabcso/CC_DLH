@@ -20,8 +20,11 @@ export default async function AdminDataSafetyPage() {
         <p>
           <strong>Internal DEC Admin Oversight View</strong>. Platform-wide governance 
           of sensitive practical proof submissions and verified achievements 
-          that have external visibility enabled. Enforce the strict data safety 
-          rules required by Annex 12. This page is not donor-safe reporting.
+          that have external visibility enabled. Raw proof is private by 
+          default; Admin work here is limited to redaction, specialist review, 
+          and safe-summary visibility controls. This page is not donor-safe 
+          reporting and does not award certificates, verify proof by AI, or 
+          confirm organizational transformation.
         </p>
       </div>
 
@@ -31,7 +34,8 @@ export default async function AdminDataSafetyPage() {
           <p>
             Submissions flagged by verifiers because they contain potentially 
             unsafe data, require redaction, or involve highly sensitive 
-            safeguarding or civic-space topics.
+            safeguarding or civic-space topics. These are raw proof safety 
+            checks, separate from course certificates and verified achievements.
           </p>
         </div>
 
@@ -64,6 +68,14 @@ export default async function AdminDataSafetyPage() {
                   <div className="blocker-panel">
                     <strong>Action Required:</strong>
                     <p>{submission.requiredAction || "Not specified."}</p>
+                  </div>
+                  <div className="next-step-panel">
+                    <strong>Safety boundary:</strong>
+                    <p>
+                      Keep raw proof internal. Resolve only after the sensitive
+                      details are reviewed, redacted, or confirmed safe under
+                      the existing proof workflow.
+                    </p>
                   </div>
                 </div>
                 <div className="publishing-card-actions">
@@ -120,7 +132,9 @@ export default async function AdminDataSafetyPage() {
             <h3>No flagged proof submissions</h3>
             <p>
               There are currently no proof submissions blocked awaiting 
-              Admin/Specialist review across the platform.
+              Admin or specialist safety review across the platform. Raw proof
+              remains private unless an existing authorized workflow changes
+              its safe-summary visibility.
             </p>
           </div>
         )}
@@ -130,9 +144,10 @@ export default async function AdminDataSafetyPage() {
         <div className="admin-section-heading">
           <h2 id="external-visibility-title">Externally visible achievements</h2>
           <p>
-            Verified achievements that have Donor Visibility or Public Badge 
-            visibility enabled. Review these to ensure they represent safe 
-            summaries without exposing raw sensitive data.
+            Verified achievements that have donor visibility or public badge 
+            visibility enabled. Review these as safe summaries only: they are 
+            separate from course certificates and must not expose raw proof, 
+            sensitive identifiers, or claims of donor readiness.
           </p>
         </div>
 
@@ -161,6 +176,14 @@ export default async function AdminDataSafetyPage() {
                   <div className="next-step-panel">
                     <strong>Safe Summary Description:</strong>
                     <p>{achievement.description}</p>
+                  </div>
+                  <div className="blocker-panel">
+                    <strong>Visibility boundary:</strong>
+                    <p>
+                      External visibility must remain limited to this reviewed
+                      summary. Raw proof, internal review notes, and sensitive
+                      learner or CSO identifiers stay protected.
+                    </p>
                   </div>
                 </div>
                 <div className="publishing-card-actions">
@@ -196,7 +219,9 @@ export default async function AdminDataSafetyPage() {
             <h3>No externally visible achievements</h3>
             <p>
               No verified achievements currently have donor or public visibility 
-              enabled on the platform.
+              enabled on the platform. This is the safest default; proof and
+              achievement records remain internal unless a safe visibility path
+              is already enabled and reviewed.
             </p>
           </div>
         )}

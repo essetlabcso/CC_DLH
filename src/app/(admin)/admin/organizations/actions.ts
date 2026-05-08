@@ -6,6 +6,10 @@ import { notFound, redirect } from "next/navigation";
 
 import { parseOrganizationForm } from "@/lib/admin/organization-form";
 import { parseAddMemberForm, parseUpdateMembershipForm, parseInviteMemberForm } from "@/lib/admin/membership-form";
+import {
+  ADMIN_AUTHORITY_CHANGE_ERROR,
+  canChangeLegacyAdminAuthority,
+} from "@/lib/admin/admin-authority";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 
@@ -306,6 +310,20 @@ export async function updateOrganizationMembershipAction(
   const currentRoles = membership.roles.map((r) => r.role);
   const removingAdmin = currentRoles.includes(UserRole.ADMIN) && !nextRoles.includes(UserRole.ADMIN);
 
+  if (
+    !canChangeLegacyAdminAuthority({
+      actorRole: identity.session.role,
+      currentRoles,
+      nextRoles,
+    })
+  ) {
+    redirect(
+      `/admin/organizations/${organizationId}?error=${encodeURIComponent(
+        ADMIN_AUTHORITY_CHANGE_ERROR
+      )}`
+    );
+  }
+
   // Protection: Self-lockout
   if (isUpdatingSelf) {
     if (becomingDisabled) {
@@ -434,6 +452,20 @@ export async function inviteOrganizationMemberAction(organizationId: string, for
 
   if (!parsed.ok) {
     redirect(`/admin/organizations/${organizationId}?error=${encodeURIComponent(parsed.message)}`);
+  }
+
+  if (
+    !canChangeLegacyAdminAuthority({
+      actorRole: identity.session.role,
+      currentRoles: [],
+      nextRoles: parsed.data.roles,
+    })
+  ) {
+    redirect(
+      `/admin/organizations/${organizationId}?error=${encodeURIComponent(
+        ADMIN_AUTHORITY_CHANGE_ERROR
+      )}`
+    );
   }
 
   // Check if user already exists

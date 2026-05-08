@@ -8,9 +8,13 @@ import {
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
-import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import {
+  requirePermissionIdentity,
+  requireWorkspaceIdentity,
+} from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
-import { canRoleTransitionCourseVersion } from "@/lib/db/lifecycle";
+import { canTransitionCourseVersion } from "@/lib/db/lifecycle";
+import { canPublishCourseVersion } from "@/lib/permissions/scoped-access";
 import {
   buildReviewerPauseChecklist,
   buildReviewerApprovalChecklist,
@@ -462,20 +466,16 @@ export async function publishApprovedCourseAction(
   courseId: string,
   versionId: string,
 ) {
-  const identity = await requireWorkspaceIdentity("/review/publishing");
+  const identity = await requirePermissionIdentity("/review/publishing");
 
   if (
-    !canRoleTransitionCourseVersion(
-      identity.session.role,
+    !canPublishCourseVersion(identity) ||
+    !canTransitionCourseVersion(
       CourseVersionStatus.APPROVED,
       CourseVersionStatus.PUBLISHED,
     )
   ) {
-    redirect(
-      `/forbidden?next=${encodeURIComponent(
-        "/review/publishing",
-      )}&workspace=review`,
-    );
+    redirect("/forbidden?reason=PUBLISH_RESTRICTED");
   }
 
   const version = await prisma.courseVersion.findFirst({
@@ -483,10 +483,6 @@ export async function publishApprovedCourseAction(
       id: versionId,
       courseId,
       status: CourseVersionStatus.APPROVED,
-      course:
-        identity.session.role === "admin"
-          ? {}
-          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: true,

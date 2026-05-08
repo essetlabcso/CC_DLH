@@ -24,8 +24,11 @@ export async function revokeCertificateAction(
       },
     },
     select: {
+      certificateNumber: true,
+      courseVersionId: true,
       id: true,
       revokedAt: true,
+      userId: true,
     },
   });
 
@@ -35,22 +38,41 @@ export async function revokeCertificateAction(
 
   if (!certificate.revokedAt) {
     const revokedAt = new Date();
+    const reason = note || "Certificate revoked by admin.";
 
-    await prisma.learnerCertificate.update({
-      where: {
-        id: certificate.id,
-      },
-      data: {
-        revokedAt,
-        statusEvents: {
-          create: {
-            actorId: identity.user.id,
-            eventType: CertificateStatusEventType.REVOKED,
-            note: note || "Certificate revoked by admin.",
-            createdAt: revokedAt,
+    await prisma.$transaction(async (tx) => {
+      await tx.learnerCertificate.update({
+        where: {
+          id: certificate.id,
+        },
+        data: {
+          revokedAt,
+          statusEvents: {
+            create: {
+              actorId: identity.user.id,
+              eventType: CertificateStatusEventType.REVOKED,
+              note: reason,
+              createdAt: revokedAt,
+            },
           },
         },
-      },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          action: "CERTIFICATE_REVOKED",
+          actorId: identity.user.id,
+          beforeJson: JSON.stringify(toCertificateAuditSnapshot(certificate)),
+          afterJson: JSON.stringify({
+            ...toCertificateAuditSnapshot(certificate),
+            revokedAt: revokedAt.toISOString(),
+          }),
+          entityId: certificate.id,
+          entityType: "LearnerCertificate",
+          reason,
+          riskLevel: "HIGH",
+        },
+      });
     });
   }
 
@@ -74,8 +96,11 @@ export async function reactivateCertificateAction(
       },
     },
     select: {
+      certificateNumber: true,
+      courseVersionId: true,
       id: true,
       revokedAt: true,
+      userId: true,
     },
   });
 
@@ -84,20 +109,40 @@ export async function reactivateCertificateAction(
   }
 
   if (certificate.revokedAt) {
-    await prisma.learnerCertificate.update({
-      where: {
-        id: certificate.id,
-      },
-      data: {
-        revokedAt: null,
-        statusEvents: {
-          create: {
-            actorId: identity.user.id,
-            eventType: CertificateStatusEventType.REACTIVATED,
-            note: note || "Certificate reactivated by admin.",
+    const reason = note || "Certificate reactivated by admin.";
+
+    await prisma.$transaction(async (tx) => {
+      await tx.learnerCertificate.update({
+        where: {
+          id: certificate.id,
+        },
+        data: {
+          revokedAt: null,
+          statusEvents: {
+            create: {
+              actorId: identity.user.id,
+              eventType: CertificateStatusEventType.REACTIVATED,
+              note: reason,
+            },
           },
         },
-      },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          action: "CERTIFICATE_REACTIVATED",
+          actorId: identity.user.id,
+          beforeJson: JSON.stringify(toCertificateAuditSnapshot(certificate)),
+          afterJson: JSON.stringify({
+            ...toCertificateAuditSnapshot(certificate),
+            revokedAt: null,
+          }),
+          entityId: certificate.id,
+          entityType: "LearnerCertificate",
+          reason,
+          riskLevel: "HIGH",
+        },
+      });
     });
   }
 
@@ -107,7 +152,24 @@ export async function reactivateCertificateAction(
 
 function revalidateCertificatePaths(certificateNumber: string) {
   revalidatePath("/admin/certificates");
+  revalidatePath("/admin/audit-log");
   revalidatePath("/learn/certificates");
   revalidatePath(`/learn/certificates/${certificateNumber}`);
   revalidatePath(`/verify?certificate=${encodeURIComponent(certificateNumber)}`);
+}
+
+function toCertificateAuditSnapshot(certificate: {
+  certificateNumber: string;
+  courseVersionId: string;
+  id: string;
+  revokedAt: Date | null;
+  userId: string;
+}) {
+  return {
+    certificateNumber: certificate.certificateNumber,
+    courseVersionId: certificate.courseVersionId,
+    id: certificate.id,
+    revokedAt: certificate.revokedAt?.toISOString() ?? null,
+    userId: certificate.userId,
+  };
 }

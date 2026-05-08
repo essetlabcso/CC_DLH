@@ -1,5 +1,7 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { getOrganizationDetail } from "@/lib/admin/organizations";
+import { getAdminStatusLabel } from "@/lib/admin/role-labels";
+import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { MembershipManager } from "../MembershipManager";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -20,7 +22,11 @@ export default async function OrganizationDetailPage({
 }: OrganizationDetailPageProps) {
   const resolvedSearchParams = await searchParams;
   const { organizationId } = await params;
+  const identity = await requireWorkspaceIdentity(
+    `/admin/organizations/${organizationId}`,
+  );
   const org = await getOrganizationDetail(organizationId);
+  const canManageAdminAuthority = identity.session.role === "admin";
 
   if (!org) {
     notFound();
@@ -74,7 +80,11 @@ export default async function OrganizationDetailPage({
         </section>
 
         <section className="admin-section">
-          <MembershipManager organizationId={org.id} members={org.members} />
+          <MembershipManager
+            canManageAdminAuthority={canManageAdminAuthority}
+            organizationId={org.id}
+            members={org.members}
+          />
         </section>
 
         <section className="admin-section" aria-labelledby="org-info-title">
@@ -107,7 +117,7 @@ export default async function OrganizationDetailPage({
                           : "status-badge-blocked"
                       }`}
                     >
-                      {org.status}
+                      {getAdminStatusLabel(org.status)}
                     </span>
                   </dd>
                 </div>

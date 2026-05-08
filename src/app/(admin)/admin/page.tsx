@@ -3,28 +3,49 @@ import { getAdminDashboardCounts } from "@/lib/admin/dashboard";
 import Link from "next/link";
 
 const governanceRules = [
-  "80% final test score triggers certificate eligibility.",
-  "Practical proof is tracked separately from certificates.",
-  "Review approves readiness; Publish releases approved versions.",
+  "Only legacy Admin users control Platform Admin authority.",
+  "Platform Admins publish only after Review approval.",
+  "80%+ final test score triggers the course certificate.",
+  "Practical proof remains separate from the course certificate.",
   "Raw proof remains private by default.",
-  "Course creators cannot publish courses.",
-  "Course setup is anchored to approved diagnosis records and capacity evidence.",
+  "Admins can return, reopen, reassign, archive, or retire only through allowed workflow actions.",
 ];
 
 const taskCards = [
+  {
+    title: "Users and Roles",
+    href: "/admin/users",
+    status: "Manage",
+    summary:
+      "Manage operational access while keeping Platform Admin authority under legacy Admin control.",
+  },
+  {
+    title: "Organizations",
+    href: "/admin/organizations",
+    status: "Manage",
+    summary:
+      "Register CSOs, maintain organization details, and manage memberships.",
+  },
   {
     title: "Reference Data",
     href: "/admin/reference-data",
     status: "Manage",
     summary:
-      "Lookup categories and values used across setup, review, publishing, proof, and monitoring.",
+      "Manage approved values used across setup, review, publishing, proof, and monitoring.",
+  },
+  {
+    title: "Courses & Workflow",
+    href: "/admin/courses",
+    status: "Review",
+    summary:
+      "See course workflow status, blockers, next actions, and publish readiness without bypassing gates.",
   },
   {
     title: "Workflow Field Metadata",
     href: "/admin/field-metadata",
     status: "View only",
     summary:
-      "Registry of important fields across setup, diagnosis, design, build, review, publish, and monitoring.",
+      "Review the governed fields used across the course workflow.",
   },
   {
     title: "Diagnosis Datasets",
@@ -45,21 +66,7 @@ const taskCards = [
     href: "/admin/audit-log",
     status: "Available",
     summary:
-      "Detailed trace of administrative changes, including reference data, organizations, and diagnosis records.",
-  },
-  {
-    title: "Organizations",
-    href: "/admin/organizations",
-    status: "Manage",
-    summary:
-      "Register and manage partner CSOs, including metadata, status, and system record protections.",
-  },
-  {
-    title: "Users and Roles",
-    href: "/admin/users",
-    status: "Manage",
-    summary:
-      "Review current users and manage existing platform role assignments.",
+      "Review the trace of Admin changes and sensitive decisions.",
   },
   {
     title: "Certificate Oversight",
@@ -80,7 +87,14 @@ const taskCards = [
     href: "/admin/data-safety",
     status: "Manage",
     summary:
-      "Oversee sensitive practical proof submissions and verified achievements with external visibility.",
+      "Oversee practical proof safety flags and external visibility decisions.",
+  },
+  {
+    title: "Configuration",
+    href: "/admin/config",
+    status: "Review",
+    summary:
+      "Review system constraints and controlled setup areas.",
   },
 ];
 
@@ -124,6 +138,16 @@ export default async function AdminWorkspacePage() {
       detail: "Registered CSOs",
     },
     {
+      label: "Certificates",
+      value: counts.certificates,
+      detail: "Issued learning certificates",
+    },
+    {
+      label: "Approved for publish",
+      value: counts.coursesApprovedForPublish,
+      detail: "Courses waiting for release",
+    },
+    {
       label: "Specialist flags",
       value: counts.specialistFlags,
       detail: "Proof needing Admin review",
@@ -132,6 +156,96 @@ export default async function AdminWorkspacePage() {
       label: "Externally visible",
       value: counts.externallyVisibleAchievements,
       detail: "Achievements safely shared",
+    },
+  ];
+
+  const actionCards = [
+    {
+      label: "Course workflow",
+      href: "/admin/courses",
+      status:
+        counts.coursesSubmittedForReview + counts.coursesApprovedForPublish > 0
+          ? "Needs review"
+          : "Clear",
+      tone:
+        counts.coursesSubmittedForReview + counts.coursesApprovedForPublish > 0
+          ? "status-badge-blocked"
+          : "status-badge-ready",
+      detail:
+        counts.coursesSubmittedForReview + counts.coursesApprovedForPublish > 0
+          ? `${
+              counts.coursesSubmittedForReview +
+              counts.coursesApprovedForPublish
+            } course version${
+              counts.coursesSubmittedForReview +
+                counts.coursesApprovedForPublish ===
+              1
+                ? ""
+                : "s"
+            } need review or publish attention.`
+          : "No submitted or approved courses are currently waiting.",
+    },
+    {
+      label: "Proof safety review",
+      href: "/admin/data-safety",
+      status: counts.specialistFlags > 0 ? "Needs attention" : "Clear",
+      tone:
+        counts.specialistFlags > 0
+          ? "status-badge-blocked"
+          : "status-badge-ready",
+      detail:
+        counts.specialistFlags > 0
+          ? `${counts.specialistFlags} proof submission${
+              counts.specialistFlags === 1 ? "" : "s"
+            } need specialist or redaction review.`
+          : "No specialist or redaction flags are waiting.",
+    },
+    {
+      label: "External visibility",
+      href: "/admin/data-safety",
+      status:
+        counts.externallyVisibleAchievements > 0 ? "Review visibility" : "Private by default",
+      tone:
+        counts.externallyVisibleAchievements > 0
+          ? "status-badge-published"
+          : "status-badge-ready",
+      detail:
+        counts.externallyVisibleAchievements > 0
+          ? `${counts.externallyVisibleAchievements} achievement${
+              counts.externallyVisibleAchievements === 1 ? "" : "s"
+            } have donor or public visibility enabled.`
+          : "No verified achievements are externally visible.",
+    },
+    {
+      label: "Publish queue",
+      href: "/review/publishing",
+      status: counts.coursesApprovedForPublish > 0 ? "Ready for Admin" : "No waiting courses",
+      tone:
+        counts.coursesApprovedForPublish > 0
+          ? "status-badge-blocked"
+          : "status-badge-ready",
+      detail:
+        counts.coursesApprovedForPublish > 0
+          ? `${counts.coursesApprovedForPublish} reviewed course${
+              counts.coursesApprovedForPublish === 1 ? "" : "s"
+            } are approved for publishing checks.`
+          : "No reviewed courses are currently waiting for publication.",
+    },
+    {
+      label: "Reference setup",
+      href: "/admin/reference-data",
+      status:
+        counts.lookupCategories > 0 && counts.lookupValues > 0
+          ? "Ready"
+          : "Needs setup",
+      tone:
+        counts.lookupCategories > 0 && counts.lookupValues > 0
+          ? "status-badge-ready"
+          : "status-badge-blocked",
+      detail:
+        counts.lookupCategories > 0 && counts.lookupValues > 0
+          ? "Reference categories and values are available."
+          : "Reference categories and values need Admin setup.",
     },
   ];
 
@@ -145,8 +259,8 @@ export default async function AdminWorkspacePage() {
           : "status-badge-blocked",
       detail:
         counts.lookupCategories > 0 && counts.lookupValues > 0
-          ? "Core categories and values are available for future Admin-managed forms."
-          : "Reference categories and values need to be loaded before connected forms can use them.",
+          ? "Core categories and values are available for Admin-managed forms."
+          : "Reference categories and values need setup before connected forms can use them.",
     },
     {
       label: "Workflow metadata ready",
@@ -154,7 +268,7 @@ export default async function AdminWorkspacePage() {
       tone: counts.fieldMetadata > 0 ? "status-badge-ready" : "status-badge-blocked",
       detail:
         counts.fieldMetadata > 0
-          ? "Key workflow fields are registered for future governed setup and review screens."
+          ? "Key workflow fields are registered for governed setup and review screens."
           : "Workflow field records need to be loaded before Admin can oversee field governance.",
     },
     {
@@ -195,6 +309,29 @@ export default async function AdminWorkspacePage() {
     },
   ];
 
+  const workflowCards = [
+    {
+      label: "Submitted for Review",
+      value: counts.coursesSubmittedForReview,
+      detail: "Course versions waiting in the review pathway",
+    },
+    {
+      label: "Approved for Publish",
+      value: counts.coursesApprovedForPublish,
+      detail: "Reviewed course versions ready for publishing checks",
+    },
+    {
+      label: "Published",
+      value: counts.coursesPublished,
+      detail: "Course versions released for learners",
+    },
+    {
+      label: "Proof Under Review",
+      value: counts.proofsUnderReview,
+      detail: "Practical proof submissions in review",
+    },
+  ];
+
   return (
     <WorkspaceShell eyebrow="DEC Admin" title="Admin Control Center">
       <div className="admin-dashboard">
@@ -202,18 +339,34 @@ export default async function AdminWorkspacePage() {
           <div>
             <h2 id="admin-overview-title">Platform governance overview</h2>
             <p>
-              Control the reference data, approved diagnosis records, workflow
-              field metadata, and governance signals that keep the DEC Learning
-              Hub consistent and traceable.
+              Keep platform access, reference data, course readiness,
+              certificates, proof safety, and monitoring evidence clear and
+              traceable.
             </p>
           </div>
-          <span className="status-badge status-badge-published">Read-only overview</span>
+          <span className="status-badge status-badge-ready">Operational view</span>
+        </section>
+
+        <section className="admin-section" aria-labelledby="admin-actions-title">
+          <div className="admin-section-heading">
+            <h2 id="admin-actions-title">Action required</h2>
+            <p>Items that need Admin attention from current platform records.</p>
+          </div>
+          <div className="admin-card-grid">
+            {actionCards.map((card) => (
+              <Link className="admin-task-card" href={card.href} key={card.label}>
+                <span className={`status-badge ${card.tone}`}>{card.status}</span>
+                <strong>{card.label}</strong>
+                <p>{card.detail}</p>
+              </Link>
+            ))}
+          </div>
         </section>
 
         <section className="admin-section" aria-labelledby="admin-health-title">
           <div className="admin-section-heading">
             <h2 id="admin-health-title">Configuration health</h2>
-            <p>Live counts from the current Admin foundation.</p>
+            <p>Current setup, governance, and safety records.</p>
           </div>
           <div className="admin-metrics-grid">
             {healthCards.map((card) => (
@@ -226,10 +379,26 @@ export default async function AdminWorkspacePage() {
           </div>
         </section>
 
+        <section className="admin-section" aria-labelledby="admin-workflow-title">
+          <div className="admin-section-heading">
+            <h2 id="admin-workflow-title">Workflow status</h2>
+            <p>High-level course and proof movement, using existing platform records.</p>
+          </div>
+          <div className="admin-metrics-grid">
+            {workflowCards.map((card) => (
+              <article className="admin-stat-card" key={card.label}>
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+                <p>{card.detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="admin-section" aria-labelledby="admin-readiness-title">
           <div className="admin-section-heading">
             <h2 id="admin-readiness-title">Readiness status</h2>
-            <p>What is ready now and what remains intentionally controlled.</p>
+            <p>What is ready, what needs setup, and what remains intentionally controlled.</p>
           </div>
           <div className="admin-card-grid">
             {readinessCards.map((card) => (
@@ -247,7 +416,7 @@ export default async function AdminWorkspacePage() {
         <section className="admin-section" aria-labelledby="admin-tasks-title">
           <div className="admin-section-heading">
             <h2 id="admin-tasks-title">Admin areas</h2>
-            <p>Governance and management entry points for the platform control center.</p>
+            <p>Common places for Admin review, setup, and oversight.</p>
           </div>
           <div className="admin-task-grid">
             {taskCards.map((card) => (

@@ -1,10 +1,15 @@
 import { CourseVersionStatus } from "@prisma/client";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { publishApprovedCourseAction } from "@/app/(review)/review/actions";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
-import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import { requirePermissionIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
+import {
+  canPublishCourseVersion,
+  canViewPublishQueue,
+} from "@/lib/permissions/scoped-access";
 import {
   buildPublishReadiness,
   countPublishableLessons,
@@ -25,14 +30,14 @@ export default async function PublishingPage({
   searchParams,
 }: PublishingPageProps) {
   const resolvedSearchParams = await searchParams;
-  const identity = await requireWorkspaceIdentity("/review/publishing");
+  const identity = await requirePermissionIdentity("/review/publishing");
+
+  if (!canViewPublishQueue(identity)) {
+    redirect("/forbidden?reason=PUBLISH_RESTRICTED");
+  }
   const approvedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.APPROVED,
-      course:
-        identity.session.role === "admin"
-          ? {}
-          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: {
@@ -61,10 +66,6 @@ export default async function PublishingPage({
   const recentlyPublished = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
-      course:
-        identity.session.role === "admin"
-          ? {}
-          : { organizationId: identity.user.organizationId },
     },
     include: {
       course: {
@@ -83,7 +84,7 @@ export default async function PublishingPage({
     },
     take: 3,
   });
-  const canPublishApprovedVersions = identity.session.role === "admin";
+  const canPublishApprovedVersions = canPublishCourseVersion(identity);
 
   return (
     <WorkspaceShell eyebrow="Publishing" title="Approved courses">

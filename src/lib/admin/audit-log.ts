@@ -1,5 +1,52 @@
 import { prisma } from "@/lib/db/client";
 
+const auditRiskLevels = ["LOW", "MEDIUM", "HIGH"] as const;
+const auditReasonStatuses = ["WITH_REASON", "MISSING_REASON"] as const;
+
+export const adminAuditEntityFilterOptions = [
+  "User",
+  "Organization",
+  "OrganizationMembership",
+  "AdminLookupCategory",
+  "AdminLookupValue",
+  "DiagnosisDataset",
+  "DiagnosisRecord",
+  "CourseVersion",
+  "LearnerCertificate",
+  "PracticalProofSubmission",
+  "VerifiedAchievement",
+] as const;
+
+export const adminAuditActionFilterOptions = [
+  "USER_ROLES_UPDATED",
+  "USER_INVITED",
+  "MEMBERSHIP_ADDED",
+  "MEMBERSHIP_UPDATED",
+  "ORGANIZATION_CREATED",
+  "ORGANIZATION_UPDATED",
+  "LOOKUP_CATEGORY_CREATED",
+  "LOOKUP_CATEGORY_UPDATED",
+  "LOOKUP_VALUE_CREATED",
+  "LOOKUP_VALUE_UPDATED",
+  "COURSE_VERSION_RETURNED",
+  "COURSE_VERSION_PAUSED",
+  "COURSE_VERSION_SPECIALIST_REVIEW_REQUIRED",
+  "COURSE_VERSION_PUBLISHED",
+  "COURSE_REVISION_REQUESTED",
+  "CERTIFICATE_REVOKED",
+  "CERTIFICATE_REACTIVATED",
+  "SPECIALIST_REVIEW_RESOLVED",
+  "REDACTION_REQUIREMENT_RESOLVED",
+  "EXTERNAL_VISIBILITY_REVOKED",
+] as const;
+
+export type AdminAuditLogFilters = {
+  action?: string;
+  entityType?: string;
+  reasonStatus?: string;
+  riskLevel?: string;
+};
+
 export type AdminAuditLogEntry = {
   id: string;
   action: string;
@@ -15,6 +62,7 @@ export type AdminAuditLogEntry = {
 
 export type AdminAuditLogSummary = {
   entries: AdminAuditLogEntry[];
+  filters: AdminAuditLogFilters;
   totals: {
     highRisk: number;
     lowRisk: number;
@@ -23,7 +71,11 @@ export type AdminAuditLogSummary = {
   };
 };
 
-export async function getAdminAuditLogSummary(): Promise<AdminAuditLogSummary> {
+export async function getAdminAuditLogSummary(
+  filters: AdminAuditLogFilters = {},
+): Promise<AdminAuditLogSummary> {
+  const normalizedFilters = normalizeAdminAuditLogFilters(filters);
+  const where = buildAuditLogWhere(normalizedFilters);
   const [entries, totals] = await Promise.all([
     prisma.adminAuditLog.findMany({
       include: {
@@ -34,6 +86,7 @@ export async function getAdminAuditLogSummary(): Promise<AdminAuditLogSummary> {
           },
         },
       },
+      where,
       orderBy: {
         createdAt: "desc",
       },
@@ -65,6 +118,7 @@ export async function getAdminAuditLogSummary(): Promise<AdminAuditLogSummary> {
       reason: entry.reason,
       riskLevel: formatLabel(entry.riskLevel),
     })),
+    filters: normalizedFilters,
     totals: {
       highRisk: countForRisk("HIGH"),
       lowRisk: countForRisk("LOW"),
@@ -72,6 +126,72 @@ export async function getAdminAuditLogSummary(): Promise<AdminAuditLogSummary> {
       total: totals.reduce((sum, total) => sum + total._count._all, 0),
     },
   };
+}
+
+export function normalizeAdminAuditLogFilters(
+  filters: AdminAuditLogFilters,
+): AdminAuditLogFilters {
+  const riskLevel = filters.riskLevel?.trim().toUpperCase();
+  const reasonStatus = filters.reasonStatus?.trim().toUpperCase();
+  const entityType = filters.entityType?.trim();
+  const action = filters.action?.trim().toUpperCase();
+
+  return {
+    action: adminAuditActionFilterOptions.includes(
+      action as (typeof adminAuditActionFilterOptions)[number],
+    )
+      ? action
+      : undefined,
+    entityType: adminAuditEntityFilterOptions.includes(
+      entityType as (typeof adminAuditEntityFilterOptions)[number],
+    )
+      ? entityType
+      : undefined,
+    reasonStatus: auditReasonStatuses.includes(
+      reasonStatus as (typeof auditReasonStatuses)[number],
+    )
+      ? (reasonStatus as (typeof auditReasonStatuses)[number])
+      : undefined,
+    riskLevel: auditRiskLevels.includes(
+      riskLevel as (typeof auditRiskLevels)[number],
+    )
+      ? (riskLevel as (typeof auditRiskLevels)[number])
+      : undefined,
+  };
+}
+
+export function formatAdminAuditFilterLabel(value: string) {
+  return formatAction(value);
+}
+
+function buildAuditLogWhere(filters: AdminAuditLogFilters) {
+  const where: {
+    action?: string;
+    entityType?: string;
+    NOT?: { reason: string };
+    reason?: string;
+    riskLevel?: string;
+  } = {};
+
+  if (filters.riskLevel) {
+    where.riskLevel = filters.riskLevel;
+  }
+
+  if (filters.entityType) {
+    where.entityType = filters.entityType;
+  }
+
+  if (filters.action) {
+    where.action = filters.action;
+  }
+
+  if (filters.reasonStatus === "WITH_REASON") {
+    where.NOT = { reason: "" };
+  } else if (filters.reasonStatus === "MISSING_REASON") {
+    where.reason = "";
+  }
+
+  return where;
 }
 
 function formatAction(value: string) {

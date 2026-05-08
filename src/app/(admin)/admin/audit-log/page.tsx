@@ -1,12 +1,38 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import {
+  adminAuditActionFilterOptions,
+  adminAuditEntityFilterOptions,
+  formatAdminAuditFilterLabel,
   getAdminAuditLogSummary,
   type AdminAuditLogEntry,
 } from "@/lib/admin/audit-log";
 import Link from "next/link";
 
-export default async function AdminAuditLogPage() {
-  const auditLog = await getAdminAuditLogSummary();
+type AdminAuditLogPageProps = {
+  searchParams?: Promise<{
+    action?: string;
+    entity?: string;
+    reason?: string;
+    risk?: string;
+  }>;
+};
+
+export default async function AdminAuditLogPage({
+  searchParams,
+}: AdminAuditLogPageProps) {
+  const params = await searchParams;
+  const auditLog = await getAdminAuditLogSummary({
+    action: params?.action,
+    entityType: params?.entity,
+    reasonStatus: params?.reason === "missing" ? "MISSING_REASON" : params?.reason === "present" ? "WITH_REASON" : undefined,
+    riskLevel:
+      params?.risk === "LOW" ||
+      params?.risk === "MEDIUM" ||
+      params?.risk === "HIGH"
+        ? params.risk
+        : undefined,
+  });
+  const activeFilters = auditLog.filters;
 
   return (
     <WorkspaceShell eyebrow="Admin Control Center" title="Audit Log">
@@ -16,7 +42,9 @@ export default async function AdminAuditLogPage() {
             <h2>Governance activity record</h2>
             <p>
               Review Admin changes to reference data, diagnosis records, and
-              platform governance records.
+              platform governance records. Sensitive actions should show an
+              actor, affected record, reason, risk level, and before or after
+              snapshot where the current workflow captures one.
             </p>
           </div>
           <Link className="workspace-link secondary" href="/admin">
@@ -53,6 +81,76 @@ export default async function AdminAuditLogPage() {
           </div>
         </section>
 
+        <section className="admin-section" aria-labelledby="audit-filters-title">
+          <div className="admin-section-heading">
+            <h2 id="audit-filters-title">Filters</h2>
+            <p>
+              Narrow recent activity by risk, action, entity type, or whether a
+              reason was recorded.
+            </p>
+          </div>
+          <form action="/admin/audit-log" className="admin-table-card">
+            <div className="context-grid">
+              <label className="workspace-label">
+                <span>Risk</span>
+                <select name="risk" defaultValue={activeFilters.riskLevel ?? ""}>
+                  <option value="">All risks</option>
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+              </label>
+              <label className="workspace-label">
+                <span>Entity</span>
+                <select name="entity" defaultValue={activeFilters.entityType ?? ""}>
+                  <option value="">All entities</option>
+                  {adminAuditEntityFilterOptions.map((entity) => (
+                    <option key={entity} value={entity}>
+                      {entity}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="workspace-label">
+                <span>Action</span>
+                <select name="action" defaultValue={activeFilters.action ?? ""}>
+                  <option value="">All actions</option>
+                  {adminAuditActionFilterOptions.map((action) => (
+                    <option key={action} value={action}>
+                      {formatAdminAuditFilterLabel(action)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="workspace-label">
+                <span>Reason</span>
+                <select
+                  name="reason"
+                  defaultValue={
+                    activeFilters.reasonStatus === "WITH_REASON"
+                      ? "present"
+                      : activeFilters.reasonStatus === "MISSING_REASON"
+                        ? "missing"
+                        : ""
+                  }
+                >
+                  <option value="">All records</option>
+                  <option value="present">Reason recorded</option>
+                  <option value="missing">Missing reason</option>
+                </select>
+              </label>
+            </div>
+            <div className="workspace-nav" aria-label="Audit filter actions">
+              <button className="workspace-button" type="submit">
+                Apply filters
+              </button>
+              <Link className="workspace-link secondary" href="/admin/audit-log">
+                Clear filters
+              </Link>
+            </div>
+          </form>
+        </section>
+
         {auditLog.entries.length > 0 ? (
           <section className="admin-section" aria-labelledby="audit-events-title">
             <div className="admin-section-heading">
@@ -86,12 +184,13 @@ export default async function AdminAuditLogPage() {
         ) : (
           <section className="admin-empty-panel">
             <span className="status-badge status-badge-published">
-              No records
+              No matching records
             </span>
-            <h2>No Admin activity has been recorded yet</h2>
+            <h2>No Admin activity matches the current view</h2>
             <p>
-              Admin changes to datasets, diagnosis records, and platform
-              governance settings will appear here once they are made.
+              Adjust the filters to review other Admin activity. If the log is
+              empty without filters, Admin changes to governed records will
+              appear here once they are made.
             </p>
           </section>
         )}

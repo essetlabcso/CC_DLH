@@ -1,3 +1,5 @@
+import { CourseVersionStatus } from "@prisma/client";
+
 import { prisma } from "@/lib/db/client";
 
 export type AdminDashboardCounts = {
@@ -8,6 +10,11 @@ export type AdminDashboardCounts = {
   diagnosisRecords: number;
   auditLogs: number;
   organizations: number;
+  certificates: number;
+  coursesSubmittedForReview: number;
+  coursesApprovedForPublish: number;
+  coursesPublished: number;
+  proofsUnderReview: number;
   specialistFlags: number;
   externallyVisibleAchievements: number;
 };
@@ -37,6 +44,11 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     diagnosisRecords,
     auditLogs,
     organizations,
+    certificates,
+    coursesSubmittedForReview,
+    coursesApprovedForPublish,
+    coursesPublished,
+    proofsUnderReview,
     specialistFlags,
     externallyVisibleAchievements,
   ] = await Promise.all([
@@ -47,6 +59,23 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     prisma.diagnosisRecord.count(),
     prisma.adminAuditLog.count(),
     prisma.organization.count(),
+    prisma.learnerCertificate.count(),
+    prisma.courseVersion.count({
+      where: { status: CourseVersionStatus.SUBMITTED },
+    }),
+    prisma.courseVersion.count({
+      where: { status: CourseVersionStatus.APPROVED },
+    }),
+    prisma.courseVersion.count({
+      where: { status: CourseVersionStatus.PUBLISHED },
+    }),
+    prisma.learnerPracticalProofSubmission.count({
+      where: {
+        status: {
+          in: ["SUBMITTED", "UNDER_REVIEW"],
+        },
+      },
+    }),
     prisma.learnerPracticalProofSubmission.count({
       where: {
         OR: [
@@ -73,6 +102,11 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     diagnosisRecords,
     auditLogs,
     organizations,
+    certificates,
+    coursesSubmittedForReview,
+    coursesApprovedForPublish,
+    coursesPublished,
+    proofsUnderReview,
     specialistFlags,
     externallyVisibleAchievements,
   };

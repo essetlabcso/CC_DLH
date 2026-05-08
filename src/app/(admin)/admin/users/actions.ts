@@ -4,6 +4,10 @@ import { MembershipStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
+import {
+  ADMIN_AUTHORITY_CHANGE_ERROR,
+  canChangeLegacyAdminAuthority,
+} from "@/lib/admin/admin-authority";
 import { parseUserRoleUpdateForm } from "@/lib/admin/user-role-form";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { toPrismaUserRole } from "@/lib/auth/persistence";
@@ -49,6 +53,20 @@ export async function updateUserRolesAction(
   const nextPrismaRoles = parsed.roles.map(toPrismaUserRole);
   const currentRoles = membership.roles.map((role) => role.role);
   const isUpdatingSelf = membership.userId === identity.user.id;
+
+  if (
+    !canChangeLegacyAdminAuthority({
+      actorRole: identity.session.role,
+      currentRoles,
+      nextRoles: nextPrismaRoles,
+    })
+  ) {
+    redirect(
+      `/admin/users?error=${encodeURIComponent(
+        ADMIN_AUTHORITY_CHANGE_ERROR,
+      )}`,
+    );
+  }
 
   if (isUpdatingSelf && !parsed.roles.includes("admin")) {
     redirect(

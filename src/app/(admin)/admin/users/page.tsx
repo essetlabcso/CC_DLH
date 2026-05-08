@@ -2,6 +2,8 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { roles } from "@/lib/access";
 import { getAdminUsersOverview, type AdminUserSummary } from "@/lib/admin/users";
 import { updateUserRolesAction } from "@/app/(admin)/admin/users/actions";
+import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import { getAdminRoleLabel, getAdminStatusLabel } from "@/lib/admin/role-labels";
 import Link from "next/link";
 
 type AdminUsersPageProps = {
@@ -15,7 +17,9 @@ export default async function AdminUsersPage({
   searchParams,
 }: AdminUsersPageProps) {
   const resolvedSearchParams = await searchParams;
+  const identity = await requireWorkspaceIdentity("/admin/users");
   const overview = await getAdminUsersOverview();
+  const canManageAdminAuthority = identity.session.role === "admin";
 
   return (
     <WorkspaceShell eyebrow="Admin Control Center" title="Users and Roles">
@@ -24,8 +28,8 @@ export default async function AdminUsersPage({
           <div>
             <h2>User and role management</h2>
             <p>
-              Review current users and manage their platform roles using the
-              existing DEC role model.
+              Review current users, manage operational access, and keep
+              Platform Admin authority under legacy Admin control.
             </p>
           </div>
           <Link className="workspace-link secondary" href="/admin">
@@ -86,7 +90,11 @@ export default async function AdminUsersPage({
           {overview.users.length > 0 ? (
             <div className="admin-user-list">
               {overview.users.map((user) => (
-                <UserAccessCard key={user.id} user={user} />
+                <UserAccessCard
+                  canManageAdminAuthority={canManageAdminAuthority}
+                  key={user.id}
+                  user={user}
+                />
               ))}
             </div>
           ) : (
@@ -107,8 +115,20 @@ export default async function AdminUsersPage({
   );
 }
 
-function UserAccessCard({ user }: { user: AdminUserSummary }) {
-  const canUpdate = Boolean(user.membershipId);
+function UserAccessCard({
+  canManageAdminAuthority,
+  user,
+}: {
+  canManageAdminAuthority: boolean;
+  user: AdminUserSummary;
+}) {
+  const hasAdminAuthority = user.roles.includes("admin");
+  const canUpdate =
+    Boolean(user.membershipId) &&
+    (canManageAdminAuthority || !hasAdminAuthority);
+  const assignableRoles = canManageAdminAuthority
+    ? roles
+    : roles.filter((role) => role !== "admin");
 
   return (
     <article className="admin-user-card">
@@ -119,7 +139,7 @@ function UserAccessCard({ user }: { user: AdminUserSummary }) {
         </div>
         <div className="reference-badge-row">
           <span className="status-badge status-badge-ready">
-            {formatLabel(user.status)}
+            {getAdminStatusLabel(user.status)}
           </span>
           <span className="status-badge status-badge-published">
             {user.organizationName}
@@ -130,11 +150,19 @@ function UserAccessCard({ user }: { user: AdminUserSummary }) {
       <dl className="reference-meta-list">
         <div>
           <dt>Current roles</dt>
-          <dd>{user.roles.length > 0 ? user.roles.map(formatLabel).join(", ") : "None"}</dd>
+          <dd>
+            {user.roles.length > 0
+              ? user.roles.map(getAdminRoleLabel).join(", ")
+              : "None"}
+          </dd>
         </div>
         <div>
           <dt>Membership</dt>
-          <dd>{user.membershipStatus ? formatLabel(user.membershipStatus) : "None"}</dd>
+          <dd>
+            {user.membershipStatus
+              ? getAdminStatusLabel(user.membershipStatus)
+              : "None"}
+          </dd>
         </div>
         <div>
           <dt>Courses owned</dt>
@@ -154,7 +182,7 @@ function UserAccessCard({ user }: { user: AdminUserSummary }) {
           <fieldset>
             <legend>Assigned roles</legend>
             <div className="reference-visibility-grid">
-              {roles.map((role) => (
+              {assignableRoles.map((role) => (
                 <label className="checkbox-row" key={role}>
                   <input
                     defaultChecked={user.roles.includes(role)}
@@ -162,11 +190,16 @@ function UserAccessCard({ user }: { user: AdminUserSummary }) {
                     type="checkbox"
                     value={role}
                   />
-                  <span>{role === "learner" ? "Participant" : formatLabel(role)}</span>
+                  <span>{getAdminRoleLabel(role)}</span>
                 </label>
               ))}
             </div>
           </fieldset>
+          {!canManageAdminAuthority && hasAdminAuthority ? (
+            <p className="workspace-note">
+              Platform Admin authority is controlled by legacy Admin users.
+            </p>
+          ) : null}
           <label>
             <span>Reason for role update</span>
             <textarea
@@ -182,7 +215,9 @@ function UserAccessCard({ user }: { user: AdminUserSummary }) {
         </form>
       ) : (
         <p className="workspace-note">
-          This user does not have an active membership to update.
+          {hasAdminAuthority && !canManageAdminAuthority
+            ? "Platform Admin authority is controlled by legacy Admin users."
+            : "This user does not have an active membership to update."}
         </p>
       )}
     </article>
@@ -238,13 +273,4 @@ function StatusMessage({
   }
 
   return null;
-}
-
-function formatLabel(value: string) {
-  return value
-    .toLowerCase()
-    .split(/[-_]/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }

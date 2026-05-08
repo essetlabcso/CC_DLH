@@ -37,6 +37,7 @@ export default async function AdminReferenceDataPage({
             <p>
               Inspect the controlled dropdowns and reference values that support
               Course Setup, diagnosis, review, publishing, proof, and monitoring.
+              Used values should be deactivated rather than removed or repurposed.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -86,6 +87,52 @@ export default async function AdminReferenceDataPage({
               label="Active"
               value={referenceData.totals.activeValues}
             />
+            <MetricCard
+              detail="Values linked to existing records"
+              label="Used"
+              value={referenceData.totals.usedValues}
+            />
+          </div>
+        </section>
+
+        <section
+          className="admin-section"
+          aria-labelledby="reference-safety-title"
+        >
+          <div className="admin-section-heading">
+            <h2 id="reference-safety-title">Reference data safeguards</h2>
+            <p>
+              These controls keep lookup changes visible, auditable, and safe for
+              active courses and learner records.
+            </p>
+          </div>
+          <div className="admin-readiness-grid">
+            <article className="admin-readiness-card">
+              <span className="status-badge status-badge-ready">Safe default</span>
+              <h3>Deactivate used values</h3>
+              <p>
+                Existing values with recorded usage stay available for history;
+                inactive status removes them from future selection where supported.
+              </p>
+            </article>
+            <article className="admin-readiness-card">
+              <span className="status-badge status-badge-published">
+                Protected
+              </span>
+              <h3>System and workflow values</h3>
+              <p>
+                System-locked values remain protected, and sensitive workflow
+                areas are marked before Admins make changes.
+              </p>
+            </article>
+            <article className="admin-readiness-card">
+              <span className="status-badge status-badge-ready">Audited</span>
+              <h3>Change reasons required</h3>
+              <p>
+                Updates to existing categories and values continue to require a
+                reason and are recorded in the Admin audit log.
+              </p>
+            </article>
           </div>
         </section>
 
@@ -139,15 +186,22 @@ export default async function AdminReferenceDataPage({
                       <h3>{category.categoryName}</h3>
                       <p>{category.categoryKey}</p>
                     </div>
-                    <span
-                      className={`status-badge ${
-                        category.isActive
-                          ? "status-badge-ready"
-                          : "status-badge-blocked"
-                      }`}
-                    >
-                      {category.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div className="reference-badge-row">
+                      <span
+                        className={`status-badge ${
+                          category.isActive
+                            ? "status-badge-ready"
+                            : "status-badge-blocked"
+                        }`}
+                      >
+                        {category.isActive ? "Active" : "Inactive"}
+                      </span>
+                      {category.isProtectedWorkflowCategory ? (
+                        <span className="status-badge status-badge-published">
+                          Protected area
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <p>{category.description || "No description provided."}</p>
                   <dl className="reference-meta-list">
@@ -166,6 +220,10 @@ export default async function AdminReferenceDataPage({
                           ? "System category"
                           : "Admin category"}
                       </dd>
+                    </div>
+                    <div>
+                      <dt>Usage tracking</dt>
+                      <dd>{categoryUsageLabel(category.values)}</dd>
                     </div>
                   </dl>
                   <div className="reference-action-row">
@@ -212,7 +270,7 @@ export default async function AdminReferenceDataPage({
             </h2>
             <p>
               Read-only value details include status, lock state, visibility,
-              parent value, and display order.
+              usage state, parent value, and display order.
             </p>
           </div>
 
@@ -268,6 +326,18 @@ export default async function AdminReferenceDataPage({
                                   ? "System Locked"
                                   : "Admin Managed"}
                               </span>
+                              <span
+                                className={`status-badge ${usageBadgeClass(
+                                  value,
+                                )}`}
+                              >
+                                {usageBadgeLabel(value)}
+                              </span>
+                              {value.isProtectedWorkflowValue ? (
+                                <span className="status-badge status-badge-published">
+                                  Protected area
+                                </span>
+                              ) : null}
                             </div>
                           </div>
                           {value.description || value.helpText ? (
@@ -289,6 +359,14 @@ export default async function AdminReferenceDataPage({
                             <div>
                               <dt>Visible to</dt>
                               <dd>{visibilityLabel(value)}</dd>
+                            </div>
+                            <div>
+                              <dt>Usage</dt>
+                              <dd>{value.usageSummary}</dd>
+                            </div>
+                            <div>
+                              <dt>Safe action</dt>
+                              <dd>{safeActionLabel(value)}</dd>
                             </div>
                           </dl>
                           {value.canEdit ? (
@@ -430,4 +508,67 @@ function visibilityLabel(value: {
   ].filter(Boolean);
 
   return visibleTo.length > 0 ? visibleTo.join(", ") : "Hidden";
+}
+
+function categoryUsageLabel(
+  values: {
+    isUsed: boolean;
+    isUsageTracked: boolean;
+  }[],
+) {
+  const trackedValues = values.filter((value) => value.isUsageTracked).length;
+
+  if (trackedValues === 0) {
+    return "Not tracked yet";
+  }
+
+  const usedValues = values.filter((value) => value.isUsed).length;
+  return `${usedValues} used of ${trackedValues} tracked values`;
+}
+
+function usageBadgeClass(value: {
+  isUsed: boolean;
+  isUsageTracked: boolean;
+}) {
+  if (!value.isUsageTracked) {
+    return "";
+  }
+
+  return value.isUsed ? "status-badge-published" : "status-badge-ready";
+}
+
+function usageBadgeLabel(value: {
+  isUsed: boolean;
+  isUsageTracked: boolean;
+}) {
+  if (!value.isUsageTracked) {
+    return "Usage not tracked";
+  }
+
+  return value.isUsed ? "Used" : "No recorded use";
+}
+
+function safeActionLabel(value: {
+  isProtectedWorkflowValue: boolean;
+  isSystemLocked: boolean;
+  isUsed: boolean;
+  isUsageTracked: boolean;
+}) {
+  if (value.isSystemLocked) {
+    return "System locked; do not edit.";
+  }
+
+  if (value.isUsed) {
+    return "Deactivate instead of renaming or repurposing.";
+  }
+
+  if (value.isProtectedWorkflowValue) {
+    return "Review carefully before changing this workflow value.";
+  }
+
+  if (!value.isUsageTracked) {
+    return "Review manually before changing this value.";
+  }
+
+  return "May be edited or deactivated with an audit reason.";
 }

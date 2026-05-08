@@ -8,6 +8,7 @@ import {
   getCertificateStatusLabel,
 } from "@/lib/learner/certificate-status";
 import { formatCertificateDate } from "@/lib/learner/certificates";
+import { FINAL_TEST_PASS_SCORE } from "@/lib/learner/final-test";
 
 import {
   reactivateCertificateAction,
@@ -57,10 +58,20 @@ export default async function AdminCertificatesPage({
 
   return (
     <WorkspaceShell eyebrow="Admin" title="Certificate oversight">
-      <p>
-        Review issued DEC learning certificates and their learner, course, and
-        version records.
-      </p>
+      <div className="admin-hero">
+        <p>
+          Review issued DEC learning certificates and their learner, course,
+          and version records. A course certificate is issued from the final
+          test only: learners who score {FINAL_TEST_PASS_SCORE}% or above pass
+          the course and receive the automated certificate where certificates
+          are enabled.
+        </p>
+        <p>
+          Practical proof, verified achievements, and badges are separate
+          recognition records. They are not required for a course certificate
+          and do not change the certificate threshold.
+        </p>
+      </div>
       {resolvedSearchParams?.revoked === "1" ? (
         <p className="workspace-note">Certificate revoked.</p>
       ) : null}
@@ -91,6 +102,14 @@ export default async function AdminCertificatesPage({
                   <article>
                     <strong>Issued</strong>
                     <span>{formatCertificateDate(certificate.issuedAt)}</span>
+                  </article>
+                  <article>
+                    <strong>Certificate basis</strong>
+                    <span>{FINAL_TEST_PASS_SCORE}%+ final test score</span>
+                  </article>
+                  <article>
+                    <strong>Proof relationship</strong>
+                    <span>Separate from certificate</span>
                   </article>
                   <article>
                     <strong>Status</strong>
@@ -172,8 +191,10 @@ export default async function AdminCertificatesPage({
         <div className="empty-state">
           <h2>No certificates issued yet</h2>
           <p>
-            Certificate records will appear here after learners complete
-            certificate-ready courses.
+            Certificate records will appear here after learners score{" "}
+            {FINAL_TEST_PASS_SCORE}% or above on the final test for a
+            certificate-enabled course. Optional proof or badges will not create
+            certificate records.
           </p>
         </div>
       )}

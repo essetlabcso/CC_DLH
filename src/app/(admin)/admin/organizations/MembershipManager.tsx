@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MembershipStatus, UserRole } from "@prisma/client";
+import { getAdminRoleLabel } from "@/lib/admin/role-labels";
 import { addOrganizationMemberAction, updateOrganizationMembershipAction, inviteOrganizationMemberAction } from "./actions";
 
 type Member = {
@@ -15,15 +16,20 @@ type Member = {
 };
 
 export function MembershipManager({
+  canManageAdminAuthority,
   organizationId,
   members,
 }: {
+  canManageAdminAuthority: boolean;
   organizationId: string;
   members: Member[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [addMode, setAddMode] = useState<"existing" | "new">("existing");
+  const assignableRoles = canManageAdminAuthority
+    ? Object.values(UserRole)
+    : Object.values(UserRole).filter((role) => role !== UserRole.ADMIN);
 
   return (
     <div className="admin-membership-manager">
@@ -49,7 +55,7 @@ export function MembershipManager({
         <section className="admin-user-card" style={{ marginBottom: "2rem", border: "2px solid var(--primary-accent)" }}>
           <div className="admin-section-heading">
             <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Add or Invite Member</h3>
-            <p>Add an existing user or invite a new user to this organization.</p>
+            <p>Add an existing user or invite a new learner or operational user to this organization.</p>
           </div>
           
           <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
@@ -106,7 +112,7 @@ export function MembershipManager({
               <fieldset style={{ marginTop: "1rem", marginBottom: "1rem" }}>
                 <legend style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Initial Roles</legend>
                 <div className="reference-visibility-grid">
-                  {Object.values(UserRole).map((role) => (
+                  {assignableRoles.map((role) => (
                     <label className="checkbox-row" key={role}>
                       <input
                         defaultChecked={role === "LEARNER"}
@@ -114,11 +120,16 @@ export function MembershipManager({
                         type="checkbox"
                         value={role}
                       />
-                      <span>{role === "LEARNER" ? "Participant" : formatLabel(role)}</span>
+                      <span>{getAdminRoleLabel(role)}</span>
                     </label>
                   ))}
                 </div>
               </fieldset>
+              {!canManageAdminAuthority ? (
+                <p className="workspace-note">
+                  Platform Admin authority is controlled by legacy Admin users.
+                </p>
+              ) : null}
               <label>
                 <span>Reason for inviting</span>
                 <textarea 
@@ -160,7 +171,7 @@ export function MembershipManager({
                     <fieldset>
                       <legend>Assigned roles</legend>
                       <div className="reference-visibility-grid">
-                        {Object.values(UserRole).map((role) => (
+                        {assignableRoles.map((role) => (
                           <label className="checkbox-row" key={role}>
                             <input
                               defaultChecked={member.roles.includes(role)}
@@ -168,11 +179,16 @@ export function MembershipManager({
                               type="checkbox"
                               value={role}
                             />
-                            <span>{role === "LEARNER" ? "Participant" : formatLabel(role)}</span>
+                            <span>{getAdminRoleLabel(role)}</span>
                           </label>
                         ))}
                       </div>
                     </fieldset>
+                    {!canManageAdminAuthority && member.roles.includes(UserRole.ADMIN) ? (
+                      <p className="workspace-note">
+                        Platform Admin authority is controlled by legacy Admin users.
+                      </p>
+                    ) : null}
 
                     <label>
                       <span>Membership Status</span>
@@ -222,16 +238,18 @@ export function MembershipManager({
                       ) : (
                         <span className="status-badge status-badge-ready">Member</span>
                       )}
-                      <button 
-                        className="admin-link-small" 
-                        onClick={() => {
-                          setEditingId(member.membershipId);
-                          setIsAdding(false);
-                        }}
-                        style={{ border: "none", background: "none", cursor: "pointer", padding: 0, marginLeft: "0.5rem" }}
-                      >
-                        Manage
-                      </button>
+                      {canManageAdminAuthority || !member.roles.includes(UserRole.ADMIN) ? (
+                        <button
+                          className="admin-link-small"
+                          onClick={() => {
+                            setEditingId(member.membershipId);
+                            setIsAdding(false);
+                          }}
+                          style={{ border: "none", background: "none", cursor: "pointer", padding: 0, marginLeft: "0.5rem" }}
+                        >
+                          Manage
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                   <dl className="reference-meta-list">
@@ -239,11 +257,16 @@ export function MembershipManager({
                       <dt>Roles</dt>
                       <dd>
                         {member.roles.length > 0
-                          ? member.roles.map(formatLabel).join(", ")
+                          ? member.roles.map(getAdminRoleLabel).join(", ")
                           : "None"}
                       </dd>
                     </div>
                   </dl>
+                  {!canManageAdminAuthority && member.roles.includes(UserRole.ADMIN) ? (
+                    <p className="workspace-note">
+                      Platform Admin authority is controlled by legacy Admin users.
+                    </p>
+                  ) : null}
                 </article>
               )}
             </div>
@@ -258,13 +281,4 @@ export function MembershipManager({
       )}
     </div>
   );
-}
-
-function formatLabel(value: string) {
-  return value
-    .toLowerCase()
-    .split(/[-_]/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }
