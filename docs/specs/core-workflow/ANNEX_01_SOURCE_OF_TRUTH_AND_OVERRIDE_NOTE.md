@@ -46,7 +46,9 @@ docs/specs/core-workflow/04_REVIEW_AND_PUBLISH_PHASE.md
 
 docs/specs/core-workflow/05_MONITORING_AND_EVALUATION_PHASE.md
 
-These files define the five refined workflow phases:
+docs/specs/core-workflow/06_ADMIN_ROLE_AND_EXPERIENCE_SPECIFICATION.md
+
+These files define the five refined workflow phases plus the cross-cutting Admin role and experience specification:
 
 1.  Analysis
 
@@ -59,6 +61,26 @@ These files define the five refined workflow phases:
 5.  Monitoring and Evaluation
 
 They should be read together with the revised developer-facing implementation description and this annex.
+
+## Admin Role and Admin Experience Specification — Phase 1 Binding Note
+
+The file `06_ADMIN_ROLE_AND_EXPERIENCE_SPECIFICATION.md` is the approved Phase 1 source of truth for Admin role behavior, Admin user experience, Admin dashboard expectations, Admin-controlled reference data, Admin workflow oversight, Admin publishing authority, Admin data-safety responsibilities, Admin monitoring visibility, and Admin audit expectations.
+
+This Admin specification should be read together with the core workflow phase files and Annex 2: Role-Action and Permission Matrix. Where older documents imply a more complex Admin model, the Phase 1 Admin specification confirms the simplified approved product decision:
+
+- Only the Super Admin can create, approve, suspend, or remove Platform Admins.
+- Platform Admins manage day-to-day platform administration.
+- Platform Admins may publish courses only after Review approval and Approved for Publish status.
+- Platform Admins may directly manage learners/participants in Phase 1.
+- Platform Admins may directly add, edit, deactivate, and reactivate lookup/reference values, with changes recorded in the Admin audit log.
+- Lookup/reference values already used by existing records should not be permanently deleted; they should be deactivated for future use while preserved historically.
+- Platform Admins should not have a broad workflow gate override in Phase 1.
+- Platform Admins may return, reopen, reassign, archive, retire, or move courses only through allowed workflow actions, with required reasons for sensitive actions.
+- Raw proof remains private by default.
+- Practical proof, verified achievements, and badges remain separate from course certificates.
+- The certificate rule remains: final test score of 80% or above triggers automated course certificate.
+
+If there is a conflict between older Admin-related wording and `06_ADMIN_ROLE_AND_EXPERIENCE_SPECIFICATION.md`, Codex should follow the Admin specification for Admin-specific Phase 1 behavior unless DEC later approves an explicit override.
 
 ## 4. Existing Repo Specifications
 
