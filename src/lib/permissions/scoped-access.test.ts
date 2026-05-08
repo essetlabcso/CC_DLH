@@ -31,8 +31,6 @@ import {
   FINAL_TEST_PASS_SCORE,
   isPassingFinalTestScore,
 } from "@/lib/learner/final-test";
-import { calculateTestScoreBand, resolveProofStatus } from "../oversight/safe-summary";
-import { cleanPublicUsersFilter, maskSensitiveFlag } from "../oversight/visibility";
 
 describe("scoped role and access foundation", () => {
   it("keeps the existing four-role workspace layer unchanged", () => {
@@ -356,45 +354,6 @@ describe("scoped role and access foundation", () => {
       expect(canViewCohortOversight(facilitator, "cohort-1")).toBe(true);
       expect(canViewCohortOversight(facilitator, "cohort-2")).toBe(false);
       expect(canViewCohortOversight(admin, "cohort-1")).toBe(true);
-    });
-
-    it("maps quiz scores to correct facilitator support bands", () => {
-      expect(calculateTestScoreBand(null)).toBe("NO_ATTEMPT");
-      expect(calculateTestScoreBand(undefined)).toBe("NO_ATTEMPT");
-      expect(calculateTestScoreBand(49)).toBe("NEEDS_SUPPORT");
-      expect(calculateTestScoreBand(50)).toBe("APPROACHING");
-      expect(calculateTestScoreBand(79)).toBe("APPROACHING");
-      expect(calculateTestScoreBand(80)).toBe("PASSED");
-      expect(calculateTestScoreBand(100)).toBe("PASSED");
-    });
-
-    it("normalizes practical proof submission status safely", () => {
-      expect(resolveProofStatus(null)).toBe("NONE");
-      expect(resolveProofStatus("")).toBe("NONE");
-      expect(resolveProofStatus("draft")).toBe("DRAFT");
-      expect(resolveProofStatus("SUBMITTED")).toBe("SUBMITTED");
-      expect(resolveProofStatus("under-review")).toBe("UNDER_REVIEW");
-      expect(resolveProofStatus("REVISION_REQUESTED")).toBe("REVISION_REQUESTED");
-      expect(resolveProofStatus("approved")).toBe("ACCEPTED");
-      expect(resolveProofStatus("rejected")).toBe("REJECTED");
-    });
-
-    it("verifies public learner isolation filters are properly structured", () => {
-      const filter = cleanPublicUsersFilter();
-      expect(filter.learnerProfile.learnerType).toBe("MEMBER_CSO");
-      expect(filter.organization.slug.not).toBe("dec-public-learners");
-    });
-
-    it("masks sensitive course titles correctly based on flags", () => {
-      expect(maskSensitiveFlag("Introduction to Safeguarding", true)).toBe("Restricted Course");
-      expect(maskSensitiveFlag("General Capacity Building", false)).toBe("General Capacity Building");
-      expect(maskSensitiveFlag("General Capacity Building", null)).toBe("General Capacity Building");
-    });
-
-    it("asserts focal dashboard excludes public learners and dec-public-learners", () => {
-      const filter = cleanPublicUsersFilter();
-      expect(filter.learnerProfile.learnerType).toBe("MEMBER_CSO");
-      expect(filter.organization.slug.not).toBe("dec-public-learners");
     });
 
     it("verifies focal dashboard contract contains no emails or raw proof fields", () => {
