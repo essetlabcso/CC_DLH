@@ -112,6 +112,35 @@ enum ScopedRoleAssignmentStatus {
   EXPIRED
 }
 
+enum CourseAccessMode {
+  PUBLIC_OPEN
+  PUBLIC_REGISTRATION_REQUIRED
+  MEMBER_CSO_ONLY
+  PROGRAM_ASSIGNED
+  COHORT_ASSIGNED
+  PRIVATE_INTERNAL
+  PILOT_RESTRICTED
+}
+
+enum CourseTargetLearnerType {
+  MEMBER_CSO
+  PUBLIC
+  BOTH
+}
+
+enum DeliveryMode {
+  SELF_PACED
+  COHORT_BASED
+  BLENDED
+  WEBINAR_RESOURCE
+}
+
+enum EnrollmentMode {
+  SELF_ENROLL
+  ASSIGNED
+  INVITATION_ONLY
+  ADMIN_ENROLL
+}
 model Organization {
   id              String   @id @default(cuid())
   name            String
@@ -211,14 +240,16 @@ model MembershipRoleAssignment {
 }
 
 model Course {
-  id             String       @id @default(cuid())
-  organizationId String
-  ownerId        String
-  title          String
-  slug           String
-  status         CourseStatus @default(ACTIVE)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id                   String           @id @default(cuid())
+  organizationId       String
+  ownerId              String
+  title                String
+  slug                 String
+  status               CourseStatus     @default(ACTIVE)
+  accessMode           CourseAccessMode @default(MEMBER_CSO_ONLY)
+  publicCatalogVisible Boolean          @default(false)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   owner                 User                   @relation("CourseOwner", fields: [ownerId], references: [id], onDelete: Restrict)
@@ -299,23 +330,36 @@ model CourseWorkflowStepRecord {
 }
 
 model CourseSetup {
-  id                         String   @id @default(cuid())
-  courseVersionId            String   @unique
+  id                         String                  @id @default(cuid())
+  courseVersionId            String                  @unique
   title                      String
-  summary                    String   @default("")
-  primaryLearnerGroup        String   @default("")
-  language                   String   @default("English")
-  formatAndTime              String   @default("")
-  level                      String   @default("")
-  capacityArea               String   @default("")
-  sensitiveFlag              Boolean  @default(false)
-  certificateIntent          String   @default("")
-  learnerReality             String   @default("{}")
+  summary                    String                  @default("")
+  primaryLearnerGroup        String                  @default("")
+  language                   String                  @default("English")
+  formatAndTime              String                  @default("")
+  level                      String                  @default("")
+  capacityArea               String                  @default("")
+  sensitiveFlag              Boolean                 @default(false)
+  certificateIntent          String                  @default("")
+  learnerReality             String                  @default("{}")
   selectedDiagnosisDatasetId String?
   selectedDiagnosisRecordId  String?
-  diagnosisSnapshot          String   @default("{}")
-  createdAt                  DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
+  diagnosisSnapshot          String                  @default("{}")
+  accessMode                 CourseAccessMode        @default(MEMBER_CSO_ONLY)
+  targetLearnerType          CourseTargetLearnerType @default(MEMBER_CSO)
+  deliveryMode               DeliveryMode            @default(SELF_PACED)
+  enrollmentMode             EnrollmentMode          @default(SELF_ENROLL)
+  publicCatalogVisible       Boolean                 @default(false)
+  memberCatalogVisible       Boolean                 @default(true)
+  certificateEnabled         Boolean                 @default(true)
+  practicalProofEnabled      Boolean                 @default(false)
+  requiresProgramAssignment  Boolean                 @default(false)
+  requiresCohortAssignment   Boolean                 @default(false)
+  defaultDueDays             Int?
+  accessRestrictionNote      String                  @default("")
+  learnerVisibilitySummary   String                  @default("")
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
 
   courseVersion            CourseVersion     @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
   selectedDiagnosisDataset DiagnosisDataset? @relation("CourseSetupSelectedDiagnosisDataset", fields: [selectedDiagnosisDatasetId], references: [id], onDelete: SetNull)

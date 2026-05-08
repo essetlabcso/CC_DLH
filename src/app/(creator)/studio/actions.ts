@@ -138,11 +138,21 @@ export async function saveCourseSetupAction(courseId: string, formData: FormData
   const result = parseCourseSetupFormData(formData);
 
   if (!result.ok) {
-    redirect(
-      `/studio/courses/${courseId}/setup?error=missing&fields=${encodeURIComponent(
-        result.missingFields.join(","),
-      )}`,
-    );
+    if (result.missingFields) {
+      redirect(
+        `/studio/courses/${courseId}/setup?error=missing&fields=${encodeURIComponent(
+          result.missingFields.join(","),
+        )}`,
+      );
+    }
+    if (result.validationErrors) {
+      redirect(
+        `/studio/courses/${courseId}/setup?error=policy&messages=${encodeURIComponent(
+          result.validationErrors.join("|"),
+        )}`,
+      );
+    }
+    redirect(`/studio/courses/${courseId}/setup?error=unknown`);
   }
 
   const editable = await getEditableCourseVersion(
