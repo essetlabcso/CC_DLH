@@ -281,6 +281,23 @@ export function validateAnalysisAnchorConsistency({
   }
 
   if (
+    protectedAnchorContradicts(
+      handover.validatedCapacityGap,
+      anchor.capacityGapStatement,
+    )
+  ) {
+    issues.push(
+      "Validated capacity gap must remain aligned with the approved diagnosis evidence selected in Course Setup.",
+    );
+  }
+
+  if (protectedAnchorContradicts(handover.baseline, anchor.currentBaseline)) {
+    issues.push(
+      "Baseline/current practice must remain aligned with the approved diagnosis evidence selected in Course Setup.",
+    );
+  }
+
+  if (
     requiresSeparableKnowledgeSkill(anchor.ksmeRoute.toLowerCase()) &&
     !anchor.separableKnowledgeSkillComponent.trim()
   ) {
@@ -302,10 +319,21 @@ export function validateAnalysisAnchorConsistency({
 
   if (
     anchor.noHarmNote.trim() &&
-    !containsMeaning(handover.safeguardsNote, anchor.noHarmNote)
+    protectedAnchorContradicts(handover.safeguardsNote, anchor.noHarmNote)
   ) {
     issues.push(
       "Safeguarding and no-harm guidance from the approved diagnosis evidence must remain visible in the Analysis Handover.",
+    );
+  }
+
+  if (
+    protectedAnchorContradicts(
+      handover.evaluationAnchor,
+      anchor.evaluationAnchor,
+    )
+  ) {
+    issues.push(
+      "Evaluation anchor must remain aligned with the approved diagnosis evidence selected in Course Setup.",
     );
   }
 
@@ -482,15 +510,69 @@ function courseFitContradictsAnchor(value: string, anchorValue: string) {
   return normalizedValue !== "course fit";
 }
 
-function containsMeaning(value: string, requiredValue: string) {
+function protectedAnchorContradicts(value: string, anchorValue: string) {
   const normalizedValue = normalizeComparableText(value);
-  const normalizedRequiredValue = normalizeComparableText(requiredValue);
+  const normalizedAnchor = normalizeComparableText(anchorValue);
 
-  if (!normalizedRequiredValue) {
+  if (!normalizedAnchor) {
+    return false;
+  }
+
+  if (!normalizedValue) {
     return true;
   }
 
-  return normalizedValue.includes(normalizedRequiredValue);
+  if (
+    normalizedValue.includes(normalizedAnchor) ||
+    normalizedAnchor.includes(normalizedValue)
+  ) {
+    return false;
+  }
+
+  return !hasMeaningfulTextOverlap(normalizedValue, normalizedAnchor);
+}
+
+function hasMeaningfulTextOverlap(value: string, anchorValue: string) {
+  const valueTokens = new Set(getMeaningfulTokens(value));
+  const anchorTokens = getMeaningfulTokens(anchorValue);
+
+  if (anchorTokens.length === 0) {
+    return false;
+  }
+
+  const overlapCount = anchorTokens.filter((token) =>
+    valueTokens.has(token),
+  ).length;
+  const requiredOverlap = Math.min(2, anchorTokens.length);
+  const overlapRatio = overlapCount / anchorTokens.length;
+
+  return overlapCount >= requiredOverlap && overlapRatio >= 0.3;
+}
+
+function getMeaningfulTokens(value: string) {
+  const stopwords = new Set([
+    "about",
+    "after",
+    "again",
+    "before",
+    "being",
+    "cannot",
+    "course",
+    "from",
+    "have",
+    "into",
+    "only",
+    "that",
+    "their",
+    "this",
+    "through",
+    "with",
+  ]);
+
+  return value
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 3 && !stopwords.has(token));
 }
 
 function splitComparableParts(value: string) {

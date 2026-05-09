@@ -211,6 +211,84 @@ describe("analysis handover gate", () => {
     );
   });
 
+  it("blocks lock readiness when the validated capacity gap drops the source anchor gap", () => {
+    const handover = buildValidHandoverInput();
+    handover.validatedCapacityGap =
+      "Finance staff need help preparing procurement reports.";
+
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover,
+      snapshot: buildDiagnosisSnapshot(),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain(
+      "Validated capacity gap must remain aligned with the approved diagnosis evidence selected in Course Setup.",
+    );
+  });
+
+  it("blocks lock readiness when baseline/current practice omits the source anchor baseline", () => {
+    const handover = buildValidHandoverInput();
+    handover.baseline = "";
+
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover,
+      snapshot: buildDiagnosisSnapshot(),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain(
+      "Baseline/current practice must remain aligned with the approved diagnosis evidence selected in Course Setup.",
+    );
+  });
+
+  it("blocks lock readiness when evaluation anchor contradicts the source anchor", () => {
+    const handover = buildValidHandoverInput();
+    handover.evaluationAnchor =
+      "Learners can identify procurement thresholds in a finance policy.";
+
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover,
+      snapshot: buildDiagnosisSnapshot(),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain(
+      "Evaluation anchor must remain aligned with the approved diagnosis evidence selected in Course Setup.",
+    );
+  });
+
+  it("continues to block lock readiness when no-harm guidance is dropped", () => {
+    const handover = buildValidHandoverInput();
+    handover.safeguardsNote = "Use finance examples.";
+
+    const result = validateAnalysisAnchorConsistency({
+      diagnosis: {
+        affectedLearnerGroup: "MEAL staff",
+        courseFitDecision: "course-fit",
+      },
+      handover,
+      snapshot: buildDiagnosisSnapshot(),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain(
+      "Safeguarding and no-harm guidance from the approved diagnosis evidence must remain visible in the Analysis Handover.",
+    );
+  });
+
   it("blocks lock readiness when approved diagnosis evidence is missing", () => {
     const result = validateAnalysisAnchorConsistency({
       diagnosis: {
@@ -302,8 +380,20 @@ function buildValidHandoverInput() {
   );
   formData.set("ksmeGap", "skill");
   formData.set(
+    "validatedCapacityGap",
+    "Staff need practice preparing concise outcome evidence statements from routine monitoring data.",
+  );
+  formData.set(
+    "baseline",
+    "Staff understand reporting requirements but need support preparing concise outcome evidence statements.",
+  );
+  formData.set(
     "safeguardsNote",
     "Use fictionalized examples and avoid identifiable participant data.",
+  );
+  formData.set(
+    "evaluationAnchor",
+    "Participant prepares a concise outcome evidence statement.",
   );
   const result = parseAnalysisHandoverFormData(formData);
 
