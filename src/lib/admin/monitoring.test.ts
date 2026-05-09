@@ -1,13 +1,19 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
+  getAdminMonitoringFilterOptions,
   getAdminMonitoringCounts,
   getCapacityAreaAchievementSummaries,
   getRecentVerifiedAchievements,
+  parseAdminMonitoringFilters,
 } from "./monitoring";
 import { prisma } from "@/lib/db/client";
 
 vi.mock("@/lib/db/client", () => ({
   prisma: {
+    cohort: { findMany: vi.fn() },
+    course: { findMany: vi.fn() },
+    organization: { findMany: vi.fn() },
+    program: { findMany: vi.fn() },
     user: { count: vi.fn() },
     learnerCertificate: { count: vi.fn() },
     learnerPracticalProofSubmission: { count: vi.fn() },
@@ -18,6 +24,24 @@ vi.mock("@/lib/db/client", () => ({
 describe("monitoring data aggregations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("parses only non-empty monitoring filter values", () => {
+    expect(
+      parseAdminMonitoringFilters({
+        capacityArea: " MEAL ",
+        cohortId: "",
+        courseId: "course-1",
+        organizationId: "   ",
+        programId: "program-1",
+      }),
+    ).toEqual({
+      capacityArea: "MEAL",
+      cohortId: undefined,
+      courseId: "course-1",
+      organizationId: undefined,
+      programId: "program-1",
+    });
   });
 
   describe("getAdminMonitoringCounts", () => {
@@ -40,6 +64,74 @@ describe("monitoring data aggregations", () => {
         where: {
           status: {
             in: ["SUBMITTED", "UNDER_REVIEW"],
+          },
+        },
+      });
+    });
+
+    it("applies filters through course version summary relations", async () => {
+      vi.mocked(prisma.user.count).mockResolvedValue(4);
+      vi.mocked(prisma.learnerCertificate.count).mockResolvedValue(3);
+      vi.mocked(prisma.learnerPracticalProofSubmission.count).mockResolvedValue(2);
+      vi.mocked(prisma.learnerVerifiedAchievement.count).mockResolvedValue(1);
+
+      await getAdminMonitoringCounts({
+        capacityArea: "MEAL",
+        cohortId: "cohort-1",
+        courseId: "course-1",
+        organizationId: "org-1",
+        programId: "program-1",
+      });
+
+      const expectedCourseVersionWhere = {
+        cohortCourses: {
+          some: {
+            cohort: {
+              programId: "program-1",
+            },
+            cohortId: "cohort-1",
+          },
+        },
+        course: {
+          organizationId: "org-1",
+        },
+        courseId: "course-1",
+        setup: {
+          is: {
+            capacityArea: "MEAL",
+          },
+        },
+      };
+
+      expect(prisma.user.count).toHaveBeenCalledWith({
+        where: {
+          lessonProgress: {
+            some: {
+              courseVersion: expectedCourseVersionWhere,
+            },
+          },
+        },
+      });
+      expect(prisma.learnerCertificate.count).toHaveBeenCalledWith({
+        where: {
+          courseVersion: expectedCourseVersionWhere,
+        },
+      });
+      expect(prisma.learnerPracticalProofSubmission.count).toHaveBeenCalledWith({
+        where: {
+          courseVersion: expectedCourseVersionWhere,
+          status: {
+            in: ["SUBMITTED", "UNDER_REVIEW"],
+          },
+        },
+      });
+      expect(prisma.learnerVerifiedAchievement.count).toHaveBeenCalledWith({
+        where: {
+          capacityArea: "MEAL",
+          courseVersion: {
+            cohortCourses: expectedCourseVersionWhere.cohortCourses,
+            course: expectedCourseVersionWhere.course,
+            courseId: "course-1",
           },
         },
       });
@@ -78,6 +170,35 @@ describe("monitoring data aggregations", () => {
         { capacityArea: "Uncategorized", count: 2 },
       ]);
     });
+
+    it("filters capacity summaries without exposing achievement details", async () => {
+      vi.mocked(prisma.learnerVerifiedAchievement.groupBy).mockResolvedValue([
+        { capacityArea: "MEAL", _count: { id: 2 } },
+      ] as never);
+
+      await getCapacityAreaAchievementSummaries({
+        cohortId: "cohort-1",
+        programId: "program-1",
+      });
+
+      expect(prisma.learnerVerifiedAchievement.groupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          by: ["capacityArea"],
+          where: {
+            courseVersion: {
+              cohortCourses: {
+                some: {
+                  cohort: {
+                    programId: "program-1",
+                  },
+                  cohortId: "cohort-1",
+                },
+              },
+            },
+          },
+        }),
+      );
+    });
   });
 
   describe("getRecentVerifiedAchievements", () => {
@@ -96,6 +217,16 @@ describe("monitoring data aggregations", () => {
 
       const recent = await getRecentVerifiedAchievements();
 
+      expect(prisma.learnerVerifiedAchievement.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.not.objectContaining({
+            evidenceLink: true,
+            internalReviewNote: true,
+            proofText: true,
+            user: expect.anything(),
+          }),
+        }),
+      );
       expect(recent).toEqual([
         {
           id: "ach_1",
@@ -106,6 +237,93 @@ describe("monitoring data aggregations", () => {
           issuedAt: mockDate,
         },
       ]);
+    });
+
+    it("applies safe filters to recent achievement summaries", async () => {
+      vi.mocked(prisma.learnerVerifiedAchievement.findMany).mockResolvedValue([]);
+
+      await getRecentVerifiedAchievements({
+        capacityArea: "MEAL",
+        organizationId: "org-1",
+      });
+
+      expect(prisma.learnerVerifiedAchievement.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            capacityArea: "MEAL",
+            courseVersion: {
+              course: {
+                organizationId: "org-1",
+              },
+            },
+          },
+        }),
+      );
+    });
+  });
+
+  describe("getAdminMonitoringFilterOptions", () => {
+    it("loads safe filter options without learner or proof records", async () => {
+      vi.mocked(prisma.program.findMany).mockResolvedValue([
+        { code: "DEC", id: "program-1", name: "DEC Program" },
+      ] as never);
+      vi.mocked(prisma.cohort.findMany).mockResolvedValue([
+        { id: "cohort-1", name: "Cohort A", program: { name: "DEC Program" } },
+      ] as never);
+      vi.mocked(prisma.organization.findMany).mockResolvedValue([
+        { id: "org-1", name: "CSO One" },
+      ] as never);
+      vi.mocked(prisma.course.findMany).mockResolvedValue([
+        {
+          id: "course-1",
+          organization: { name: "CSO One" },
+          title: "MEAL Basics",
+        },
+      ] as never);
+      vi.mocked(prisma.learnerVerifiedAchievement.groupBy).mockResolvedValue([
+        { capacityArea: "MEAL", _count: { id: 2 } },
+        { capacityArea: "", _count: { id: 1 } },
+      ] as never);
+
+      await expect(getAdminMonitoringFilterOptions()).resolves.toEqual({
+        capacityAreas: ["MEAL"],
+        cohorts: [
+          {
+            id: "cohort-1",
+            name: "Cohort A",
+            programName: "DEC Program",
+          },
+        ],
+        courses: [
+          {
+            id: "course-1",
+            organizationName: "CSO One",
+            title: "MEAL Basics",
+          },
+        ],
+        organizations: [{ id: "org-1", name: "CSO One" }],
+        programs: [{ code: "DEC", id: "program-1", name: "DEC Program" }],
+      });
+      expect(prisma.program.findMany).toHaveBeenCalledWith({
+        orderBy: { name: "asc" },
+        select: {
+          code: true,
+          id: true,
+          name: true,
+        },
+      });
+      expect(prisma.course.findMany).toHaveBeenCalledWith({
+        orderBy: { title: "asc" },
+        select: {
+          id: true,
+          organization: {
+            select: {
+              name: true,
+            },
+          },
+          title: true,
+        },
+      });
     });
   });
 });

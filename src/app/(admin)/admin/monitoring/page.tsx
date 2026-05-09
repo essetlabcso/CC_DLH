@@ -1,20 +1,45 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import {
+  getAdminMonitoringFilterOptions,
   getAdminMonitoringCounts,
   getCapacityAreaAchievementSummaries,
   getRecentVerifiedAchievements,
+  parseAdminMonitoringFilters,
+  type AdminMonitoringFilterOptions,
+  type AdminMonitoringFilters,
 } from "@/lib/admin/monitoring";
+import Link from "next/link";
 
-export default async function AdminMonitoringPage() {
-  const counts = await getAdminMonitoringCounts();
-  const capacitySummaries = await getCapacityAreaAchievementSummaries();
-  const recentAchievements = await getRecentVerifiedAchievements();
+type AdminMonitoringPageProps = {
+  searchParams?: Promise<{
+    capacityArea?: string;
+    cohortId?: string;
+    courseId?: string;
+    organizationId?: string;
+    programId?: string;
+  }>;
+};
+
+export default async function AdminMonitoringPage({
+  searchParams,
+}: AdminMonitoringPageProps) {
+  const params = await searchParams;
+  const filters = parseAdminMonitoringFilters(params ?? {});
+  const [counts, capacitySummaries, recentAchievements, filterOptions] =
+    await Promise.all([
+      getAdminMonitoringCounts(filters),
+      getCapacityAreaAchievementSummaries(filters),
+      getRecentVerifiedAchievements(filters),
+      getAdminMonitoringFilterOptions(),
+    ]);
+  const selectedFilters = buildSelectedFilterChips(filters, filterOptions);
+  const hasSelectedFilters = selectedFilters.length > 0;
 
   const monitoringCards = [
     {
-      label: "Total Learners",
+      label: "Learners With Progress",
       value: counts.totalLearners,
-      detail: "Learners who have started at least one course lesson.",
+      detail: "Learners who have started at least one matching course lesson.",
     },
     {
       label: "Course Certificates",
@@ -46,6 +71,84 @@ export default async function AdminMonitoringPage() {
             </p>
           </div>
           <span className="status-badge status-badge-published">Read-only overview</span>
+        </section>
+
+        <section className="admin-section" aria-labelledby="monitoring-filter-title">
+          <div className="admin-section-heading">
+            <h2 id="monitoring-filter-title">Filter aggregate evidence</h2>
+            <p>Filters update aggregate counts only. No learner rosters, raw proof, or individual progress records are shown.</p>
+          </div>
+          <form action="/admin/monitoring" className="reference-filter-panel">
+            <div className="diagnosis-filter-grid">
+              <SelectField
+                label="Program"
+                name="programId"
+                options={filterOptions.programs.map((program) => ({
+                  label: program.code
+                    ? `${program.name} (${program.code})`
+                    : program.name,
+                  value: program.id,
+                }))}
+                value={filters.programId}
+              />
+              <SelectField
+                label="Cohort"
+                name="cohortId"
+                options={filterOptions.cohorts.map((cohort) => ({
+                  label: cohort.programName
+                    ? `${cohort.name} · ${cohort.programName}`
+                    : cohort.name,
+                  value: cohort.id,
+                }))}
+                value={filters.cohortId}
+              />
+              <SelectField
+                label="Organization"
+                name="organizationId"
+                options={filterOptions.organizations.map((organization) => ({
+                  label: organization.name,
+                  value: organization.id,
+                }))}
+                value={filters.organizationId}
+              />
+              <SelectField
+                label="Course"
+                name="courseId"
+                options={filterOptions.courses.map((course) => ({
+                  label: `${course.title} · ${course.organizationName}`,
+                  value: course.id,
+                }))}
+                value={filters.courseId}
+              />
+              <SelectField
+                label="Capacity area"
+                name="capacityArea"
+                options={filterOptions.capacityAreas.map((capacityArea) => ({
+                  label: capacityArea,
+                  value: capacityArea,
+                }))}
+                value={filters.capacityArea}
+              />
+            </div>
+            <div className="reference-filter-row compact">
+              <button className="workspace-button" type="submit">
+                Apply filters
+              </button>
+              <Link className="workspace-link secondary" href="/admin/monitoring">
+                Clear
+              </Link>
+            </div>
+          </form>
+
+          {hasSelectedFilters ? (
+            <div className="reference-badge-row" style={{ marginTop: "1rem" }}>
+              {selectedFilters.map((filter) => (
+                <span className="status-badge status-badge-ready" key={filter}>
+                  {filter}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section className="admin-section" aria-labelledby="evidence-boundaries-title">
@@ -122,8 +225,9 @@ export default async function AdminMonitoringPage() {
               ))
             ) : (
               <p className="empty-state">
-                No verified achievements have been recorded yet. Certificates
-                may still exist separately through the final test pathway.
+                {hasSelectedFilters
+                  ? "No aggregate achievement evidence matches the selected filters."
+                  : "No verified achievements have been recorded yet. Certificates may still exist separately through the final test pathway."}
               </p>
             )}
           </div>
@@ -170,8 +274,9 @@ export default async function AdminMonitoringPage() {
               </table>
             ) : (
               <p className="empty-state">
-                No verified achievements have been recorded yet. Monitoring will
-                show only safe summary evidence when human verification exists.
+                {hasSelectedFilters
+                  ? "No recent verified achievement summaries match the selected filters."
+                  : "No verified achievements have been recorded yet. Monitoring will show only safe summary evidence when human verification exists."}
               </p>
             )}
           </div>
@@ -179,4 +284,93 @@ export default async function AdminMonitoringPage() {
       </div>
     </WorkspaceShell>
   );
+}
+
+function SelectField({
+  label,
+  name,
+  options,
+  value,
+}: {
+  label: string;
+  name: string;
+  options: { label: string; value: string }[];
+  value?: string;
+}) {
+  return (
+    <label>
+      <span>{label}</span>
+      <select
+        className="reference-search-input"
+        defaultValue={value ?? ""}
+        name={name}
+      >
+        <option value="">All</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function buildSelectedFilterChips(
+  filters: AdminMonitoringFilters,
+  options: AdminMonitoringFilterOptions,
+) {
+  const chips = [
+    labelForSelectedOption(
+      "Program",
+      filters.programId,
+      options.programs.map((program) => ({
+        label: program.code ? `${program.name} (${program.code})` : program.name,
+        value: program.id,
+      })),
+    ),
+    labelForSelectedOption(
+      "Cohort",
+      filters.cohortId,
+      options.cohorts.map((cohort) => ({
+        label: cohort.programName
+          ? `${cohort.name} · ${cohort.programName}`
+          : cohort.name,
+        value: cohort.id,
+      })),
+    ),
+    labelForSelectedOption(
+      "Organization",
+      filters.organizationId,
+      options.organizations.map((organization) => ({
+        label: organization.name,
+        value: organization.id,
+      })),
+    ),
+    labelForSelectedOption(
+      "Course",
+      filters.courseId,
+      options.courses.map((course) => ({
+        label: course.title,
+        value: course.id,
+      })),
+    ),
+    filters.capacityArea ? `Capacity area: ${filters.capacityArea}` : null,
+  ];
+
+  return chips.filter((chip): chip is string => Boolean(chip));
+}
+
+function labelForSelectedOption(
+  label: string,
+  value: string | undefined,
+  options: { label: string; value: string }[],
+) {
+  if (!value) {
+    return null;
+  }
+
+  const option = options.find((item) => item.value === value);
+
+  return `${label}: ${option?.label ?? value}`;
 }
