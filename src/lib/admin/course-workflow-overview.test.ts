@@ -104,6 +104,7 @@ function makeItem(
     publishReadinessLabel: "Not at publish gate",
     publishReadinessSummary: "Summary",
     reviewerName: "Reviewer",
+    sourceAnchorSummary: "Aligned with source anchor. Package. Gap: Gap",
     status: CourseVersionStatus.DRAFT,
     statusLabel: "Draft",
     statusTone: "",

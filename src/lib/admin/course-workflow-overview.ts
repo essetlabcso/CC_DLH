@@ -53,6 +53,7 @@ export type AdminCourseWorkflowItem = {
   organizationName: string;
   programCohortLabel: string;
   capacityArea: string;
+  sourceAnchorSummary: string;
   reviewerName: string;
   workflowStage: string;
   workflowProgressLabel: string;
@@ -184,6 +185,7 @@ export async function getAdminCourseWorkflowOverview({
         version.analysisHandover?.capacityArea ||
         handover?.anchors.capacityArea ||
         "Not recorded",
+      sourceAnchorSummary: summarizeSourceAnchorForAdmin(handover),
       reviewerName: version.reviewRecord?.reviewer?.name || "Not assigned",
       workflowStage: getAdminWorkflowStage(version.status, version.workflowSteps),
       workflowProgressLabel: summarizeWorkflowProgress(version.workflowSteps),
@@ -216,6 +218,20 @@ export async function getAdminCourseWorkflowOverview({
     items,
     summary: summarizeAdminCourseWorkflow(allItems),
   };
+}
+
+function summarizeSourceAnchorForAdmin(
+  handover: ReturnType<typeof getBuildToReviewHandoverFromChecklist>,
+) {
+  if (!handover) {
+    return "Source anchor not recorded";
+  }
+
+  const status = handover.anchors.alignmentStatus || "Not recorded";
+  const packageLabel = handover.anchors.sourcePackage || "Not recorded";
+  const gap = handover.anchors.gap || "Not recorded";
+
+  return `${status}. ${packageLabel}. Gap: ${gap}`;
 }
 
 export function filterAdminCourseWorkflowItems(

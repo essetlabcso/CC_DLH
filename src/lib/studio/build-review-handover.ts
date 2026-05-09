@@ -19,6 +19,8 @@ import {
   type PracticalProofConfigLike,
   type PracticalProofReadiness,
 } from "@/lib/studio/practical-proof";
+import { validateAnalysisAnchorConsistency } from "@/lib/studio/analysis-handover";
+import { parseCourseSetupDiagnosisSnapshot } from "@/lib/studio/diagnosis-selection";
 
 export const buildToReviewCertificateRule =
   "80%+ final test score = pass and automated course certificate";
@@ -51,6 +53,13 @@ export type BuildToReviewHandover = {
     capacityArea: string;
     gap: string;
     route: string;
+    sourcePackage?: string;
+    courseFitDecision?: string;
+    baseline?: string;
+    safeguards?: string;
+    evaluationAnchor?: string;
+    alignmentStatus?: string;
+    alignmentIssues?: string[];
   };
   summary: {
     moduleCount: number;
@@ -105,14 +114,31 @@ export type BuildToReviewVersion = {
   sourceVersionId?: string | null;
   analysisHandover?: {
     capacityArea?: string | null;
+    subCapacityArea?: string | null;
+    linkedStandard?: string | null;
+    capacityIndicator?: string | null;
     validatedCapacityGap?: string | null;
+    baseline?: string | null;
+    desiredPractice?: string | null;
+    rootCauseSummary?: string | null;
     ksmeRoute?: string | null;
+    separableKnowledgeSkillComponent?: string | null;
+    interventionDecision?: string | null;
+    analysisGateDecision?: string | null;
+    referralOrFurtherDiagnosisNote?: string | null;
+    safeguardsNote?: string | null;
+    evaluationAnchor?: string | null;
+  } | null;
+  diagnosis?: {
+    affectedLearnerGroup?: string | null;
+    courseFitDecision?: string | null;
   } | null;
   designHandover?: {
     lockedAt?: string | Date | null;
   } | null;
   setup?: {
     certificateIntent?: string | null;
+    diagnosisSnapshot?: string | null;
   } | null;
   practicalProofConfig?: PracticalProofConfigLike;
   workflowSteps: readonly BuildToReviewWorkflowStep[];
@@ -210,6 +236,7 @@ export function buildBuildToReviewHandover(
   const practicalProofReadiness = buildPracticalProofReadiness(
     input.version.practicalProofConfig,
   );
+  const sourceAnchor = buildSourceAnchorSummary(input.version);
   const blockingWarnings: BuildToReviewHandoverWarning[] = [];
   const reviewerAttentionItems: string[] = [];
 
@@ -312,9 +339,23 @@ export function buildBuildToReviewHandover(
     certificateRule: buildToReviewCertificateRule,
     submissionType: input.version.sourceVersionId ? "revision" : "new",
     anchors: {
-      capacityArea: input.version.analysisHandover?.capacityArea || "Not specified",
-      gap: input.version.analysisHandover?.validatedCapacityGap || "Not specified",
-      route: input.version.analysisHandover?.ksmeRoute || "Not specified",
+      capacityArea:
+        input.version.analysisHandover?.capacityArea || "Not specified",
+      gap:
+        sourceAnchor.gap ||
+        input.version.analysisHandover?.validatedCapacityGap ||
+        "Not specified",
+      route:
+        sourceAnchor.route ||
+        input.version.analysisHandover?.ksmeRoute ||
+        "Not specified",
+      sourcePackage: sourceAnchor.sourcePackage,
+      courseFitDecision: sourceAnchor.courseFitDecision,
+      baseline: sourceAnchor.baseline,
+      safeguards: sourceAnchor.safeguards,
+      evaluationAnchor: sourceAnchor.evaluationAnchor,
+      alignmentStatus: sourceAnchor.alignmentStatus,
+      alignmentIssues: sourceAnchor.alignmentIssues,
     },
     summary: {
       moduleCount: input.version.modules.length,
@@ -376,6 +417,88 @@ export function buildBuildToReviewHandover(
     practicalProof: practicalProofReadiness,
     blockingWarnings,
     reviewerAttentionItems,
+  };
+}
+
+function buildSourceAnchorSummary(version: BuildToReviewVersion) {
+  const snapshot = parseCourseSetupDiagnosisSnapshot(
+    version.setup?.diagnosisSnapshot,
+  );
+
+  if (!snapshot) {
+    return {
+      alignmentIssues: [],
+      alignmentStatus: "Source anchor not recorded",
+      baseline: "Not recorded",
+      courseFitDecision: "Not recorded",
+      evaluationAnchor: "Not recorded",
+      gap: version.analysisHandover?.validatedCapacityGap || "Not recorded",
+      route: version.analysisHandover?.ksmeRoute || "Not recorded",
+      safeguards: "Not recorded",
+      sourcePackage: "Not recorded",
+    };
+  }
+
+  const sourcePackage = `${snapshot.dataset.code} - ${snapshot.dataset.title}`;
+  const anchor = snapshot.record;
+  const handover = version.analysisHandover;
+
+  if (!handover) {
+    return {
+      alignmentIssues: ["Analysis Handover is not recorded."],
+      alignmentStatus: "Analysis handover not recorded",
+      baseline: anchor.currentBaseline || "Not recorded",
+      courseFitDecision: anchor.courseFitDecision || "Not recorded",
+      evaluationAnchor: anchor.evaluationAnchor || "Not recorded",
+      gap: anchor.capacityGapStatement || "Not recorded",
+      route: anchor.ksmeRoute || "Not recorded",
+      safeguards: anchor.noHarmNote || "Not recorded",
+      sourcePackage,
+    };
+  }
+
+  const diagnosis = version.diagnosis
+    ? {
+        affectedLearnerGroup: version.diagnosis.affectedLearnerGroup || "",
+        courseFitDecision: version.diagnosis.courseFitDecision || "",
+      }
+    : null;
+  const consistency = validateAnalysisAnchorConsistency({
+    diagnosis,
+    handover: {
+      analysisGateDecision: handover.analysisGateDecision || "",
+      baseline: handover.baseline || "",
+      capacityArea: handover.capacityArea || "",
+      capacityIndicator: handover.capacityIndicator || "",
+      desiredPractice: handover.desiredPractice || "",
+      evaluationAnchor: handover.evaluationAnchor || "",
+      interventionDecision: handover.interventionDecision || "",
+      ksmeRoute: handover.ksmeRoute || "",
+      linkedStandard: handover.linkedStandard || "",
+      referralOrFurtherDiagnosisNote:
+        handover.referralOrFurtherDiagnosisNote || "",
+      rootCauseSummary: handover.rootCauseSummary || "",
+      safeguardsNote: handover.safeguardsNote || "",
+      separableKnowledgeSkillComponent:
+        handover.separableKnowledgeSkillComponent || "",
+      subCapacityArea: handover.subCapacityArea || "",
+      validatedCapacityGap: handover.validatedCapacityGap || "",
+    },
+    snapshot,
+  });
+
+  return {
+    alignmentIssues: consistency.issues,
+    alignmentStatus: consistency.ok
+      ? "Aligned with source anchor"
+      : "Needs reviewer attention",
+    baseline: anchor.currentBaseline || "Not recorded",
+    courseFitDecision: anchor.courseFitDecision || "Not recorded",
+    evaluationAnchor: anchor.evaluationAnchor || "Not recorded",
+    gap: anchor.capacityGapStatement || "Not recorded",
+    route: anchor.ksmeRoute || "Not recorded",
+    safeguards: anchor.noHarmNote || "Not recorded",
+    sourcePackage,
   };
 }
 

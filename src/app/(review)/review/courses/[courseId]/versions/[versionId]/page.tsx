@@ -360,7 +360,52 @@ export default async function SubmittedVersionReviewPage({
                 <strong>K/S/M/E Route Anchor</strong>
                 <span>{handover.anchors?.route || "Not specified"}</span>
               </article>
+              <article>
+                <strong>Linked evidence source package</strong>
+                <span>{handover.anchors?.sourcePackage || "Not recorded"}</span>
+              </article>
+              <article>
+                <strong>Course-fit decision</strong>
+                <span>{handover.anchors?.courseFitDecision || "Not recorded"}</span>
+              </article>
+              <article>
+                <strong>Baseline / current practice</strong>
+                <span>{handover.anchors?.baseline || "Not recorded"}</span>
+              </article>
+              <article>
+                <strong>Safeguards / no-harm note</strong>
+                <span>{handover.anchors?.safeguards || "Not recorded"}</span>
+              </article>
+              <article>
+                <strong>Evaluation anchor</strong>
+                <span>{handover.anchors?.evaluationAnchor || "Not recorded"}</span>
+              </article>
+              <article>
+                <strong>Source-anchor alignment</strong>
+                <span
+                  className={`status-badge ${
+                    handover.anchors?.alignmentStatus ===
+                    "Aligned with source anchor"
+                      ? "status-badge-ready"
+                      : "status-badge-blocked"
+                  }`}
+                >
+                  {handover.anchors?.alignmentStatus || "Not recorded"}
+                </span>
+              </article>
             </div>
+
+            {handover.anchors?.alignmentIssues &&
+            handover.anchors.alignmentIssues.length > 0 ? (
+              <div className="next-step-panel" style={{ marginBottom: "1.5rem" }}>
+                <h3>Source-anchor alignment notes</h3>
+                <ul>
+                  {handover.anchors.alignmentIssues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             <div className="context-grid review-readiness-grid" style={{ marginBottom: "1.5rem" }}>
               <article>

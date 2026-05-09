@@ -12,6 +12,10 @@ import {
   getBuildToReviewHandoverFromChecklist,
   mergeBuildToReviewHandoverChecklist,
 } from "./build-review-handover";
+import {
+  buildCourseSetupDiagnosisSnapshot,
+  serializeCourseSetupDiagnosisSnapshot,
+} from "./diagnosis-selection";
 import type { PracticalProofConfigInput } from "./practical-proof";
 
 describe("Build-to-Review handover", () => {
@@ -231,6 +235,58 @@ describe("Build-to-Review handover", () => {
       route: "Knowledge",
     });
   });
+
+  it("includes safe source-anchor summary fields for reviewer visibility", () => {
+    const handover = buildBuildToReviewHandover({
+      courseTitle: "Outcome evidence basics",
+      version: buildVersion({
+        analysisHandover: {
+          analysisGateDecision: "proceed-to-design",
+          baseline:
+            "Staff understand reporting requirements but need support preparing concise outcome evidence statements.",
+          capacityArea:
+            "Monitoring, Evaluation, Accountability, and Learning",
+          capacityIndicator: "Outcome note quality",
+          desiredPractice: "Staff prepare short outcome evidence notes.",
+          evaluationAnchor:
+            "Participant prepares a concise outcome evidence statement.",
+          interventionDecision: "Proceed with a skill practice course.",
+          ksmeRoute: "Skill",
+          linkedStandard: "DEC MEAL practice",
+          referralOrFurtherDiagnosisNote: "",
+          rootCauseSummary:
+            "The main issue is a skill gap around concise evidence statements.",
+          safeguardsNote:
+            "Use fictionalized examples and avoid identifiable participant data.",
+          separableKnowledgeSkillComponent: "",
+          subCapacityArea: "Outcome evidence and learning documentation",
+          validatedCapacityGap:
+            "Staff need practice preparing concise outcome evidence statements from routine monitoring data.",
+        },
+        diagnosis: {
+          affectedLearnerGroup: "MEAL staff",
+          courseFitDecision: "course-fit",
+        },
+        diagnosisSnapshot: buildDiagnosisSnapshotValue(),
+      }),
+    });
+
+    expect(handover.anchors).toMatchObject({
+      alignmentStatus: "Aligned with source anchor",
+      baseline:
+        "Staff understand reporting requirements but cannot prepare concise outcome evidence statements.",
+      courseFitDecision: "Course-addressable",
+      evaluationAnchor:
+        "Participant prepares a concise outcome evidence statement.",
+      gap:
+        "Staff cannot prepare concise outcome evidence statements from routine monitoring data.",
+      route: "Skill",
+      safeguards:
+        "Use fictionalized examples and avoid identifiable participant data.",
+      sourcePackage: "DEC-CSF-2026-R1 - CSF+ Partner CSO Capacity Diagnosis - Round 1",
+    });
+    expect(handover.anchors.alignmentIssues).toEqual([]);
+  });
 });
 
 function buildVersion(
@@ -238,9 +294,26 @@ function buildVersion(
     sourceVersionId?: string | null;
     analysisHandover?: {
       capacityArea?: string | null;
+      subCapacityArea?: string | null;
+      linkedStandard?: string | null;
+      capacityIndicator?: string | null;
       validatedCapacityGap?: string | null;
+      baseline?: string | null;
+      desiredPractice?: string | null;
+      rootCauseSummary?: string | null;
       ksmeRoute?: string | null;
+      separableKnowledgeSkillComponent?: string | null;
+      interventionDecision?: string | null;
+      analysisGateDecision?: string | null;
+      referralOrFurtherDiagnosisNote?: string | null;
+      safeguardsNote?: string | null;
+      evaluationAnchor?: string | null;
     } | null;
+    diagnosis?: {
+      affectedLearnerGroup?: string | null;
+      courseFitDecision?: string | null;
+    } | null;
+    diagnosisSnapshot?: string | null;
     includeFinalTest?: boolean;
     requiredContent?: Record<string, unknown>;
     practicalProofConfig?: PracticalProofConfigInput;
@@ -270,8 +343,10 @@ function buildVersion(
   return {
     sourceVersionId: options.sourceVersionId,
     analysisHandover: options.analysisHandover,
+    diagnosis: options.diagnosis,
     setup: {
       certificateIntent: "Certificate",
+      diagnosisSnapshot: options.diagnosisSnapshot,
     },
     practicalProofConfig: options.practicalProofConfig,
     workflowSteps: [
@@ -330,4 +405,54 @@ function buildVersion(
       },
     ],
   };
+}
+
+function buildDiagnosisSnapshotValue() {
+  return serializeCourseSetupDiagnosisSnapshot(
+    buildCourseSetupDiagnosisSnapshot(
+      {
+        id: "dataset-1",
+        datasetCode: "DEC-CSF-2026-R1",
+        datasetTitle: "CSF+ Partner CSO Capacity Diagnosis - Round 1",
+        programOrProject: "EU CSF+",
+        assessmentPeriodStart: null,
+        assessmentPeriodEnd: null,
+        regionsCovered: "Addis Ababa, Oromia",
+        organizationGroup: "Selected local CSO partners / CSF+ cohort",
+      },
+      {
+        id: "record-1",
+        diagnosisCode: "MEAL-001",
+        diagnosisTitle: "MEAL outcome evidence",
+        coreCapacityArea:
+          "Monitoring, Evaluation, Accountability, and Learning",
+        capacityPracticeArea: "Outcome evidence and learning documentation",
+        subCapacity: "Outcome evidence and learning documentation",
+        targetAudience: "MEAL staff / Program staff",
+        region: "Addis Ababa",
+        currentBaseline:
+          "Staff understand reporting requirements but cannot prepare concise outcome evidence statements.",
+        capacityGapStatement:
+          "Staff cannot prepare concise outcome evidence statements from routine monitoring data.",
+        desiredPractice:
+          "Staff prepare a short outcome evidence note that links outputs, observed change, evidence source, and learning implication.",
+        evidenceSource:
+          "Fictionalized workshop exercise, survey summary, and validation discussion.",
+        ksmeRoute: "Skill",
+        separableKnowledgeSkillComponent: "",
+        courseFitDecision: "Course-addressable",
+        safeguardingRiskLevel: "Low",
+        dataSensitivityLevel: "Internal",
+        noHarmNote:
+          "Use fictionalized examples and avoid identifiable participant data.",
+        evaluationAnchor:
+          "Participant prepares a concise outcome evidence statement.",
+        monitoringSignal:
+          "Improved quality of outcome evidence notes in course activities.",
+        possiblePracticalProof: "Outcome evidence note",
+        verifiedAchievementExample:
+          "Verified achievement shows a safe outcome evidence note.",
+      },
+    ),
+  );
 }

@@ -191,6 +191,10 @@ export default async function AdminCoursesPage({
                         <span>{item.capacityArea}</span>
                       </article>
                       <article>
+                        <strong>Source anchor</strong>
+                        <span>{item.sourceAnchorSummary}</span>
+                      </article>
+                      <article>
                         <strong>Workflow stage</strong>
                         <span>{item.workflowStage}</span>
                       </article>

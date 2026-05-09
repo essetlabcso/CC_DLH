@@ -133,6 +133,27 @@ export default async function ReviewQueuePage({
                           <span>{handover.anchors.route || "Not specified"}</span>
                         </article>
                         <article>
+                          <strong>Source Package</strong>
+                          <span>{handover.anchors.sourcePackage || "Not recorded"}</span>
+                        </article>
+                        <article>
+                          <strong>Course-Fit Decision</strong>
+                          <span>{handover.anchors.courseFitDecision || "Not recorded"}</span>
+                        </article>
+                        <article>
+                          <strong>Source Anchor Alignment</strong>
+                          <span
+                            className={`status-badge ${
+                              handover.anchors.alignmentStatus ===
+                              "Aligned with source anchor"
+                                ? "status-badge-ready"
+                                : "status-badge-blocked"
+                            }`}
+                          >
+                            {handover.anchors.alignmentStatus || "Not recorded"}
+                          </span>
+                        </article>
+                        <article>
                           <strong>Lesson Blocks</strong>
                           <span>
                             {handover.summary.totalBlocks} total blocks ({handover.summary.requiredBlockCount} required, {handover.summary.creatorAddedBlockCount} creator-added)
@@ -177,6 +198,18 @@ export default async function ReviewQueuePage({
                       <ul>
                         {handover.blockingWarnings.map((warning, idx) => (
                           <li key={idx}>{warning.message}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {handover?.anchors.alignmentIssues &&
+                  handover.anchors.alignmentIssues.length > 0 ? (
+                    <div className="next-step-panel review-queue-card-attention" style={{ marginBottom: "1rem" }}>
+                      <strong>Source-anchor alignment notes</strong>
+                      <ul>
+                        {handover.anchors.alignmentIssues.map((issue, idx) => (
+                          <li key={idx}>{issue}</li>
                         ))}
                       </ul>
                     </div>
