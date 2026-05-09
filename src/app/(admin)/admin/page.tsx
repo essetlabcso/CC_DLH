@@ -8,93 +8,132 @@ const governanceRules = [
   "80%+ final test score triggers the course certificate.",
   "Practical proof remains separate from the course certificate.",
   "Raw proof remains private by default.",
-  "Admins can return, reopen, reassign, archive, or retire only through allowed workflow actions.",
+  "Sensitive course changes need a clear reason and an activity record.",
 ];
 
-const taskCards = [
+const adminAreaGroups = [
   {
-    title: "Users and Roles",
-    href: "/admin/users",
-    status: "Manage",
-    summary:
-      "Manage operational access while keeping Platform Admin authority under Super Admin-equivalent control.",
+    title: "People and Organizations",
+    summary: "Manage who uses the platform and how CSOs are grouped.",
+    panels: [
+      {
+        title: "Users & Roles",
+        href: "/admin/users",
+        status: "Manage",
+        summary:
+          "Invite users, update roles, and protect Platform Admin authority.",
+      },
+      {
+        title: "Organizations",
+        href: "/admin/organizations",
+        status: "Manage",
+        summary:
+          "Manage CSO profiles, members, and safe organization summaries.",
+      },
+      {
+        title: "Programs & Cohorts",
+        status: "Coming soon",
+        summary:
+          "Group learners and courses by project, cohort, or delivery cycle.",
+      },
+    ],
   },
   {
-    title: "Organizations",
-    href: "/admin/organizations",
-    status: "Manage",
-    summary:
-      "Register CSOs, maintain organization details, and manage memberships.",
+    title: "Course Governance",
+    summary: "Keep course creation tied to approved evidence and review steps.",
+    panels: [
+      {
+        title: "Evidence Source Packages",
+        href: "/admin/diagnosis-datasets",
+        status: "Manage",
+        summary: "Manage approved source evidence for capacity gaps.",
+      },
+      {
+        title: "Validated Capacity Gaps",
+        href: "/admin/diagnosis-records",
+        status: "Manage",
+        summary: "Review approved gaps that can become courses.",
+      },
+      {
+        title: "Courses & Workflow",
+        href: "/admin/courses",
+        status: "Review",
+        summary: "See where each course is and what needs attention.",
+      },
+      {
+        title: "Review Queue",
+        href: "/review/queue",
+        status: "Review",
+        summary: "Check courses waiting for review decisions.",
+      },
+      {
+        title: "Publish Queue",
+        href: "/review/publishing",
+        status: "Publish",
+        summary: "Release approved courses when readiness checks pass.",
+      },
+    ],
   },
   {
-    title: "Reference Data",
-    href: "/admin/reference-data",
-    status: "Manage",
-    summary:
-      "Manage approved values used across setup, review, publishing, proof, and monitoring.",
+    title: "Learning Evidence",
+    summary: "Track certificates, applied evidence, and safe progress summaries.",
+    panels: [
+      {
+        title: "Certificates",
+        href: "/admin/certificates",
+        status: "Review",
+        summary: "View certificates issued from 80%+ final test scores.",
+      },
+      {
+        title: "Practical Proof & Badges",
+        href: "/admin/data-safety",
+        status: "Partial",
+        summary:
+          "Review safety flags and visibility for applied evidence while the full proof panel is still being completed.",
+      },
+      {
+        title: "Monitoring & Capacity Evidence",
+        href: "/admin/monitoring",
+        status: "View",
+        summary: "View safe learning and achievement summaries.",
+      },
+    ],
   },
   {
-    title: "Courses & Workflow",
-    href: "/admin/courses",
-    status: "Review",
-    summary:
-      "See course workflow status, blockers, next actions, and publish readiness without bypassing gates.",
-  },
-  {
-    title: "Workflow Field Metadata",
-    href: "/admin/field-metadata",
-    status: "View only",
-    summary:
-      "Review the governed fields used across the course workflow.",
-  },
-  {
-    title: "Diagnosis Datasets",
-    href: "/admin/diagnosis-datasets",
-    status: "Manage",
-    summary:
-      "Approved source datasets that will anchor future course setup and analysis work.",
-  },
-  {
-    title: "Diagnosis Records",
-    href: "/admin/diagnosis-records",
-    status: "Manage",
-    summary:
-      "Approved diagnosis records that future course creators will select before building.",
-  },
-  {
-    title: "Audit Log",
-    href: "/admin/audit-log",
-    status: "Available",
-    summary:
-      "Review the trace of Admin changes and sensitive decisions.",
-  },
-  {
-    title: "Certificate Oversight",
-    href: "/admin/certificates",
-    status: "Available",
-    summary:
-      "Review issued certificates and certificate verification records.",
-  },
-  {
-    title: "Monitoring & Evidence",
-    href: "/admin/monitoring",
-    status: "Available",
-    summary:
-      "High-level insights into learning progress and organizational capacity achievements.",
-  },
-  {
-    title: "Data Safety & Visibility",
-    href: "/admin/data-safety",
-    status: "Manage",
-    summary:
-      "Oversee practical proof safety flags and external visibility decisions.",
-  },
-  {
-    title: "Configuration",
-    href: "/admin/config",
-    status: "Review",
-    summary:
-      "Review system constraints and controlled setup areas.",
+    title: "Safety and Accountability",
+    summary: "Protect sensitive data and keep Admin changes traceable.",
+    panels: [
+      {
+        title: "Data Safety & Visibility",
+        href: "/admin/data-safety",
+        status: "Manage",
+        summary: "Review proof safety flags and external visibility.",
+      },
+      {
+        title: "Reference Data",
+        href: "/admin/reference-data",
+        status: "Manage",
+        summary: "Manage dropdown choices and controlled values.",
+      },
+      {
+        title: "Audit Log",
+        href: "/admin/audit-log",
+        status: "Review",
+        summary: "Review important Admin changes and reasons.",
+      },
+      {
+        title: "Workflow Fields",
+        href: "/admin/field-metadata",
+        status: "Support",
+        summary: "Check which fields appear in each course step.",
+      },
+      {
+        title: "Settings",
+        href: "/admin/config",
+        status: "Support",
+        summary: "Open lower-priority setup and reference tools.",
+      },
+    ],
   },
 ];
 
@@ -103,34 +142,34 @@ export default async function AdminWorkspacePage() {
 
   const healthCards = [
     {
-      label: "Lookup categories",
+      label: "Reference groups",
       value: counts.lookupCategories,
-      detail: "Reference groups available",
+      detail: "Groups of dropdown choices",
     },
     {
-      label: "Lookup values",
+      label: "Reference values",
       value: counts.lookupValues,
-      detail: "Controlled values available",
+      detail: "Dropdown choices available",
     },
     {
-      label: "Workflow fields",
+      label: "Workflow Fields",
       value: counts.fieldMetadata,
-      detail: "Tracked field records",
+      detail: "Fields shown across course steps",
     },
     {
-      label: "Diagnosis datasets",
+      label: "Evidence Source Packages",
       value: counts.diagnosisDatasets,
-      detail: "Approved sources configured",
+      detail: "Source evidence packages",
     },
     {
-      label: "Diagnosis records",
+      label: "Validated Capacity Gaps",
       value: counts.diagnosisRecords,
-      detail: "Approved records configured",
+      detail: "Gaps ready for Admin review",
     },
     {
-      label: "Audit log records",
+      label: "Audit Log",
       value: counts.auditLogs,
-      detail: "Governance events recorded",
+      detail: "Admin actions recorded",
     },
     {
       label: "Organizations",
@@ -183,7 +222,7 @@ export default async function AdminWorkspacePage() {
                 ? ""
                 : "s"
             } need review or publish attention.`
-          : "No submitted or approved courses are currently waiting.",
+          : "No submitted or approved courses are waiting.",
     },
     {
       label: "Proof safety review",
@@ -228,8 +267,8 @@ export default async function AdminWorkspacePage() {
         counts.coursesApprovedForPublish > 0
           ? `${counts.coursesApprovedForPublish} reviewed course${
               counts.coursesApprovedForPublish === 1 ? "" : "s"
-            } are approved for publishing checks.`
-          : "No reviewed courses are currently waiting for publication.",
+            } are ready for final publishing checks.`
+          : "No reviewed courses are waiting for publication.",
     },
     {
       label: "Reference setup",
@@ -251,7 +290,7 @@ export default async function AdminWorkspacePage() {
 
   const readinessCards = [
     {
-      label: "Reference data ready",
+      label: "Reference Data",
       status: counts.lookupCategories > 0 && counts.lookupValues > 0 ? "Ready" : "Needs setup",
       tone:
         counts.lookupCategories > 0 && counts.lookupValues > 0
@@ -259,20 +298,20 @@ export default async function AdminWorkspacePage() {
           : "status-badge-blocked",
       detail:
         counts.lookupCategories > 0 && counts.lookupValues > 0
-          ? "Core categories and values are available for Admin-managed forms."
-          : "Reference categories and values need setup before connected forms can use them.",
+          ? "Dropdown choices are available for Admin-managed forms."
+          : "Dropdown choices need setup before forms can use them.",
     },
     {
-      label: "Workflow metadata ready",
+      label: "Workflow Fields",
       status: counts.fieldMetadata > 0 ? "Ready" : "Needs setup",
       tone: counts.fieldMetadata > 0 ? "status-badge-ready" : "status-badge-blocked",
       detail:
         counts.fieldMetadata > 0
-          ? "Key workflow fields are registered for governed setup and review screens."
-          : "Workflow field records need to be loaded before Admin can oversee field governance.",
+          ? "Course step fields are available for Admin review."
+          : "Course step fields need to be loaded before Admin review.",
     },
     {
-      label: "Diagnosis datasets",
+      label: "Evidence Source Packages",
       status: counts.diagnosisDatasets > 0 ? "Configured" : "Not yet configured",
       tone:
         counts.diagnosisDatasets > 0
@@ -280,32 +319,25 @@ export default async function AdminWorkspacePage() {
           : "status-badge-blocked",
       detail:
         counts.diagnosisDatasets > 0
-          ? "At least one diagnosis dataset is available."
-          : "Approved diagnosis datasets still need to be added.",
+          ? "At least one evidence source package is available."
+          : "Approved evidence source packages still need to be added.",
     },
     {
-      label: "Diagnosis records",
+      label: "Validated Capacity Gaps",
       status: counts.diagnosisRecords > 0 ? "Configured" : "Not yet configured",
       tone:
         counts.diagnosisRecords > 0 ? "status-badge-ready" : "status-badge-blocked",
       detail:
         counts.diagnosisRecords > 0
-          ? "At least one diagnosis record is available."
-          : "Approved diagnosis records still need to be added.",
+          ? "At least one validated capacity gap is available."
+          : "Approved capacity gaps still need to be added.",
     },
     {
-      label: "Course Setup connection",
-      status: "Partially enabled",
-      tone: "status-badge-ready",
-      detail:
-        "Course setup is anchored to Admin diagnosis records and selected lookup fields.",
-    },
-    {
-      label: "Data safety oversight",
+      label: "Data Safety & Visibility",
       status: "Enabled",
       tone: "status-badge-ready",
       detail:
-        "Administrative oversight for sensitive proof submissions and external visibility is active.",
+        "Proof safety flags and external visibility checks are available.",
     },
   ];
 
@@ -313,22 +345,22 @@ export default async function AdminWorkspacePage() {
     {
       label: "Submitted for Review",
       value: counts.coursesSubmittedForReview,
-      detail: "Course versions waiting in the review pathway",
+      detail: "Courses waiting for review decisions",
     },
     {
       label: "Approved for Publish",
       value: counts.coursesApprovedForPublish,
-      detail: "Reviewed course versions ready for publishing checks",
+      detail: "Courses ready for publishing checks",
     },
     {
       label: "Published",
       value: counts.coursesPublished,
-      detail: "Course versions released for learners",
+      detail: "Courses released for learners",
     },
     {
       label: "Proof Under Review",
       value: counts.proofsUnderReview,
-      detail: "Practical proof submissions in review",
+      detail: "Practical proof waiting for human review",
     },
   ];
 
@@ -337,20 +369,20 @@ export default async function AdminWorkspacePage() {
       <div className="admin-dashboard">
         <section className="admin-hero" aria-labelledby="admin-overview-title">
           <div>
-            <h2 id="admin-overview-title">Platform governance overview</h2>
+            <h2 id="admin-overview-title">What Admins Control</h2>
             <p>
-              Keep platform access, reference data, course readiness,
-              certificates, proof safety, and monitoring evidence clear and
-              traceable.
+              Manage access, CSO records, approved evidence, course readiness,
+              certificates, proof safety, and monitoring summaries from one
+              place.
             </p>
           </div>
-          <span className="status-badge status-badge-ready">Operational view</span>
+          <span className="status-badge status-badge-ready">Ready</span>
         </section>
 
         <section className="admin-section" aria-labelledby="admin-actions-title">
           <div className="admin-section-heading">
             <h2 id="admin-actions-title">Action required</h2>
-            <p>Items that need Admin attention from current platform records.</p>
+            <p>Items that need Admin attention now.</p>
           </div>
           <div className="admin-card-grid">
             {actionCards.map((card) => (
@@ -365,8 +397,8 @@ export default async function AdminWorkspacePage() {
 
         <section className="admin-section" aria-labelledby="admin-health-title">
           <div className="admin-section-heading">
-            <h2 id="admin-health-title">Configuration health</h2>
-            <p>Current setup, governance, and safety records.</p>
+            <h2 id="admin-health-title">Setup Status</h2>
+            <p>Core Admin areas and safety counts.</p>
           </div>
           <div className="admin-metrics-grid">
             {healthCards.map((card) => (
@@ -381,8 +413,8 @@ export default async function AdminWorkspacePage() {
 
         <section className="admin-section" aria-labelledby="admin-workflow-title">
           <div className="admin-section-heading">
-            <h2 id="admin-workflow-title">Workflow status</h2>
-            <p>High-level course and proof movement, using existing platform records.</p>
+            <h2 id="admin-workflow-title">Course and Proof Status</h2>
+            <p>Courses and practical proof that may need follow-up.</p>
           </div>
           <div className="admin-metrics-grid">
             {workflowCards.map((card) => (
@@ -397,8 +429,8 @@ export default async function AdminWorkspacePage() {
 
         <section className="admin-section" aria-labelledby="admin-readiness-title">
           <div className="admin-section-heading">
-            <h2 id="admin-readiness-title">Readiness status</h2>
-            <p>What is ready, what needs setup, and what remains intentionally controlled.</p>
+            <h2 id="admin-readiness-title">Platform Readiness</h2>
+            <p>What is ready and what still needs Admin setup.</p>
           </div>
           <div className="admin-card-grid">
             {readinessCards.map((card) => (
@@ -415,24 +447,46 @@ export default async function AdminWorkspacePage() {
 
         <section className="admin-section" aria-labelledby="admin-tasks-title">
           <div className="admin-section-heading">
-            <h2 id="admin-tasks-title">Admin areas</h2>
-            <p>Common places for Admin review, setup, and oversight.</p>
+            <h2 id="admin-tasks-title">Admin Work Areas</h2>
+            <p>Choose the area that matches the work you need to do.</p>
           </div>
-          <div className="admin-task-grid">
-            {taskCards.map((card) => (
-              <Link className="admin-task-card" href={card.href} key={card.title}>
-                <span className="status-badge status-badge-published">{card.status}</span>
-                <strong>{card.title}</strong>
-                <p>{card.summary}</p>
-              </Link>
-            ))}
-          </div>
+          {adminAreaGroups.map((group) => (
+            <section className="admin-section" key={group.title}>
+              <div className="admin-section-heading">
+                <h3>{group.title}</h3>
+                <p>{group.summary}</p>
+              </div>
+              <div className="admin-task-grid">
+                {group.panels.map((panel) =>
+                  panel.href ? (
+                    <Link
+                      className="admin-task-card"
+                      href={panel.href}
+                      key={panel.title}
+                    >
+                      <span className="status-badge status-badge-published">
+                        {panel.status}
+                      </span>
+                      <strong>{panel.title}</strong>
+                      <p>{panel.summary}</p>
+                    </Link>
+                  ) : (
+                    <article className="admin-task-card" key={panel.title}>
+                      <span className="status-badge">{panel.status}</span>
+                      <strong>{panel.title}</strong>
+                      <p>{panel.summary}</p>
+                    </article>
+                  ),
+                )}
+              </div>
+            </section>
+          ))}
         </section>
 
         <section className="admin-section" aria-labelledby="admin-rules-title">
           <div className="admin-section-heading">
             <h2 id="admin-rules-title">Governance reminders</h2>
-            <p>Rules that remain active across the current platform foundation.</p>
+            <p>Rules that keep the platform safe and consistent.</p>
           </div>
           <div className="admin-rule-grid">
             {governanceRules.map((rule) => (
