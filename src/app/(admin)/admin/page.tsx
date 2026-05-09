@@ -32,9 +32,10 @@ const adminAreaGroups = [
       },
       {
         title: "Programs & Cohorts",
-        status: "Coming soon",
+        href: "/admin/programs-cohorts",
+        status: "View",
         summary:
-          "Group learners and courses by project, cohort, or delivery cycle.",
+          "Review how programs, cohorts, organizations, and courses are grouped.",
       },
     ],
   },
