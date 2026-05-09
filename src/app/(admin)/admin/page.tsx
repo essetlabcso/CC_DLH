@@ -24,6 +24,13 @@ const adminAreaGroups = [
           "Invite users, update roles, and protect Platform Admin authority.",
       },
       {
+        title: "Admin Authority",
+        href: "/admin/admin-authority",
+        status: "View",
+        summary:
+          "Review Super Admin-equivalent and Platform Admin authority.",
+      },
+      {
         title: "Organizations",
         href: "/admin/organizations",
         status: "Manage",
