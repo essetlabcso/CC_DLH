@@ -50,14 +50,14 @@ export function EvidenceContextPanel({ context }: EvidenceContextPanelProps) {
         <p className="workspace-error">{context.warning}</p>
       ) : null}
 
-      {context.diagnosis ? (
+          {context.diagnosis ? (
         <section
           className="evidence-context-card"
           aria-labelledby="approved-diagnosis-context-title"
         >
           <div>
             <span className="status-badge status-badge-ready">
-              Approved diagnosis
+              Locked source anchor
             </span>
             <h3 id="approved-diagnosis-context-title">
               {context.diagnosis.diagnosisTitle}
@@ -91,8 +91,9 @@ export function EvidenceContextPanel({ context }: EvidenceContextPanelProps) {
             </span>
             <h3 id="locked-analysis-context-title">Analysis context</h3>
             <p>
-              These fields carry the course-specific Analysis into downstream
-              Design and Build work.
+              These fields carry the creator course-specific interpretation
+              into downstream Design and Build work while staying aligned with
+              the source anchor.
             </p>
           </div>
           <EvidenceContextFacts items={context.analysis.items} />

@@ -278,14 +278,19 @@ export default async function DiagnosisPage({
       <form action={saveAction} className="setup-form">
         <section className="setup-form-section" aria-labelledby="diagnosis-evidence-title">
           <div>
-            <h2 id="diagnosis-evidence-title">Diagnosis evidence</h2>
+            <h2 id="diagnosis-evidence-title">
+              Creator course interpretation
+            </h2>
             <p className="section-subcopy">
-              Confirm the request, evidence, current practice, and desired
-              practice before routing the work.
+              Interpret the approved source anchor for this course. These
+              fields explain the learning response and should stay aligned with
+              the read-only capacity gap, baseline, K/S/M/E route, course-fit
+              decision, safeguards, evaluation anchor, target learner, and
+              evidence source package shown above.
             </p>
           </div>
           <label>
-            <span>What training or support is being requested?</span>
+            <span>Course-specific request or support need</span>
             <textarea
               name="surfaceRequest"
               required
@@ -293,7 +298,7 @@ export default async function DiagnosisPage({
             />
           </label>
           <label>
-            <span>What evidence shows a real performance or practice gap?</span>
+            <span>How the course responds to the validated capacity gap</span>
             <textarea
               name="performanceEvidence"
               required
@@ -302,7 +307,7 @@ export default async function DiagnosisPage({
           </label>
           <div className="form-grid">
             <label>
-              <span>Current reality</span>
+              <span>Course-specific baseline interpretation</span>
               <textarea
                 name="currentReality"
                 required
@@ -310,7 +315,7 @@ export default async function DiagnosisPage({
               />
             </label>
             <label>
-              <span>Desired reality</span>
+              <span>Course-specific desired practice</span>
               <textarea
                 name="desiredReality"
                 required
@@ -319,7 +324,7 @@ export default async function DiagnosisPage({
             </label>
           </div>
           <label>
-            <span>Affected learner group</span>
+            <span>Course participant group</span>
             <input
               name="affectedLearnerGroup"
               required
@@ -327,9 +332,9 @@ export default async function DiagnosisPage({
             />
           </label>
           <div className="setup-subsection">
-            <h3>Evidence source</h3>
+            <h3>Course interpretation note</h3>
             <label>
-              <span>Source or reference</span>
+              <span>How this course links back to the source anchor</span>
               <input
                 name="evidenceSource"
                 required
@@ -338,7 +343,7 @@ export default async function DiagnosisPage({
             </label>
             <div className="form-grid">
               <label>
-                <span>Evidence type</span>
+                <span>Evidence use in this course</span>
                 <input
                   name="evidenceType"
                   required
@@ -346,7 +351,7 @@ export default async function DiagnosisPage({
                 />
               </label>
               <label>
-                <span>Evidence date or period</span>
+                <span>Evidence date or period, if useful</span>
                 <input
                   name="evidencePeriod"
                   defaultValue={evidenceSources.period}
@@ -360,8 +365,9 @@ export default async function DiagnosisPage({
           <div>
             <h2 id="diagnosis-route-title">Course-fit route</h2>
             <p className="section-subcopy">
-              Decide whether the gap is a course-fit and whether a separable
-              Knowledge or Skill component exists.
+              Confirm the course route without changing the approved source
+              anchor. Motivation, Environment, or Mixed records can continue
+              only when the separable Knowledge or Skill component is explicit.
             </p>
           </div>
           <div className="form-grid">
@@ -407,7 +413,9 @@ export default async function DiagnosisPage({
           <div>
             <h2 id="analysis-handover-title">Analysis-to-Design Handover</h2>
             <p className="section-subcopy">
-              The locked evidence package Design will use as its source.
+              Prepare the course-specific Analysis that Design will use. It
+              should carry forward the protected source anchor fields without
+              quietly rewriting them.
             </p>
           </div>
           <div className="form-grid">
@@ -670,12 +678,12 @@ function ApprovedDiagnosisEvidencePanel({
       >
         <div className="section-heading-row">
           <div>
-            <h2 id="approved-diagnosis-title">
-              Approved diagnosis evidence
+          <h2 id="approved-diagnosis-title">
+              Admin-approved source anchor
             </h2>
             <p className="section-subcopy">
-              No approved diagnosis evidence is linked to this course. Return to
-              Course Setup and select a valid diagnosis record before
+              No approved and released diagnosis source anchor is linked to
+              this course. Return to Course Setup and select a valid diagnosis record before
               continuing.
             </p>
           </div>
@@ -700,11 +708,11 @@ function ApprovedDiagnosisEvidencePanel({
     >
       <div className="section-heading-row">
         <div>
-          <h2 id="approved-diagnosis-title">Approved diagnosis evidence</h2>
+          <h2 id="approved-diagnosis-title">Admin-approved source anchor</h2>
           <p className="section-subcopy">
-            This course starts from the approved diagnosis record selected
-            during Course Setup. Use this as the evidence anchor for
-            course-specific analysis.
+            This course starts from the approved and released diagnosis record
+            selected during Course Setup. Creators can design the learning
+            response, but should not silently change the approved evidence base.
           </p>
         </div>
         <div className="review-hero-status" aria-label="Inherited evidence badges">
@@ -722,7 +730,7 @@ function ApprovedDiagnosisEvidencePanel({
       <div className="approved-diagnosis-title-card">
         <div>
           <span className="status-badge status-badge-ready">
-            Locked evidence
+            Locked source anchor
           </span>
           <h3>{snapshot.record.title}</h3>
           <p>
@@ -733,6 +741,10 @@ function ApprovedDiagnosisEvidencePanel({
       </div>
 
       <dl className="approved-diagnosis-facts">
+        <EvidenceFact
+          label="Linked evidence source package"
+          value={`${snapshot.dataset.code} - ${snapshot.dataset.title}`}
+        />
         <EvidenceFact label="Core capacity area" value={snapshot.record.coreCapacityArea} />
         <EvidenceFact
           label="Capacity Practice Area"

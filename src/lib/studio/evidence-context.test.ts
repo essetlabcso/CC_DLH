@@ -18,11 +18,20 @@ describe("evidence context display model", () => {
       ),
     });
 
+    expect(context.title).toBe("Admin-approved source anchor");
+    expect(context.lineage.approvedDiagnosis).toBe("Approved source anchor");
     expect(context.status.hasApprovedDiagnosisEvidence).toBe(true);
     expect(context.status.hasMissingEvidenceWarning).toBe(false);
     expect(context.diagnosis?.datasetCode).toBe("DEC-CSF-2026-R1");
     expect(context.diagnosis?.diagnosisCode).toBe("MEAL-001");
+    expect(context.badges.map((badge) => badge.label)).toContain(
+      "Admin-approved source",
+    );
     expect(context.badges.map((badge) => badge.label)).toContain("Skill");
+    expect(context.diagnosis?.items).toContainEqual({
+      label: "Linked evidence source package",
+      value: "DEC-CSF-2026-R1 - CSF+ Partner CSO Capacity Diagnosis - Round 1",
+    });
   });
 
   it("falls back to a linked diagnosis record when the snapshot is invalid", () => {

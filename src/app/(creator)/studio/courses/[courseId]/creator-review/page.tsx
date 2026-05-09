@@ -2,6 +2,7 @@ import { CourseWorkflowStep, WorkflowStepStatus } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EvidenceContextPanel } from "@/components/studio/EvidenceContextPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -14,6 +15,7 @@ import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
+import { buildEvidenceContextDisplayModel } from "@/lib/studio/evidence-context";
 
 import {
   completeCreatorReviewAction,
@@ -117,6 +119,22 @@ export default async function CreatorReviewPage({
     courseTitle: editable.course.title,
     version: editable.version,
   });
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const evidenceContext = buildEvidenceContextDisplayModel({
+    analysisHandover: editable.version.analysisHandover,
+    currentStageLabel: "Creator Review",
+    diagnosisSnapshotValue: editable.version.setup?.diagnosisSnapshot,
+    linkedDiagnosisRecord,
+  });
 
   return (
     <WorkspaceShell eyebrow="Creator Review" title={editable.course.title}>
@@ -147,6 +165,8 @@ export default async function CreatorReviewPage({
           submitting this course for formal review.
         </p>
       ) : null}
+
+      <EvidenceContextPanel context={evidenceContext} />
 
       <section className="studio-section" aria-labelledby="anchors-title">
         <h2 id="anchors-title">Analysis & Design Anchors</h2>

@@ -2,6 +2,7 @@ import { CourseWorkflowStep, WorkflowStepStatus } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EvidenceContextPanel } from "@/components/studio/EvidenceContextPanel";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -13,6 +14,7 @@ import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
 } from "@/lib/studio/courses";
+import { buildEvidenceContextDisplayModel } from "@/lib/studio/evidence-context";
 import {
   previewCompletionFieldLabels,
 } from "@/lib/studio/preview-checks";
@@ -90,6 +92,22 @@ export default async function PreviewPage({
   }
 
   const completePreviewAction = completePreviewChecksAction.bind(null, courseId);
+  const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
+    ? await prisma.diagnosisRecord.findUnique({
+        where: {
+          id: editable.version.setup.selectedDiagnosisRecordId,
+        },
+        include: {
+          dataset: true,
+        },
+      })
+    : null;
+  const evidenceContext = buildEvidenceContextDisplayModel({
+    analysisHandover: editable.version.analysisHandover,
+    currentStageLabel: "Preview",
+    diagnosisSnapshotValue: editable.version.setup?.diagnosisSnapshot,
+    linkedDiagnosisRecord,
+  });
   const missingFields = resolvedSearchParams?.fields
     ? resolvedSearchParams.fields
         .split(",")
@@ -111,6 +129,8 @@ export default async function PreviewPage({
           Complete the required Preview checks: {missingFields.join(", ")}.
         </p>
       ) : null}
+
+      <EvidenceContextPanel context={evidenceContext} />
 
       <section className="studio-section" aria-labelledby="preview-title">
         <div className="learner-preview-shell">

@@ -82,9 +82,9 @@ export function buildEvidenceContextDisplayModel({
   );
 
   return {
-    title: "Evidence context",
+    title: "Admin-approved source anchor",
     description:
-      "Use this read-only source context to keep Design and Build aligned with approved capacity evidence.",
+      "Use this read-only source context to keep course planning aligned with the approved diagnosis evidence. Creators design the learning response, but should not silently change the evidence base.",
     status: {
       hasApprovedDiagnosisEvidence,
       hasLockedAnalysis,
@@ -93,8 +93,8 @@ export function buildEvidenceContextDisplayModel({
     },
     lineage: {
       approvedDiagnosis: hasApprovedDiagnosisEvidence
-        ? "Approved diagnosis"
-        : "Diagnosis evidence missing",
+        ? "Approved source anchor"
+        : "Source anchor missing",
       lockedAnalysis: hasLockedAnalysis ? "Locked Analysis" : "Analysis not locked",
       designContext: currentStageLabel,
     },
@@ -126,9 +126,9 @@ function buildEvidenceContextBadges(
     return badges;
   }
 
-  badges.unshift(
-    {
-      label: "Approved diagnosis",
+    badges.unshift(
+      {
+      label: "Admin-approved source",
       tone: "ready",
     },
     {
@@ -158,6 +158,10 @@ function buildDiagnosisDisplay(snapshot: CourseSetupDiagnosisSnapshot) {
     diagnosisCode: snapshot.record.code,
     diagnosisTitle: snapshot.record.title,
     items: [
+      item(
+        "Linked evidence source package",
+        `${snapshot.dataset.code} - ${snapshot.dataset.title}`,
+      ),
       item("Core capacity area", snapshot.record.coreCapacityArea),
       item("Capacity Practice Area", capacityPracticeArea),
       item("Target Audience", snapshot.record.targetAudience),
