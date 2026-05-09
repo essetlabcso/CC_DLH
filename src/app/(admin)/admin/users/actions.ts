@@ -6,7 +6,7 @@ import { notFound, redirect } from "next/navigation";
 
 import {
   ADMIN_AUTHORITY_CHANGE_ERROR,
-  canChangeLegacyAdminAuthority,
+  canChangePlatformAdminAuthority,
 } from "@/lib/admin/admin-authority";
 import { parseUserRoleUpdateForm } from "@/lib/admin/user-role-form";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
@@ -55,7 +55,7 @@ export async function updateUserRolesAction(
   const isUpdatingSelf = membership.userId === identity.user.id;
 
   if (
-    !canChangeLegacyAdminAuthority({
+    !canChangePlatformAdminAuthority({
       actorRole: identity.session.role,
       currentRoles,
       nextRoles: nextPrismaRoles,

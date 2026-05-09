@@ -8,7 +8,7 @@ import { parseOrganizationForm } from "@/lib/admin/organization-form";
 import { parseAddMemberForm, parseUpdateMembershipForm, parseInviteMemberForm } from "@/lib/admin/membership-form";
 import {
   ADMIN_AUTHORITY_CHANGE_ERROR,
-  canChangeLegacyAdminAuthority,
+  canChangePlatformAdminAuthority,
 } from "@/lib/admin/admin-authority";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
@@ -311,7 +311,7 @@ export async function updateOrganizationMembershipAction(
   const removingAdmin = currentRoles.includes(UserRole.ADMIN) && !nextRoles.includes(UserRole.ADMIN);
 
   if (
-    !canChangeLegacyAdminAuthority({
+    !canChangePlatformAdminAuthority({
       actorRole: identity.session.role,
       currentRoles,
       nextRoles,
@@ -455,7 +455,7 @@ export async function inviteOrganizationMemberAction(organizationId: string, for
   }
 
   if (
-    !canChangeLegacyAdminAuthority({
+    !canChangePlatformAdminAuthority({
       actorRole: identity.session.role,
       currentRoles: [],
       nextRoles: parsed.data.roles,

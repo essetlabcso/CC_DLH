@@ -7,7 +7,9 @@ describe("Admin role labels", () => {
     expect(getAdminRoleLabel("learner")).toBe("Learner / Participant");
     expect(getAdminRoleLabel("CREATOR")).toBe("Course Creator");
     expect(getAdminRoleLabel("reviewer")).toBe("Course Reviewer");
-    expect(getAdminRoleLabel("ADMIN")).toBe("Platform Admin authority");
+    expect(getAdminRoleLabel("ADMIN")).toBe(
+      "Super Admin-equivalent authority",
+    );
   });
 
   it("formats statuses without exposing enum style labels", () => {

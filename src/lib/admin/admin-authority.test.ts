@@ -2,48 +2,48 @@ import { UserRole } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 
 import {
-  canChangeLegacyAdminAuthority,
-  isLegacySuperAdminEquivalent,
-  touchesLegacyAdminAuthority,
+  canChangePlatformAdminAuthority,
+  isSuperAdminEquivalentForPhase1,
+  touchesPlatformAdminAuthority,
 } from "./admin-authority";
 
 describe("Admin authority boundary", () => {
-  it("treats only legacy admin as the Super Admin-equivalent for Slice 1", () => {
-    expect(isLegacySuperAdminEquivalent("admin")).toBe(true);
-    expect(isLegacySuperAdminEquivalent("learner")).toBe(false);
-    expect(isLegacySuperAdminEquivalent("creator")).toBe(false);
-    expect(isLegacySuperAdminEquivalent("reviewer")).toBe(false);
+  it("treats only admin as the Super Admin-equivalent for Phase 1", () => {
+    expect(isSuperAdminEquivalentForPhase1("admin")).toBe(true);
+    expect(isSuperAdminEquivalentForPhase1("learner")).toBe(false);
+    expect(isSuperAdminEquivalentForPhase1("creator")).toBe(false);
+    expect(isSuperAdminEquivalentForPhase1("reviewer")).toBe(false);
   });
 
-  it("detects assignment or removal of legacy Admin authority", () => {
+  it("detects assignment or removal of Platform Admin authority", () => {
     expect(
-      touchesLegacyAdminAuthority([UserRole.LEARNER], [UserRole.ADMIN]),
+      touchesPlatformAdminAuthority([UserRole.LEARNER], [UserRole.ADMIN]),
     ).toBe(true);
     expect(
-      touchesLegacyAdminAuthority([UserRole.ADMIN], [UserRole.LEARNER]),
+      touchesPlatformAdminAuthority([UserRole.ADMIN], [UserRole.LEARNER]),
     ).toBe(true);
     expect(
-      touchesLegacyAdminAuthority([UserRole.LEARNER], [UserRole.CREATOR]),
+      touchesPlatformAdminAuthority([UserRole.LEARNER], [UserRole.CREATOR]),
     ).toBe(false);
   });
 
-  it("blocks non-legacy admins from changing Admin authority", () => {
+  it("blocks non-Super Admin-equivalent users from changing Platform Admin authority", () => {
     expect(
-      canChangeLegacyAdminAuthority({
+      canChangePlatformAdminAuthority({
         actorRole: "admin",
         currentRoles: [UserRole.LEARNER],
         nextRoles: [UserRole.ADMIN],
       }),
     ).toBe(true);
     expect(
-      canChangeLegacyAdminAuthority({
+      canChangePlatformAdminAuthority({
         actorRole: "learner",
         currentRoles: [UserRole.LEARNER],
         nextRoles: [UserRole.ADMIN],
       }),
     ).toBe(false);
     expect(
-      canChangeLegacyAdminAuthority({
+      canChangePlatformAdminAuthority({
         actorRole: "learner",
         currentRoles: [UserRole.LEARNER],
         nextRoles: [UserRole.CREATOR],

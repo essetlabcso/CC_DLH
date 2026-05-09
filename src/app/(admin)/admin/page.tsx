@@ -3,7 +3,7 @@ import { getAdminDashboardCounts } from "@/lib/admin/dashboard";
 import Link from "next/link";
 
 const governanceRules = [
-  "Only legacy Admin users control Platform Admin authority.",
+  "Only Super Admin-equivalent users can grant or change Platform Admin authority.",
   "Platform Admins publish only after Review approval.",
   "80%+ final test score triggers the course certificate.",
   "Practical proof remains separate from the course certificate.",
@@ -17,7 +17,7 @@ const taskCards = [
     href: "/admin/users",
     status: "Manage",
     summary:
-      "Manage operational access while keeping Platform Admin authority under legacy Admin control.",
+      "Manage operational access while keeping Platform Admin authority under Super Admin-equivalent control.",
   },
   {
     title: "Organizations",

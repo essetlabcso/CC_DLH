@@ -3,26 +3,26 @@ import { UserRole } from "@prisma/client";
 import type { DecRole } from "@/lib/access";
 
 export const ADMIN_AUTHORITY_CHANGE_ERROR =
-  "Only a legacy Admin can assign or change Platform Admin authority.";
+  "Only Super Admin-equivalent users can grant or change Platform Admin authority.";
 
-export function isLegacySuperAdminEquivalent(role: DecRole) {
+export function isSuperAdminEquivalentForPhase1(role: DecRole) {
   return role === "admin";
 }
 
-export function touchesLegacyAdminAuthority(
+export function touchesPlatformAdminAuthority(
   currentRoles: readonly UserRole[],
   nextRoles: readonly UserRole[],
 ) {
   return currentRoles.includes(UserRole.ADMIN) || nextRoles.includes(UserRole.ADMIN);
 }
 
-export function canChangeLegacyAdminAuthority(input: {
+export function canChangePlatformAdminAuthority(input: {
   actorRole: DecRole;
   currentRoles: readonly UserRole[];
   nextRoles: readonly UserRole[];
 }) {
   return (
-    !touchesLegacyAdminAuthority(input.currentRoles, input.nextRoles) ||
-    isLegacySuperAdminEquivalent(input.actorRole)
+    !touchesPlatformAdminAuthority(input.currentRoles, input.nextRoles) ||
+    isSuperAdminEquivalentForPhase1(input.actorRole)
   );
 }

@@ -48,7 +48,7 @@ describe("scoped role and access foundation", () => {
     expect(canAccessWorkspace(identity("reviewer"), adminWorkspace!)).toBe(false);
   });
 
-  it("allows Admin workspace access for legacy Admin and scoped Platform Admin only", () => {
+  it("allows Admin workspace access for Super Admin-equivalent and scoped Platform Admin only", () => {
     const scopedPlatformAdmin = identity("learner", {
       scopedRoleAssignments: [
         {
@@ -74,7 +74,7 @@ describe("scoped role and access foundation", () => {
     expect(canAccessAdminWorkspace(disabledPlatformAdmin)).toBe(false);
   });
 
-  it("keeps Platform Admin authority management limited to legacy Admin", () => {
+  it("keeps Platform Admin authority management limited to Super Admin-equivalent users", () => {
     const scopedPlatformAdmin = identity("learner", {
       scopedRoleAssignments: [
         {
@@ -234,7 +234,7 @@ describe("scoped role and access foundation", () => {
     expect(canApproveForPublish(identity("reviewer"), version)).toBe(true);
   });
 
-  it("allows legacy Admin and scoped Platform Admin to publish in Phase 1", () => {
+  it("allows Super Admin-equivalent users and scoped Platform Admins to publish in Phase 1", () => {
     const scopedPlatformAdmin = identity("learner", {
       scopedRoleAssignments: [
         {

@@ -29,7 +29,7 @@ export default async function AdminUsersPage({
             <h2>User and role management</h2>
             <p>
               Review current users, manage operational access, and keep
-              Platform Admin authority under legacy Admin control.
+              Platform Admin authority under Super Admin-equivalent control.
             </p>
           </div>
           <Link className="workspace-link secondary" href="/admin">
@@ -56,8 +56,8 @@ export default async function AdminUsersPage({
               value={overview.totals.activeUsers}
             />
             <MetricCard
-              detail="Can administer the platform"
-              label="Admins"
+              detail="Can grant or change Platform Admin authority"
+              label="Super Admin-equivalent"
               value={overview.totals.admins}
             />
             <MetricCard
@@ -197,7 +197,7 @@ function UserAccessCard({
           </fieldset>
           {!canManageAdminAuthority && hasAdminAuthority ? (
             <p className="workspace-note">
-              Platform Admin authority is controlled by legacy Admin users.
+              Platform Admin authority is controlled by Super Admin-equivalent users.
             </p>
           ) : null}
           <label>
@@ -216,7 +216,7 @@ function UserAccessCard({
       ) : (
         <p className="workspace-note">
           {hasAdminAuthority && !canManageAdminAuthority
-            ? "Platform Admin authority is controlled by legacy Admin users."
+            ? "Platform Admin authority is controlled by Super Admin-equivalent users."
             : "This user does not have an active membership to update."}
         </p>
       )}

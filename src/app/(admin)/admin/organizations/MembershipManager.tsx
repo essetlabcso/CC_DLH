@@ -127,7 +127,7 @@ export function MembershipManager({
               </fieldset>
               {!canManageAdminAuthority ? (
                 <p className="workspace-note">
-                  Platform Admin authority is controlled by legacy Admin users.
+                  Platform Admin authority is controlled by Super Admin-equivalent users.
                 </p>
               ) : null}
               <label>
@@ -186,7 +186,7 @@ export function MembershipManager({
                     </fieldset>
                     {!canManageAdminAuthority && member.roles.includes(UserRole.ADMIN) ? (
                       <p className="workspace-note">
-                        Platform Admin authority is controlled by legacy Admin users.
+                        Platform Admin authority is controlled by Super Admin-equivalent users.
                       </p>
                     ) : null}
 
@@ -264,7 +264,7 @@ export function MembershipManager({
                   </dl>
                   {!canManageAdminAuthority && member.roles.includes(UserRole.ADMIN) ? (
                     <p className="workspace-note">
-                      Platform Admin authority is controlled by legacy Admin users.
+                      Platform Admin authority is controlled by Super Admin-equivalent users.
                     </p>
                   ) : null}
                 </article>
