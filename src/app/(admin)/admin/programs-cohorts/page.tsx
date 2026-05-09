@@ -152,6 +152,15 @@ function ProgramCard({ program }: { program: AdminProgramSummary }) {
           <dd>{formatDateRange(program.startsAt, program.endsAt)}</dd>
         </div>
       </dl>
+
+      <div className="admin-card-actions">
+        <Link
+          className="workspace-link secondary"
+          href={`/admin/programs-cohorts/programs/${program.id}`}
+        >
+          View program
+        </Link>
+      </div>
     </article>
   );
 }
@@ -189,6 +198,15 @@ function CohortCard({ cohort }: { cohort: AdminCohortSummary }) {
           <dd>{formatDateRange(cohort.startsAt, cohort.endsAt)}</dd>
         </div>
       </dl>
+
+      <div className="admin-card-actions">
+        <Link
+          className="workspace-link secondary"
+          href={`/admin/programs-cohorts/cohorts/${cohort.id}`}
+        >
+          View cohort
+        </Link>
+      </div>
     </article>
   );
 }
