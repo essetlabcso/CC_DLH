@@ -87,10 +87,10 @@ const adminAreaGroups = [
       },
       {
         title: "Practical Proof & Badges",
-        href: "/admin/data-safety",
-        status: "Partial",
+        href: "/admin/proof-badges",
+        status: "View",
         summary:
-          "Review safety flags and visibility for applied evidence while the full proof panel is still being completed.",
+          "Review proof, recognition, badge visibility, and safety summaries.",
       },
       {
         title: "Monitoring & Capacity Evidence",
