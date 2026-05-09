@@ -32,14 +32,15 @@ export default async function AdminDiagnosisRecordsPage({
   const browser = await getAdminDiagnosisRecordBrowser(filters);
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Records">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Validated Capacity Gaps">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
-            <h2>Approved diagnosis evidence browser</h2>
+            <h2>Validated capacity gap browser</h2>
             <p>
-              Browse diagnosis records that will later provide the approved
-              evidence base selected during Course Setup.
+              Browse diagnosis records that package one validated capacity gap
+              each. Approved and released records become the evidence base
+              Course Creators select during Course Setup.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -47,7 +48,7 @@ export default async function AdminDiagnosisRecordsPage({
               Back to Admin
             </Link>
             <Link className="workspace-link secondary" href="/admin/diagnosis-datasets">
-              Diagnosis Datasets
+              Evidence Source Packages
             </Link>
           </div>
         </section>
@@ -55,22 +56,22 @@ export default async function AdminDiagnosisRecordsPage({
         <section className="admin-section" aria-labelledby="record-health-title">
           <div className="admin-section-heading">
             <h2 id="record-health-title">Record readiness</h2>
-            <p>Live totals for governed diagnosis records.</p>
+            <p>Live totals for governed diagnosis records and creator release.</p>
           </div>
           <div className="admin-metrics-grid">
             <MetricCard
-              detail="Diagnosis records available"
-              label="Total records"
+              detail="Validated capacity gap records available"
+              label="Total gaps"
               value={browser.totals.totalRecords}
             />
             <MetricCard
-              detail="Approved for future use"
+              detail="Approved as validated evidence"
               label="Approved"
               value={browser.totals.approvedRecords}
             />
             <MetricCard
-              detail="Protected from casual change"
-              label="Locked"
+              detail="Available to Course Creators"
+              label="Released"
               value={browser.totals.lockedRecords}
             />
             <MetricCard
@@ -79,7 +80,7 @@ export default async function AdminDiagnosisRecordsPage({
               value={browser.totals.archivedRecords}
             />
             <MetricCard
-              detail="Suitable for course response"
+              detail="Suitable for a course response"
               label="Course-addressable"
               value={browser.totals.courseAddressableRecords}
             />
@@ -95,8 +96,8 @@ export default async function AdminDiagnosisRecordsPage({
           <div className="admin-section-heading">
             <h2 id="record-filter-title">Find diagnosis records</h2>
             <p>
-              Filter by dataset, approval status, capacity area, K/S/M/E route,
-              course-fit decision, region, or active state.
+              Filter by evidence source package, approval status, capacity area,
+              K/S/M/E route, course-fit decision, region, or active state.
             </p>
           </div>
           <form action="/admin/diagnosis-records" className="diagnosis-filter-panel">
@@ -113,7 +114,7 @@ export default async function AdminDiagnosisRecordsPage({
             />
             <div className="diagnosis-filter-grid">
               <SelectField
-                label="Dataset"
+                label="Evidence source package"
                 name="datasetId"
                 options={browser.filterOptions.datasets.map((dataset) => ({
                   label: `${dataset.datasetCode} · ${dataset.datasetTitle}`,
@@ -177,7 +178,7 @@ export default async function AdminDiagnosisRecordsPage({
             <h2 id="record-list-title">Record browser</h2>
             <p>
               {browser.records.length} records shown with diagnosis context,
-              capacity alignment, and governance status.
+              capacity alignment, release status, and governance status.
             </p>
           </div>
 
@@ -201,8 +202,13 @@ export default async function AdminDiagnosisRecordsPage({
                             : "status-badge-ready"
                         }`}
                       >
-                        {record.isLocked ? "Locked" : "Unlocked"}
+                        {record.isLocked ? "Released to creators" : "Not released"}
                       </span>
+                      {record.selectedCourseSetupCount > 0 ? (
+                        <span className="status-badge status-badge-published">
+                          Already selected
+                        </span>
+                      ) : null}
                       <span
                         className={`status-badge ${
                           record.archivedAt || !record.isActive
@@ -230,7 +236,10 @@ export default async function AdminDiagnosisRecordsPage({
                   </div>
 
                   <dl className="reference-meta-list">
-                    <MetaItem label="Dataset" value={record.datasetTitle} />
+                    <MetaItem
+                      label="Evidence source package"
+                      value={record.datasetTitle}
+                    />
                     <MetaItem label="Region" value={record.region || "Not set"} />
                     <MetaItem
                       label="Organization / group"
@@ -273,6 +282,14 @@ export default async function AdminDiagnosisRecordsPage({
                       label="Visibility"
                       value={formatStatus(record.visibilityScope)}
                     />
+                    <MetaItem
+                      label="Course Setup usage"
+                      value={
+                        record.selectedCourseSetupCount > 0
+                          ? `${record.selectedCourseSetupCount} selected`
+                          : "Not selected yet"
+                      }
+                    />
                   </dl>
 
                   <div className="diagnosis-preview-grid">
@@ -297,11 +314,11 @@ export default async function AdminDiagnosisRecordsPage({
               <span className="status-badge status-badge-blocked">
                 0 records shown
               </span>
-              <h2>No diagnosis records are configured yet</h2>
+              <h2>No validated capacity gaps are configured yet</h2>
               <p>
-                Approved diagnosis records will later become the evidence base
-                selected during Course Setup. No records are available to browse
-                yet.
+                Approved and released diagnosis records will later become the
+                evidence base selected during Course Setup. No records are
+                available to browse yet.
               </p>
             </section>
           )}

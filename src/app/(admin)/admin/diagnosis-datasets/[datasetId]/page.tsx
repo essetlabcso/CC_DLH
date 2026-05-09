@@ -39,20 +39,21 @@ export default async function AdminDiagnosisDatasetDetailPage({
   }
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Dataset">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Evidence Source Package">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
             <p className="workspace-kicker">{dataset.datasetCode}</p>
             <h2>{dataset.datasetTitle}</h2>
             <p>
-              Governed view of this diagnosis source dataset, its coverage,
-              approval state, linked diagnosis records, and Course Setup usage.
+              Governed view of this diagnosis evidence source package, its
+              coverage, approval state, linked validated capacity gaps, and
+              Course Setup usage.
             </p>
           </div>
           <div className="admin-hero-actions">
             <Link className="workspace-link secondary" href="/admin/diagnosis-datasets">
-              Back to datasets
+              Back to evidence packages
             </Link>
             {dataset.canEdit ? (
               <Link
@@ -67,11 +68,11 @@ export default async function AdminDiagnosisDatasetDetailPage({
                 className="workspace-link"
                 href={`/admin/diagnosis-records/new?datasetId=${dataset.id}`}
               >
-                New draft record
+              New draft capacity gap
               </Link>
             ) : null}
             <Link className="workspace-link secondary" href="/admin/diagnosis-records">
-              Diagnosis records
+              Validated capacity gaps
             </Link>
           </div>
         </section>
@@ -80,13 +81,13 @@ export default async function AdminDiagnosisDatasetDetailPage({
 
         <section className="admin-section" aria-labelledby="dataset-status-title">
           <div className="admin-section-heading">
-            <h2 id="dataset-status-title">Dataset status</h2>
-            <p>Governance and use signals for this diagnosis dataset.</p>
+            <h2 id="dataset-status-title">Evidence package status</h2>
+            <p>Governance and use signals for this evidence source package.</p>
           </div>
           <div className="admin-metrics-grid">
             <MetricCard
-              detail="Diagnosis records linked to this dataset"
-              label="Records"
+              detail="Validated capacity gaps linked to this package"
+              label="Capacity gaps"
               value={dataset.recordCount}
             />
             <MetricCard
@@ -95,8 +96,8 @@ export default async function AdminDiagnosisDatasetDetailPage({
               value={dataset.totals.approvedRecords}
             />
             <MetricCard
-              detail="Locked records"
-              label="Locked"
+              detail="Released to Course Creators"
+              label="Released"
               value={dataset.totals.lockedRecords}
             />
             <MetricCard
@@ -138,8 +139,9 @@ export default async function AdminDiagnosisDatasetDetailPage({
           <div className="admin-section-heading">
             <h2 id="dataset-governance-title">Dataset governance actions</h2>
             <p>
-              Approve datasets for diagnosis record locking, or archive datasets
-              that should no longer support new Course Setup selection.
+              Approve evidence source packages for diagnosis record release, or
+              archive packages that should no longer support new Course Setup
+              selection.
             </p>
           </div>
           <div className="diagnosis-preview-grid">
@@ -153,7 +155,7 @@ export default async function AdminDiagnosisDatasetDetailPage({
               }
               enabled={dataset.canApprove}
               fieldName="approvalReason"
-              helpText="Approval confirms that this dataset can support approved diagnosis records."
+              helpText="Approval confirms that this evidence source package can support approved diagnosis records."
               label="Approval reason"
               title="Approve dataset"
             />
@@ -162,12 +164,12 @@ export default async function AdminDiagnosisDatasetDetailPage({
               buttonLabel="Archive dataset"
               disabledHelp={
                 dataset.selectedCourseSetupCount > 0
-                  ? "This dataset is selected by Course Setup and cannot be archived in this phase."
-                  : "This dataset is already archived."
+                  ? "This evidence source package is selected by Course Setup and cannot be archived in this phase."
+                  : "This evidence source package is already archived."
               }
               enabled={dataset.canArchive}
               fieldName="archiveReason"
-              helpText="Archiving keeps the dataset for traceability but removes it from future course-selection use."
+              helpText="Archiving keeps the package for traceability but removes it from future course-selection use."
               label="Archive reason"
               title="Archive dataset"
             />
@@ -176,7 +178,7 @@ export default async function AdminDiagnosisDatasetDetailPage({
 
         <section className="admin-section" aria-labelledby="dataset-context-title">
           <div className="admin-section-heading">
-            <h2 id="dataset-context-title">Dataset context</h2>
+            <h2 id="dataset-context-title">Evidence package context</h2>
             <p>Approved source information for Admin review and traceability.</p>
           </div>
           <dl className="reference-meta-list">
@@ -223,8 +225,11 @@ export default async function AdminDiagnosisDatasetDetailPage({
 
         <section className="admin-section" aria-labelledby="dataset-records-title">
           <div className="admin-section-heading">
-            <h2 id="dataset-records-title">Linked diagnosis records</h2>
-            <p>Records inside this dataset that may anchor future course creation.</p>
+            <h2 id="dataset-records-title">Linked validated capacity gaps</h2>
+            <p>
+              Diagnosis records inside this evidence source package that may be
+              approved and released to Course Creators.
+            </p>
           </div>
           {dataset.records.length > 0 ? (
             <div className="diagnosis-card-grid">
@@ -244,7 +249,7 @@ export default async function AdminDiagnosisDatasetDetailPage({
                             : "status-badge-ready"
                         }`}
                       >
-                        {record.isLocked ? "Locked" : "Unlocked"}
+                        {record.isLocked ? "Released to creators" : "Not released"}
                       </span>
                       <span
                         className={`status-badge ${
@@ -304,9 +309,10 @@ export default async function AdminDiagnosisDatasetDetailPage({
           ) : (
             <section className="admin-empty-panel">
               <span className="status-badge status-badge-blocked">No records</span>
-              <h2>No diagnosis records are linked yet</h2>
+              <h2>No validated capacity gaps are linked yet</h2>
               <p>
-                Diagnosis records will appear here when this dataset is populated.
+                Diagnosis records will appear here when this evidence source
+                package is populated.
               </p>
             </section>
           )}
@@ -346,7 +352,7 @@ function StatusMessage({
     return (
       <section className="admin-section" aria-label="Action message">
         <span className="status-badge status-badge-ready">Approved</span>
-        <p>This diagnosis dataset has been approved.</p>
+        <p>This evidence source package has been approved.</p>
       </section>
     );
   }
@@ -356,8 +362,8 @@ function StatusMessage({
       <section className="admin-section" aria-label="Action message">
         <span className="status-badge status-badge-blocked">Archived</span>
         <p>
-          This diagnosis dataset is archived and remains visible for historical
-          traceability.
+          This evidence source package is archived and remains visible for
+          historical traceability.
         </p>
       </section>
     );
@@ -495,8 +501,8 @@ function UsageSection({
       <div className="admin-section-heading">
         <h2 id="dataset-usage-title">Linked Course Setup usage</h2>
         <p>
-          Courses that currently preserve this dataset as their approved evidence
-          anchor.
+          Courses that currently preserve this evidence source package as their
+          approved evidence anchor.
         </p>
       </div>
       {usages.length > 0 ? (
@@ -523,10 +529,10 @@ function UsageSection({
       ) : (
         <section className="admin-empty-panel">
           <span className="status-badge status-badge-published">No course usage</span>
-          <h2>No Course Setup records currently select this dataset</h2>
+          <h2>No Course Setup records currently select this evidence package</h2>
           <p>
-            This dataset remains available for review even when it has not yet
-            been selected by a course.
+            This evidence source package remains available for review even when
+            it has not yet been selected by a course.
           </p>
         </section>
       )}

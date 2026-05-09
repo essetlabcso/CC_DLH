@@ -224,7 +224,7 @@ export function getDiagnosisRecordEligibility(input: {
       return {
         selectable: false,
         reason:
-          "This record needs a clearly documented Knowledge or Skill component before it can anchor a course.",
+          "This record needs a clearly documented Knowledge or Skill component before it can be released as a course anchor.",
         tone: "blocked",
       };
     }
@@ -236,7 +236,7 @@ export function getDiagnosisRecordEligibility(input: {
     return {
       selectable: false,
       reason:
-        "This diagnosis points to non-course support, so it is visible for context but cannot anchor course creation.",
+        "This diagnosis points to non-course support, so it is visible for context but cannot be released for course creation.",
       tone: "blocked",
     };
   }
@@ -245,7 +245,7 @@ export function getDiagnosisRecordEligibility(input: {
     return {
       selectable: false,
       reason:
-        "This record needs further diagnosis before it can be used for course setup.",
+        "This record needs further diagnosis before it can be released for Course Setup.",
       tone: "blocked",
     };
   }
@@ -254,15 +254,15 @@ export function getDiagnosisRecordEligibility(input: {
     return {
       selectable: false,
       reason:
-        "This record is not prioritized for Phase 1 course creation.",
+        "This record is not prioritized for Phase 1 course creation release.",
       tone: "blocked",
     };
   }
 
   return {
     selectable: false,
-    reason:
-      "This record does not yet have a course-fit decision that allows course creation.",
+      reason:
+      "This record does not yet have a course-fit decision that allows release for course creation.",
     tone: "blocked",
   };
 }
@@ -347,7 +347,7 @@ function getKsmeEligibility(
       : {
           selectable: false,
           reason:
-            "Mixed-route records need a clear Knowledge or Skill component before course setup.",
+            "Mixed-route records need a clear Knowledge or Skill component before release for Course Setup.",
           tone: "blocked",
         };
   }
@@ -363,7 +363,7 @@ function getKsmeEligibility(
       : {
           selectable: false,
           reason:
-            "Motivation or Environment records need a separable Knowledge or Skill component before course setup.",
+            "Motivation or Environment records need a separable Knowledge or Skill component before release for Course Setup.",
           tone: "blocked",
         };
   }
@@ -371,7 +371,7 @@ function getKsmeEligibility(
   return {
     selectable: false,
     reason:
-      "This K/S/M/E route needs further diagnosis before course setup.",
+      "This K/S/M/E route needs further diagnosis before release for Course Setup.",
     tone: "blocked",
   };
 }

@@ -43,7 +43,7 @@ export default async function EditDiagnosisRecordPage({
   const action = updateDiagnosisRecordDraftAction.bind(null, record.id);
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Edit Diagnosis Record">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Edit Validated Capacity Gap">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
@@ -52,8 +52,8 @@ export default async function EditDiagnosisRecordPage({
             </p>
             <h2>{record.diagnosisTitle}</h2>
             <p>
-              Update this draft diagnosis record before it is approved, locked,
-              or selected by Course Setup.
+              Update this draft diagnosis record before it is approved,
+              released to Course Creators, or selected by Course Setup.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -67,7 +67,7 @@ export default async function EditDiagnosisRecordPage({
               className="workspace-link secondary"
               href={`/admin/diagnosis-datasets/${record.datasetId}`}
             >
-              Open dataset
+              Open evidence package
             </Link>
           </div>
         </section>
@@ -75,7 +75,7 @@ export default async function EditDiagnosisRecordPage({
         {record.canEdit ? (
           <section className="admin-section" aria-labelledby="record-form-title">
             <div className="admin-section-heading">
-              <h2 id="record-form-title">Draft record details</h2>
+              <h2 id="record-form-title">Draft capacity gap details</h2>
               <p>
                 A reason is required so the Admin audit trail explains this
                 draft update.
@@ -97,11 +97,12 @@ export default async function EditDiagnosisRecordPage({
         ) : (
           <section className="admin-empty-panel">
             <span className="status-badge status-badge-blocked">Read only</span>
-            <h2>This diagnosis record cannot be edited here</h2>
+            <h2>This validated capacity gap cannot be edited here</h2>
             <p>
-              Only draft, unlocked, active records under draft datasets can be
-              edited before Course Setup uses them. Approved, locked, archived,
-              inactive, and used records remain protected for traceability.
+              Only draft, unreleased, active records under draft evidence source
+              packages can be edited before Course Setup uses them. Approved,
+              released, archived, inactive, and used records remain protected
+              for traceability.
             </p>
             <Link
               className="workspace-link secondary"

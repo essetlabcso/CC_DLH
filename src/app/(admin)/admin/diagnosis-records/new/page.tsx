@@ -23,19 +23,19 @@ export default async function NewDiagnosisRecordPage({
 
   if (!datasetId) {
     return (
-      <WorkspaceShell eyebrow="Admin Control Center" title="New Diagnosis Record">
+      <WorkspaceShell eyebrow="Admin Control Center" title="New Validated Capacity Gap">
         <div className="admin-dashboard diagnosis-browser">
           <section className="admin-empty-panel">
             <span className="status-badge status-badge-blocked">
-              Dataset needed
+              Evidence package needed
             </span>
-            <h2>Start from a draft diagnosis dataset</h2>
+            <h2>Start from a draft evidence source package</h2>
             <p>
-              Draft diagnosis records must be created under a draft source
-              dataset so the evidence remains traceable.
+              Draft diagnosis records must be created under a draft evidence
+              source package so the evidence remains traceable.
             </p>
             <Link className="workspace-link secondary" href="/admin/diagnosis-datasets">
-              Open diagnosis datasets
+              Open evidence packages
             </Link>
           </section>
         </div>
@@ -53,16 +53,16 @@ export default async function NewDiagnosisRecordPage({
   }
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="New Diagnosis Record">
+    <WorkspaceShell eyebrow="Admin Control Center" title="New Validated Capacity Gap">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
             <p className="workspace-kicker">{dataset.datasetCode}</p>
-            <h2>Create a draft diagnosis record</h2>
+            <h2>Create a draft validated capacity gap</h2>
             <p>
-              Add a controlled draft diagnosis record under this source dataset.
-              Draft records are not selectable in Course Setup until later
-              approval and locking workflows are enabled.
+              Add one controlled draft diagnosis record under this evidence
+              source package. Draft records are not selectable in Course Setup
+              until approval and release to Course Creators are complete.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -81,7 +81,7 @@ export default async function NewDiagnosisRecordPage({
         {dataset.canEdit ? (
           <section className="admin-section" aria-labelledby="record-form-title">
             <div className="admin-section-heading">
-              <h2 id="record-form-title">Draft diagnosis record details</h2>
+              <h2 id="record-form-title">Draft validated capacity gap details</h2>
               <p>
                 Use safe summary wording only. Do not include raw interview,
                 safeguarding, political, or personal data.

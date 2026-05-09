@@ -5,7 +5,7 @@ import {
   type DiagnosisRecordApprovalReadinessInput,
 } from "@/lib/admin/diagnosis-record-approval";
 
-describe("diagnosis record approval and lock readiness", () => {
+describe("diagnosis record approval and release readiness", () => {
   it("passes approval and lock readiness for a complete eligible record", () => {
     const readiness = getDiagnosisRecordApprovalReadiness(
       buildInput({
@@ -53,7 +53,7 @@ describe("diagnosis record approval and lock readiness", () => {
       ]),
     );
     expect(readiness.lockBlockingIssues).toContain(
-      "Resolve approval readiness issues before locking this record.",
+      "Resolve approval readiness issues before releasing this record to Course Creators.",
     );
   });
 
@@ -64,7 +64,7 @@ describe("diagnosis record approval and lock readiness", () => {
     expect(readiness.lockReady).toBe(false);
     expect(readiness.status).toBe("ready_for_approval");
     expect(readiness.lockBlockingIssues).toContain(
-      "Approve the diagnosis record before locking it.",
+      "Approve the validated capacity gap before releasing it to Course Creators.",
     );
   });
 
@@ -99,7 +99,7 @@ describe("diagnosis record approval and lock readiness", () => {
 
     expect(readiness.lockReady).toBe(false);
     expect(readiness.lockBlockingIssues).toContain(
-      "This record needs a clearly documented Knowledge or Skill component before it can anchor a course.",
+      "This record needs a clearly documented Knowledge or Skill component before it can be released as a course anchor.",
     );
   });
 
@@ -132,7 +132,7 @@ describe("diagnosis record approval and lock readiness", () => {
     expect(readiness.approvalReady).toBe(true);
     expect(readiness.lockReady).toBe(false);
     expect(readiness.lockBlockingIssues).toContain(
-      "This diagnosis points to non-course support, so it is visible for context but cannot anchor course creation.",
+      "This diagnosis points to non-course support, so it is visible for context but cannot be released for course creation.",
     );
   });
 
@@ -148,8 +148,8 @@ describe("diagnosis record approval and lock readiness", () => {
     expect(readiness.lockReady).toBe(false);
     expect(readiness.lockBlockingIssues).toEqual(
       expect.arrayContaining([
-        "The linked diagnosis dataset must be approved before this record can be locked for Course Setup.",
-        "Archived diagnosis datasets cannot supply Course Setup records.",
+        "The linked evidence source package must be approved before this record can be released to Course Creators.",
+        "Archived evidence source packages cannot supply Course Setup records.",
       ]),
     );
   });

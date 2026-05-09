@@ -171,7 +171,7 @@ function getApprovalWarnings(input: DiagnosisRecordApprovalReadinessInput) {
 
   if (!courseEligibility.selectable && hasText(input.courseFitDecision)) {
     warnings.push(
-      "This record may still be valid evidence, but it is not ready to anchor Course Setup.",
+      "This validated capacity gap may still be useful evidence, but it is not ready to be released to Course Creators.",
     );
   }
 
@@ -185,29 +185,29 @@ function getLockBlockingIssues(
   const issues: string[] = [];
 
   if (approvalBlockingIssues.length > 0) {
-    issues.push("Resolve approval readiness issues before locking this record.");
+    issues.push("Resolve approval readiness issues before releasing this record to Course Creators.");
   }
 
   if (!isStatus(input.datasetApprovalStatus, "APPROVED")) {
     issues.push(
-      "The linked diagnosis dataset must be approved before this record can be locked for Course Setup.",
+      "The linked evidence source package must be approved before this record can be released to Course Creators.",
     );
   }
 
   if (input.datasetArchivedAt) {
-    issues.push("Archived diagnosis datasets cannot supply Course Setup records.");
+    issues.push("Archived evidence source packages cannot supply Course Setup records.");
   }
 
   if (!isStatus(input.recordApprovalStatus, "APPROVED")) {
-    issues.push("Approve the diagnosis record before locking it.");
+    issues.push("Approve the validated capacity gap before releasing it to Course Creators.");
   }
 
   if (input.recordArchivedAt) {
-    issues.push("Archived diagnosis records cannot be locked for Course Setup.");
+    issues.push("Archived validated capacity gaps cannot be released to Course Creators.");
   }
 
   if (!input.isActive) {
-    issues.push("Inactive diagnosis records cannot be locked for Course Setup.");
+    issues.push("Inactive validated capacity gaps cannot be released to Course Creators.");
   }
 
   const courseEligibility = getDiagnosisRecordEligibility({
@@ -228,7 +228,7 @@ function getLockWarnings(input: DiagnosisRecordApprovalReadinessInput) {
 
   if (!input.isLocked && isStatus(input.recordApprovalStatus, "APPROVED")) {
     warnings.push(
-      "Locking will make this approved diagnosis record read-only for Course Setup use.",
+      "Release will make this approved validated capacity gap read-only and selectable by Course Creators.",
     );
   }
 
@@ -273,18 +273,18 @@ function getStatus({
 
 function getSummary(status: DiagnosisRecordApprovalReadiness["status"]) {
   if (status === "ready_for_lock") {
-    return "This diagnosis record is approved and ready to be locked for Course Setup eligibility.";
+    return "This validated capacity gap is approved and ready to be released to Course Creators.";
   }
 
   if (status === "ready_for_approval") {
-    return "This diagnosis record has the core evidence fields needed for approval review.";
+    return "This validated capacity gap has the core evidence fields needed for approval review.";
   }
 
   if (status === "lock_blocked") {
-    return "This diagnosis record is approved but not yet ready to be locked for Course Setup.";
+    return "This validated capacity gap is approved but not yet ready to be released to Course Creators.";
   }
 
-  return "This diagnosis record needs more evidence before approval review.";
+  return "This validated capacity gap needs more evidence before approval review.";
 }
 
 function isBlank(value: unknown) {

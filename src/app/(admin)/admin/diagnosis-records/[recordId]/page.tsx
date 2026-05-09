@@ -82,7 +82,7 @@ export default async function AdminDiagnosisRecordDetailPage({
     record.selectedCourseSetupCount === 0;
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Record">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Validated Capacity Gap">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
@@ -91,8 +91,8 @@ export default async function AdminDiagnosisRecordDetailPage({
             </p>
             <h2>{record.diagnosisTitle}</h2>
             <p>
-              Governed view of the diagnosis evidence, course-fit decision,
-              safety context, and Course Setup usage for this record.
+              Governed view of one validated capacity gap, its course-fit
+              decision, safety context, and release status for Course Creators.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -135,8 +135,8 @@ export default async function AdminDiagnosisRecordDetailPage({
               value={record.priorityRank ?? 0}
             />
             <MetricCard
-              detail="Dataset approval state"
-              label="Dataset approved"
+              detail="Evidence package approval state"
+              label="Package approved"
               value={record.datasetApprovalStatus === "APPROVED" ? 1 : 0}
             />
           </div>
@@ -147,8 +147,13 @@ export default async function AdminDiagnosisRecordDetailPage({
                 record.isLocked ? "status-badge-published" : "status-badge-ready"
               }`}
             >
-              {record.isLocked ? "Locked" : "Unlocked"}
+              {record.isLocked ? "Released to creators" : "Not released"}
             </span>
+            {record.selectedCourseSetupCount > 0 ? (
+              <span className="status-badge status-badge-published">
+                Already selected in Course Setup
+              </span>
+            ) : null}
             <span
               className={`status-badge ${
                 record.archivedAt || !record.isActive
@@ -182,11 +187,11 @@ export default async function AdminDiagnosisRecordDetailPage({
           aria-labelledby="record-readiness-title"
         >
           <div className="admin-section-heading">
-            <h2 id="record-readiness-title">Approval and lock readiness</h2>
+            <h2 id="record-readiness-title">Approval and release readiness</h2>
             <p>
               Read-only guidance for Admin review. Approval confirms the record
-              is complete evidence; locking makes an approved, eligible record
-              available for Course Setup.
+              is complete evidence; release makes an approved, eligible
+              validated capacity gap available to Course Creators.
             </p>
           </div>
           <div className="diagnosis-preview-grid">
@@ -199,15 +204,15 @@ export default async function AdminDiagnosisRecordDetailPage({
               warnings={readiness.approvalWarnings}
             />
             <ReadinessCard
-              blockedLabel="Not eligible for Course Setup"
+              blockedLabel="Not ready for creator release"
               blockingIssues={readiness.lockBlockingIssues}
               ready={readiness.lockReady}
               readyLabel={
                 record.isLocked
-                  ? "Locked and Course Setup eligible"
-                  : "Ready to lock for Course Setup"
+                  ? "Released and Course Setup eligible"
+                  : "Ready to release to Course Creators"
               }
-              title="Lock readiness"
+              title="Release readiness"
               warnings={readiness.lockWarnings}
             />
           </div>
@@ -231,17 +236,17 @@ export default async function AdminDiagnosisRecordDetailPage({
                 null,
                 record.id,
               )}
-              buttonLabel="Lock for Course Setup"
+              buttonLabel="Release to Course Creators"
               disabledHelp={
                 record.isLocked
-                  ? "This record is already locked for Course Setup."
-                  : "Resolve lock readiness issues before making this record selectable during Course Setup."
+                  ? "This record has already been released to Course Creators."
+                  : "Resolve release readiness issues before making this record selectable during Course Setup."
               }
               enabled={canLock}
               fieldName="lockReason"
-              helpText="Locking makes an approved, eligible diagnosis record read-only and available for Course Setup selection."
-              label="Lock reason"
-              title="Lock for Course Setup"
+              helpText="Release keeps the approved capacity gap read-only and makes it available for Course Setup selection."
+              label="Release reason"
+              title="Release to Course Creators"
             />
           </div>
           <div className="diagnosis-preview-grid">
@@ -254,8 +259,11 @@ export default async function AdminDiagnosisRecordDetailPage({
 
         <section className="admin-section" aria-labelledby="record-evidence-title">
           <div className="admin-section-heading">
-            <h2 id="record-evidence-title">Evidence summary</h2>
-            <p>Baseline, capacity gap, desired practice, and evidence source.</p>
+            <h2 id="record-evidence-title">Safe evidence summary</h2>
+            <p>
+              Baseline, capacity gap, desired practice, and summarized evidence
+              source. Raw sensitive evidence should stay restricted.
+            </p>
           </div>
           <div className="diagnosis-preview-grid">
             <PreviewBlock
@@ -288,10 +296,10 @@ export default async function AdminDiagnosisRecordDetailPage({
             <p>How this record maps to DEC capacity practice and target groups.</p>
           </div>
           <dl className="reference-meta-list">
-            <MetaItem label="Dataset" value={record.datasetTitle} />
+            <MetaItem label="Evidence source package" value={record.datasetTitle} />
             <MetaItem label="Assessment period" value={record.assessmentPeriod} />
             <MetaItem
-              label="Dataset status"
+              label="Package status"
               value={
                 record.datasetArchivedAt
                   ? "Archived"
@@ -337,7 +345,11 @@ export default async function AdminDiagnosisRecordDetailPage({
         <section className="admin-section" aria-labelledby="record-fit-title">
           <div className="admin-section-heading">
             <h2 id="record-fit-title">K/S/M/E and course-fit decision</h2>
-            <p>Whether this diagnosis can safely anchor course creation.</p>
+            <p>
+              Whether this validated capacity gap can safely anchor course
+              creation. Motivation and Environment records remain blocked unless
+              a separable Knowledge or Skill component is recorded.
+            </p>
           </div>
           <dl className="reference-meta-list">
             <MetaItem label="K/S/M/E route" value={record.ksmeRoute || "Not set"} />
@@ -426,7 +438,7 @@ export default async function AdminDiagnosisRecordDetailPage({
         <section className="admin-section" aria-labelledby="record-governance-title">
           <div className="admin-section-heading">
             <h2 id="record-governance-title">Approval and traceability</h2>
-            <p>Who approved or locked the record and when it last changed.</p>
+            <p>Who approved or released the record and when it last changed.</p>
           </div>
           <dl className="reference-meta-list">
             <MetaItem
@@ -435,10 +447,10 @@ export default async function AdminDiagnosisRecordDetailPage({
             />
             <MetaItem label="Approved date" value={formatDate(record.approvedAt)} />
             <MetaItem
-              label="Locked by"
-              value={record.lockedByName ?? "Not locked"}
+              label="Released by"
+              value={record.lockedByName ?? "Not released"}
             />
-            <MetaItem label="Locked date" value={formatDate(record.lockedAt)} />
+            <MetaItem label="Release date" value={formatDate(record.lockedAt)} />
             <MetaItem
               label="Created by"
               value={record.createdByName ?? "Not recorded"}
@@ -489,7 +501,7 @@ function StatusMessage({
     return (
       <section className="admin-section" aria-label="Action message">
         <span className="status-badge status-badge-ready">Approved</span>
-        <p>This diagnosis record has been approved.</p>
+        <p>This validated capacity gap has been approved.</p>
       </section>
     );
   }
@@ -498,9 +510,12 @@ function StatusMessage({
     return (
       <section className="admin-section" aria-label="Action message">
         <span className="status-badge status-badge-ready">
-          Locked for Course Setup
+          Released to Course Creators
         </span>
-        <p>This diagnosis record is now available for eligible Course Setup use.</p>
+        <p>
+          This validated capacity gap is now available as a read-only evidence
+          anchor for eligible Course Setup use.
+        </p>
       </section>
     );
   }
@@ -700,8 +715,8 @@ function UsageSection({
       <div className="admin-section-heading">
         <h2 id="record-usage-title">Linked Course Setup usage</h2>
         <p>
-          Courses that currently preserve this diagnosis record as their approved
-          evidence anchor.
+          Courses that currently preserve this validated capacity gap as their
+          approved evidence anchor.
         </p>
       </div>
       {usages.length > 0 ? (
@@ -728,7 +743,7 @@ function UsageSection({
       ) : (
         <section className="admin-empty-panel">
           <span className="status-badge status-badge-published">No course usage</span>
-          <h2>No Course Setup records currently select this diagnosis</h2>
+          <h2>No Course Setup records currently select this capacity gap</h2>
           <p>
             This record remains available for review even when it has not yet
             been selected by a course.

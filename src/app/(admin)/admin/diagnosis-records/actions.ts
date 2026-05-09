@@ -41,7 +41,7 @@ export async function createDiagnosisRecordDraftAction(formData: FormData) {
   if (!canCreateRecordUnderDataset(dataset)) {
     redirect(
       `/admin/diagnosis-datasets/${dataset.id}?error=${encodeURIComponent(
-        "Diagnosis records can only be created under draft datasets that are not archived.",
+        "Diagnosis records can only be created under draft evidence source packages that are not archived.",
       )}`,
     );
   }
@@ -144,7 +144,7 @@ export async function updateDiagnosisRecordDraftAction(
   if (!canEditRecord(current)) {
     redirect(
       `/admin/diagnosis-records/${recordId}?error=${encodeURIComponent(
-        "Only draft, unlocked, active diagnosis records under draft datasets can be edited before Course Setup uses them.",
+        "Only draft, unreleased, active diagnosis records under draft evidence source packages can be edited before Course Setup uses them.",
       )}`,
     );
   }
@@ -152,7 +152,7 @@ export async function updateDiagnosisRecordDraftAction(
   if (parsed.data.datasetId !== current.datasetId) {
     redirect(
       `/admin/diagnosis-records/${recordId}/edit?error=${encodeURIComponent(
-        "This draft record must stay linked to its current diagnosis dataset.",
+        "This draft record must stay linked to its current evidence source package.",
       )}`,
     );
   }
@@ -224,7 +224,7 @@ export async function approveDiagnosisRecordAction(
   if (!reason) {
     redirectWithRecordError(
       recordId,
-      "Add an approval reason before approving this diagnosis record.",
+      "Add an approval reason before approving this validated capacity gap.",
     );
   }
 
@@ -237,7 +237,7 @@ export async function approveDiagnosisRecordAction(
   if (current.isLocked || current._count.selectedCourseSetups > 0) {
     redirectWithRecordError(
       recordId,
-      "This diagnosis record is already locked or used by Course Setup, so it cannot be approved again.",
+      "This validated capacity gap is already released or used by Course Setup, so it cannot be approved again.",
     );
   }
 
@@ -253,7 +253,7 @@ export async function approveDiagnosisRecordAction(
     redirectWithRecordError(
       recordId,
       readiness.approvalBlockingIssues[0] ??
-        "Resolve approval readiness issues before approving this diagnosis record.",
+        "Resolve approval readiness issues before approving this validated capacity gap.",
     );
   }
 
@@ -303,7 +303,7 @@ export async function lockDiagnosisRecordForCourseSetupAction(
   if (!reason) {
     redirectWithRecordError(
       recordId,
-      "Add a lock reason before making this diagnosis record available for Course Setup.",
+      "Add a release reason before making this validated capacity gap available to Course Creators.",
     );
   }
 
@@ -320,7 +320,7 @@ export async function lockDiagnosisRecordForCourseSetupAction(
   if (current._count.selectedCourseSetups > 0) {
     redirectWithRecordError(
       recordId,
-      "This diagnosis record is already used by Course Setup and cannot be locked again.",
+      "This validated capacity gap is already used by Course Setup and cannot be released again.",
     );
   }
 
@@ -332,7 +332,7 @@ export async function lockDiagnosisRecordForCourseSetupAction(
     redirectWithRecordError(
       recordId,
       readiness.lockBlockingIssues[0] ??
-        "Resolve lock readiness issues before making this record available for Course Setup.",
+        "Resolve release readiness issues before making this record available to Course Creators.",
     );
   }
 

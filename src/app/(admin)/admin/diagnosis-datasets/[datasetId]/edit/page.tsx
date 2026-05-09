@@ -37,15 +37,15 @@ export default async function EditDiagnosisDatasetPage({
   const action = updateDiagnosisDatasetDraftAction.bind(null, dataset.id);
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Edit Diagnosis Dataset">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Edit Evidence Source Package">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
             <p className="workspace-kicker">{dataset.datasetCode}</p>
             <h2>{dataset.datasetTitle}</h2>
             <p>
-              Update draft dataset metadata before diagnosis records are approved
-              for future course creation.
+              Update draft evidence package metadata before diagnosis records
+              are approved and released for future course creation.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -53,10 +53,10 @@ export default async function EditDiagnosisDatasetPage({
               className="workspace-link secondary"
               href={`/admin/diagnosis-datasets/${dataset.id}`}
             >
-              Back to dataset
+              Back to evidence package
             </Link>
             <Link className="workspace-link secondary" href="/admin/diagnosis-datasets">
-              All datasets
+              All evidence packages
             </Link>
           </div>
         </section>
@@ -64,7 +64,7 @@ export default async function EditDiagnosisDatasetPage({
         {dataset.canEdit ? (
           <section className="admin-section" aria-labelledby="dataset-form-title">
             <div className="admin-section-heading">
-              <h2 id="dataset-form-title">Draft dataset details</h2>
+              <h2 id="dataset-form-title">Draft evidence package details</h2>
               <p>
                 A reason is required so the Admin audit trail explains this
                 draft update.
@@ -81,11 +81,11 @@ export default async function EditDiagnosisDatasetPage({
         ) : (
           <section className="admin-empty-panel">
             <span className="status-badge status-badge-blocked">Read only</span>
-            <h2>This dataset cannot be edited here</h2>
+            <h2>This evidence source package cannot be edited here</h2>
             <p>
-              Only draft datasets that are not archived and not selected by
-              Course Setup can be edited. Approved, archived, and used datasets
-              remain protected for traceability.
+              Only draft evidence source packages that are not archived and not
+              selected by Course Setup can be edited. Approved, archived, and
+              used packages remain protected for traceability.
             </p>
             <Link
               className="workspace-link secondary"

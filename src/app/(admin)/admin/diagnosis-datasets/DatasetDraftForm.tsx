@@ -41,7 +41,7 @@ export function DatasetDraftForm({
       <fieldset>
         <legend>Core dataset identity</legend>
         <label>
-          <span>Dataset code</span>
+          <span>Package code</span>
           <input
             aria-describedby={
               canEditDatasetCode ? undefined : "dataset-code-readonly-note"
@@ -55,12 +55,12 @@ export function DatasetDraftForm({
         </label>
         {!canEditDatasetCode ? (
           <p className="form-help" id="dataset-code-readonly-note">
-            Dataset code is locked because this draft already has linked records.
+            Package code is protected because this draft already has linked records.
           </p>
         ) : null}
 
         <label>
-          <span>Dataset title</span>
+          <span>Package title</span>
           <input
             defaultValue={dataset?.datasetTitle ?? ""}
             name="datasetTitle"
@@ -83,7 +83,7 @@ export function DatasetDraftForm({
           <textarea
             defaultValue={dataset?.assessmentPurpose ?? ""}
             name="assessmentPurpose"
-            placeholder="Describe why this diagnosis dataset was collected."
+            placeholder="Describe why this evidence source package was collected."
           />
         </label>
       </fieldset>

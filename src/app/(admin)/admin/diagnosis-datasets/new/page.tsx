@@ -15,19 +15,19 @@ export default async function NewDiagnosisDatasetPage({
   const resolvedSearchParams = await searchParams;
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="New Diagnosis Dataset">
+    <WorkspaceShell eyebrow="Admin Control Center" title="New Evidence Source Package">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
-            <h2>Create a draft diagnosis dataset</h2>
+            <h2>Create a draft evidence source package</h2>
             <p>
-              Start a controlled source dataset for future approved diagnosis
-              records. Draft datasets stay hidden from Course Setup until later
-              approval and locking workflows are enabled.
+              Start a controlled evidence source package for future approved
+              diagnosis records. Draft packages stay hidden from Course Setup
+              until records are approved and released to Course Creators.
             </p>
           </div>
           <Link className="workspace-link secondary" href="/admin/diagnosis-datasets">
-            Back to datasets
+            Back to evidence packages
           </Link>
         </section>
 
@@ -35,8 +35,9 @@ export default async function NewDiagnosisDatasetPage({
           <div className="admin-section-heading">
             <h2 id="draft-rules-title">Draft rules</h2>
             <p>
-              This step creates draft source metadata only. It does not approve,
-              publish, import, or expose diagnosis records to course creators.
+              This step creates draft evidence package metadata only. It does
+              not approve, publish, import, or expose diagnosis records to
+              Course Creators.
             </p>
           </div>
           <div className="reference-badge-row">
@@ -47,14 +48,14 @@ export default async function NewDiagnosisDatasetPage({
               Admin controlled
             </span>
             <span className="status-badge status-badge-blocked">
-              Not selectable in Course Setup
+              Not released to creators
             </span>
           </div>
         </section>
 
         <section className="admin-section" aria-labelledby="dataset-form-title">
           <div className="admin-section-heading">
-            <h2 id="dataset-form-title">Dataset details</h2>
+            <h2 id="dataset-form-title">Evidence package details</h2>
             <p>
               Use safe summary wording only. Do not include raw interview,
               safeguarding, political, or personal data.

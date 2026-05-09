@@ -6,14 +6,15 @@ export default async function AdminDiagnosisDatasetsPage() {
   const browser = await getAdminDiagnosisDatasetBrowser();
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Datasets">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Evidence Source Packages">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
-            <h2>Approved diagnosis source datasets</h2>
+            <h2>Diagnosis evidence source packages</h2>
             <p>
-              Browse the diagnosis datasets that will later anchor Course Setup,
-              analysis, and evidence-linked course creation.
+              Browse the evidence source packages that hold validated capacity
+              gaps. Approved packages can supply diagnosis records for creator
+              release.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -21,27 +22,27 @@ export default async function AdminDiagnosisDatasetsPage() {
               Back to Admin
             </Link>
             <Link className="workspace-link" href="/admin/diagnosis-datasets/new">
-              New draft dataset
+              New draft evidence package
             </Link>
             <Link className="workspace-link secondary" href="/admin/diagnosis-records">
-              Diagnosis Records
+              Validated Capacity Gaps
             </Link>
           </div>
         </section>
 
         <section className="admin-section" aria-labelledby="dataset-health-title">
           <div className="admin-section-heading">
-            <h2 id="dataset-health-title">Dataset readiness</h2>
-            <p>Live totals for Admin-governed diagnosis source datasets.</p>
+            <h2 id="dataset-health-title">Evidence package readiness</h2>
+            <p>Live totals for Admin-governed diagnosis evidence packages.</p>
           </div>
           <div className="admin-metrics-grid">
             <MetricCard
-              detail="Diagnosis source datasets"
-              label="Total datasets"
+              detail="Diagnosis evidence source packages"
+              label="Total packages"
               value={browser.totals.totalDatasets}
             />
             <MetricCard
-              detail="Ready for future selection"
+              detail="Approved as source evidence"
               label="Approved"
               value={browser.totals.approvedDatasets}
             />
@@ -56,8 +57,8 @@ export default async function AdminDiagnosisDatasetsPage() {
               value={browser.totals.archivedDatasets}
             />
             <MetricCard
-              detail="Linked diagnosis records"
-              label="Records"
+              detail="Linked validated capacity gaps"
+              label="Capacity gaps"
               value={browser.totals.totalRecords}
             />
           </div>
@@ -65,10 +66,10 @@ export default async function AdminDiagnosisDatasetsPage() {
 
         <section className="admin-section" aria-labelledby="dataset-list-title">
           <div className="admin-section-heading">
-            <h2 id="dataset-list-title">Dataset browser</h2>
+            <h2 id="dataset-list-title">Evidence package browser</h2>
             <p>
-              Read-only view of dataset status, coverage, visibility, and linked
-              record counts.
+              Read-only view of package status, coverage, visibility, and linked
+              validated capacity gap counts.
             </p>
           </div>
 
@@ -161,10 +162,10 @@ export default async function AdminDiagnosisDatasetsPage() {
               <span className="status-badge status-badge-blocked">
                 0 configured
               </span>
-              <h2>No diagnosis datasets are configured yet</h2>
+              <h2>No evidence source packages are configured yet</h2>
               <p>
-                Approved diagnosis datasets will be added here before Course
-                Setup can use them as governed source material.
+                Approved evidence source packages will be added here before
+                diagnosis records can be released to Course Creators.
               </p>
             </section>
           )}

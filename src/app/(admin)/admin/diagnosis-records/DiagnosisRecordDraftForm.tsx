@@ -50,20 +50,20 @@ export function DiagnosisRecordDraftForm({
       ) : null}
 
       <fieldset>
-        <legend>Source dataset</legend>
+        <legend>Evidence source package</legend>
         <dl className="reference-meta-list">
           <div>
-            <dt>Dataset code</dt>
+            <dt>Package code</dt>
             <dd>{dataset.datasetCode}</dd>
           </div>
           <div>
-            <dt>Dataset title</dt>
+            <dt>Package title</dt>
             <dd>{dataset.datasetTitle}</dd>
           </div>
         </dl>
         <p className="form-help">
-          Draft records created here stay unavailable to Course Setup until a
-          later approval and locking workflow is enabled.
+          Draft records created here stay unavailable to Course Setup until
+          approval and release to Course Creators are complete.
         </p>
       </fieldset>
 
@@ -233,7 +233,7 @@ export function DiagnosisRecordDraftForm({
           <textarea
             defaultValue={record?.separableKnowledgeSkillComponent ?? ""}
             name="separableKnowledgeSkillComponent"
-            placeholder="Required later if a Motivation, Environment, or Mixed record should become partly course-addressable."
+            placeholder="Required if a Motivation, Environment, or Mixed record should become partly course-addressable."
           />
         </label>
 
@@ -401,7 +401,7 @@ export function DiagnosisRecordDraftForm({
           <h3 id="draft-warning-title">Draft readiness notes</h3>
           <p>
             These notes do not block draft save. They show what should be filled
-            before a later approval review.
+            before approval and release review.
           </p>
           <ul>
             {warnings.map((warning) => (

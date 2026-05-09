@@ -98,8 +98,8 @@ export default async function CourseSetupPage({
         <div className="setup-hero-next">
           <strong>What this unlocks</strong>
           <span>
-            Saving setup opens Diagnosis, where the practical CSO challenge and
-            evidence are confirmed.
+            Saving setup uses a released diagnosis record as the locked source
+            anchor for the course.
           </span>
         </div>
       </div>
@@ -113,8 +113,8 @@ export default async function CourseSetupPage({
       ) : null}
       {resolvedSearchParams?.error === "diagnosis" ? (
         <p className="workspace-error">
-          Select an approved course-eligible diagnosis record before completing
-          Course Setup. DEC courses must start from approved capacity evidence.
+          Select an approved and released diagnosis record before completing
+          Course Setup. DEC courses must start from validated capacity evidence.
         </p>
       ) : null}
 
@@ -129,14 +129,14 @@ export default async function CourseSetupPage({
                 Diagnosis evidence anchor
               </h2>
               <p className="section-subcopy">
-                DEC courses should start from approved capacity evidence. Select
-                the diagnosis record this course will respond to before
-                completing Course Setup.
+                DEC courses should start from approved and released capacity
+                evidence. Select the validated capacity gap this course will
+                respond to before completing Course Setup.
               </p>
             </div>
             {selectedDiagnosis ? (
               <span className="status-badge status-badge-ready">
-                Evidence selected
+                Locked source selected
               </span>
             ) : savedDiagnosisSnapshot ? (
               <span className="status-badge status-badge-blocked">
@@ -151,9 +151,9 @@ export default async function CourseSetupPage({
 
           {resolvedSearchParams?.error === "diagnosis" ? (
             <p className="workspace-error diagnosis-anchor-error">
-              Select an approved course-eligible diagnosis record before
-              completing Course Setup. DEC courses must start from approved
-              capacity evidence.
+              Select an approved and released diagnosis record before completing
+              Course Setup. DEC courses must start from validated capacity
+              evidence.
             </p>
           ) : null}
 
@@ -168,8 +168,12 @@ export default async function CourseSetupPage({
               }
               targetAudience={selectedDiagnosis.targetAudience}
               region={selectedDiagnosis.region}
+              baseline={selectedDiagnosis.currentBaseline}
+              capacityGap={selectedDiagnosis.capacityGapStatement}
               ksmeRoute={selectedDiagnosis.ksmeRoute}
               courseFitDecision={selectedDiagnosis.courseFitDecision}
+              noHarmNote={selectedDiagnosis.noHarmNote}
+              evaluationAnchor={selectedDiagnosis.evaluationAnchor}
             />
           ) : savedDiagnosisSnapshot ? (
             <SelectedDiagnosisSummary
@@ -182,16 +186,20 @@ export default async function CourseSetupPage({
               }
               targetAudience={savedDiagnosisSnapshot.record.targetAudience}
               region={savedDiagnosisSnapshot.record.region}
+              baseline={savedDiagnosisSnapshot.record.currentBaseline}
+              capacityGap={savedDiagnosisSnapshot.record.capacityGapStatement}
               ksmeRoute={savedDiagnosisSnapshot.record.ksmeRoute}
               courseFitDecision={
                 savedDiagnosisSnapshot.record.courseFitDecision
               }
+              noHarmNote={savedDiagnosisSnapshot.record.noHarmNote}
+              evaluationAnchor={savedDiagnosisSnapshot.record.evaluationAnchor}
               note="This saved context is preserved from the original selection. It may no longer be available for new course setup."
             />
           ) : null}
 
           <fieldset className="diagnosis-option-fieldset">
-            <legend>Approved diagnosis records</legend>
+            <legend>Released diagnosis source anchors</legend>
             {diagnosisOptions.length > 0 ? (
               <div className="diagnosis-option-grid">
                 {diagnosisOptions.map((option) => {
@@ -249,7 +257,7 @@ export default async function CourseSetupPage({
               </div>
             ) : (
               <p className="workspace-note">
-                No approved diagnosis records are available yet.
+                No approved and released diagnosis records are available yet.
               </p>
             )}
           </fieldset>
@@ -407,8 +415,9 @@ export default async function CourseSetupPage({
       <div className="next-step-panel">
         <h2>Next step: Diagnosis</h2>
         <p>
-          Diagnosis will confirm the practical CSO challenge, evidence, KSME gap,
-          and whether a course is the right intervention.
+          Diagnosis will preserve the selected capacity gap, baseline, K/S/M/E
+          route, course-fit decision, safeguards, and evaluation anchor as the
+          source for later design work.
         </p>
         <nav className="workspace-nav" aria-label="Course Setup next step">
           {canContinueToDiagnosis ? (
@@ -420,7 +429,7 @@ export default async function CourseSetupPage({
             </Link>
           ) : (
             <span className="workspace-link disabled" aria-disabled="true">
-              Select diagnosis evidence to continue
+              Select released diagnosis evidence to continue
             </span>
           )}
         </nav>
@@ -470,21 +479,29 @@ function SelectWithCurrentOption({
 
 function SelectedDiagnosisSummary({
   capacityPracticeArea,
+  baseline,
+  capacityGap,
   code,
   courseFitDecision,
   dataset,
+  evaluationAnchor,
   ksmeRoute,
   note,
+  noHarmNote,
   region,
   targetAudience,
   title,
 }: {
   capacityPracticeArea: string;
+  baseline: string;
+  capacityGap: string;
   code: string;
   courseFitDecision: string;
   dataset: string;
+  evaluationAnchor: string;
   ksmeRoute: string;
   note?: string;
+  noHarmNote: string;
   region: string;
   targetAudience: string;
   title: string;
@@ -492,13 +509,29 @@ function SelectedDiagnosisSummary({
   return (
     <div className="selected-diagnosis-summary">
       <div>
-        <span className="status-badge status-badge-ready">Selected anchor</span>
+        <span className="status-badge status-badge-ready">
+          Locked source anchor
+        </span>
         <h3>{title}</h3>
         <p>
           {code} · {dataset}
         </p>
+        <p className="diagnosis-option-note">
+          This released diagnosis record is the approved evidence source for the
+          course. The capacity gap, K/S/M/E route, course-fit decision,
+          baseline, safeguards, and evaluation anchor should not be silently
+          changed by the course creator.
+        </p>
       </div>
       <dl className="diagnosis-anchor-facts">
+        <div>
+          <dt>Validated Capacity Gap</dt>
+          <dd>{capacityGap || "Not specified"}</dd>
+        </div>
+        <div>
+          <dt>Baseline / Current Practice</dt>
+          <dd>{baseline || "Not specified"}</dd>
+        </div>
         <div>
           <dt>Capacity Practice Area</dt>
           <dd>{capacityPracticeArea || "Not specified"}</dd>
@@ -518,6 +551,14 @@ function SelectedDiagnosisSummary({
         <div>
           <dt>Course-Fit Decision</dt>
           <dd>{courseFitDecision || "Not specified"}</dd>
+        </div>
+        <div>
+          <dt>Safeguards / No-Harm Note</dt>
+          <dd>{noHarmNote || "Not specified"}</dd>
+        </div>
+        <div>
+          <dt>Evaluation Anchor</dt>
+          <dd>{evaluationAnchor || "Not specified"}</dd>
         </div>
       </dl>
       {note ? <p className="diagnosis-option-note">{note}</p> : null}

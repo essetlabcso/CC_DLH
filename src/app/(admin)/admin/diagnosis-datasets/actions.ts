@@ -107,7 +107,7 @@ export async function updateDiagnosisDatasetDraftAction(
   ) {
     redirect(
       `/admin/diagnosis-datasets/${datasetId}?error=${encodeURIComponent(
-        "Only draft diagnosis datasets that are not archived or used by Course Setup can be edited.",
+        "Only draft evidence source packages that are not archived or used by Course Setup can be edited.",
       )}`,
     );
   }
@@ -180,7 +180,7 @@ export async function approveDiagnosisDatasetAction(
   if (!reason) {
     redirectWithDatasetError(
       datasetId,
-      "Add an approval reason before approving this diagnosis dataset.",
+      "Add an approval reason before approving this evidence source package.",
     );
   }
 
@@ -204,7 +204,7 @@ export async function approveDiagnosisDatasetAction(
   if (current.archivedAt) {
     redirectWithDatasetError(
       datasetId,
-      "Archived diagnosis datasets cannot be approved.",
+      "Archived evidence source packages cannot be approved.",
     );
   }
 
@@ -264,7 +264,7 @@ export async function archiveDiagnosisDatasetAction(
   if (!reason) {
     redirectWithDatasetError(
       datasetId,
-      "Add an archive reason before archiving this diagnosis dataset.",
+      "Add an archive reason before archiving this evidence source package.",
     );
   }
 
@@ -292,7 +292,7 @@ export async function archiveDiagnosisDatasetAction(
   if (current._count.selectedCourseSetups > 0) {
     redirectWithDatasetError(
       datasetId,
-      "This diagnosis dataset is currently selected by Course Setup and cannot be archived in this phase.",
+      "This evidence source package is currently selected by Course Setup and cannot be archived in this phase.",
     );
   }
 
