@@ -10,11 +10,11 @@ export default async function AdminDiagnosisDatasetsPage() {
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
-            <h2>Diagnosis evidence source packages</h2>
+            <h2>Evidence Source Packages</h2>
             <p>
               Browse the evidence source packages that hold validated capacity
-              gaps. Approved packages can supply diagnosis records for creator
-              release.
+              gaps. Approved packages can supply validated capacity gaps for
+              release to Course Creators.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -33,11 +33,11 @@ export default async function AdminDiagnosisDatasetsPage() {
         <section className="admin-section" aria-labelledby="dataset-health-title">
           <div className="admin-section-heading">
             <h2 id="dataset-health-title">Evidence package readiness</h2>
-            <p>Live totals for Admin-governed diagnosis evidence packages.</p>
+            <p>Live totals for Admin-managed evidence source packages.</p>
           </div>
           <div className="admin-metrics-grid">
             <MetricCard
-              detail="Diagnosis evidence source packages"
+              detail="Evidence source packages"
               label="Total packages"
               value={browser.totals.totalDatasets}
             />
@@ -165,7 +165,7 @@ export default async function AdminDiagnosisDatasetsPage() {
               <h2>No evidence source packages are configured yet</h2>
               <p>
                 Approved evidence source packages will be added here before
-                diagnosis records can be released to Course Creators.
+                validated capacity gaps can be released to Course Creators.
               </p>
             </section>
           )}

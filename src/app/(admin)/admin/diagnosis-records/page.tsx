@@ -38,9 +38,9 @@ export default async function AdminDiagnosisRecordsPage({
           <div>
             <h2>Validated capacity gap browser</h2>
             <p>
-              Browse diagnosis records that package one validated capacity gap
-              each. Approved and released records become the evidence base
-              Course Creators select during Course Setup.
+              Browse records that package one validated capacity gap each.
+              Approved and released gaps become the evidence base Course
+              Creators select when building courses.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -56,7 +56,7 @@ export default async function AdminDiagnosisRecordsPage({
         <section className="admin-section" aria-labelledby="record-health-title">
           <div className="admin-section-heading">
             <h2 id="record-health-title">Record readiness</h2>
-            <p>Live totals for governed diagnosis records and creator release.</p>
+            <p>Live totals for validated capacity gaps and creator release.</p>
           </div>
           <div className="admin-metrics-grid">
             <MetricCard
@@ -86,7 +86,7 @@ export default async function AdminDiagnosisRecordsPage({
             />
             <MetricCard
               detail="Needs more analysis"
-              label="Further diagnosis"
+              label="Further analysis"
               value={browser.totals.needsFurtherDiagnosisRecords}
             />
           </div>
@@ -94,7 +94,7 @@ export default async function AdminDiagnosisRecordsPage({
 
         <section className="admin-section" aria-labelledby="record-filter-title">
           <div className="admin-section-heading">
-            <h2 id="record-filter-title">Find diagnosis records</h2>
+            <h2 id="record-filter-title">Find validated capacity gaps</h2>
             <p>
               Filter by evidence source package, approval status, capacity area,
               K/S/M/E route, course-fit decision, region, or active state.
@@ -175,9 +175,9 @@ export default async function AdminDiagnosisRecordsPage({
 
         <section className="admin-section" aria-labelledby="record-list-title">
           <div className="admin-section-heading">
-            <h2 id="record-list-title">Record browser</h2>
+            <h2 id="record-list-title">Validated capacity gap browser</h2>
             <p>
-              {browser.records.length} records shown with diagnosis context,
+              {browser.records.length} gaps shown with evidence context,
               capacity alignment, release status, and governance status.
             </p>
           </div>
@@ -283,7 +283,7 @@ export default async function AdminDiagnosisRecordsPage({
                       value={formatStatus(record.visibilityScope)}
                     />
                     <MetaItem
-                      label="Course Setup usage"
+                      label="Course creator usage"
                       value={
                         record.selectedCourseSetupCount > 0
                           ? `${record.selectedCourseSetupCount} selected`
@@ -316,8 +316,8 @@ export default async function AdminDiagnosisRecordsPage({
               </span>
               <h2>No validated capacity gaps are configured yet</h2>
               <p>
-                Approved and released diagnosis records will later become the
-                evidence base selected during Course Setup. No records are
+                Approved and released validated capacity gaps will later become
+                the evidence base selected by Course Creators. No gaps are
                 available to browse yet.
               </p>
             </section>

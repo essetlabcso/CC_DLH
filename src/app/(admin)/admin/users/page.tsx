@@ -28,7 +28,7 @@ export default async function AdminUsersPage({
           <div>
             <h2>User and role management</h2>
             <p>
-              Review current users, manage operational access, and keep
+              Review current users, manage platform access, and keep
               Platform Admin authority under Super Admin-equivalent control.
             </p>
           </div>

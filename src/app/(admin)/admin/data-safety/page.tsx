@@ -304,9 +304,9 @@ function ExternalVisibilityCard({
       <div className="publishing-card-actions">
         <Link
           className="workspace-button secondary"
-          href={`/review/achievements/${achievement.id}`}
+          href="/review/achievements"
         >
-          Open achievement review
+          Open achievement review queue
         </Link>
         <form
           action={revokeExternalVisibilityAction.bind(null, achievement.id)}
