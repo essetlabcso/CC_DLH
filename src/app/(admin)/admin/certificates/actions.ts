@@ -6,14 +6,21 @@ import { notFound, redirect } from "next/navigation";
 
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
-import { parseCertificateAdminNote } from "@/lib/learner/certificate-status";
+import { parseRequiredCertificateAdminReason } from "@/lib/learner/certificate-status";
 
 export async function revokeCertificateAction(
   certificateNumber: string,
   formData: FormData,
 ) {
   const identity = await requireWorkspaceIdentity("/admin/certificates");
-  const note = parseCertificateAdminNote(formData);
+  const parsedReason = parseRequiredCertificateAdminReason(formData);
+
+  if (!parsedReason.ok) {
+    redirect(
+      `/admin/certificates?error=${encodeURIComponent(parsedReason.message)}`,
+    );
+  }
+
   const certificate = await prisma.learnerCertificate.findFirst({
     where: {
       certificateNumber,
@@ -38,7 +45,7 @@ export async function revokeCertificateAction(
 
   if (!certificate.revokedAt) {
     const revokedAt = new Date();
-    const reason = note || "Certificate revoked by admin.";
+    const reason = parsedReason.reason;
 
     await prisma.$transaction(async (tx) => {
       await tx.learnerCertificate.update({
@@ -85,7 +92,14 @@ export async function reactivateCertificateAction(
   formData: FormData,
 ) {
   const identity = await requireWorkspaceIdentity("/admin/certificates");
-  const note = parseCertificateAdminNote(formData);
+  const parsedReason = parseRequiredCertificateAdminReason(formData);
+
+  if (!parsedReason.ok) {
+    redirect(
+      `/admin/certificates?error=${encodeURIComponent(parsedReason.message)}`,
+    );
+  }
+
   const certificate = await prisma.learnerCertificate.findFirst({
     where: {
       certificateNumber,
@@ -109,7 +123,7 @@ export async function reactivateCertificateAction(
   }
 
   if (certificate.revokedAt) {
-    const reason = note || "Certificate reactivated by admin.";
+    const reason = parsedReason.reason;
 
     await prisma.$transaction(async (tx) => {
       await tx.learnerCertificate.update({

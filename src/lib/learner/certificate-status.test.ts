@@ -6,6 +6,7 @@ import {
   getCertificateStatusLabel,
   getCertificateVerificationLabel,
   parseCertificateAdminNote,
+  parseRequiredCertificateAdminReason,
 } from "./certificate-status";
 
 describe("certificate status helpers", () => {
@@ -41,5 +42,31 @@ describe("certificate status helpers", () => {
     expect(parseCertificateAdminNote(formData)).toBe(
       "Duplicate issued in error.",
     );
+  });
+
+  it("requires visible admin reasons for certificate status changes", () => {
+    const blankFormData = new FormData();
+    blankFormData.set("note", "   ");
+
+    expect(parseRequiredCertificateAdminReason(blankFormData)).toEqual({
+      ok: false,
+      message: "Enter a certificate status reason of at least 5 characters.",
+    });
+
+    const shortFormData = new FormData();
+    shortFormData.set("note", "abcd");
+
+    expect(parseRequiredCertificateAdminReason(shortFormData)).toEqual({
+      ok: false,
+      message: "Enter a certificate status reason of at least 5 characters.",
+    });
+
+    const validFormData = new FormData();
+    validFormData.set("note", "  Duplicate certificate issued.  ");
+
+    expect(parseRequiredCertificateAdminReason(validFormData)).toEqual({
+      ok: true,
+      reason: "Duplicate certificate issued.",
+    });
   });
 });

@@ -27,8 +27,40 @@ export function getCertificateStatusEventLabel(
   }
 }
 
-export function parseCertificateAdminNote(formData: FormData) {
-  const value = formData.get("note");
+export type CertificateAdminReasonResult =
+  | {
+      ok: true;
+      reason: string;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
+export function parseCertificateAdminNote(
+  formData: FormData,
+  fieldName = "note",
+) {
+  const value = formData.get(fieldName);
 
   return typeof value === "string" ? value.trim() : "";
+}
+
+export function parseRequiredCertificateAdminReason(
+  formData: FormData,
+  fieldName = "note",
+): CertificateAdminReasonResult {
+  const reason = parseCertificateAdminNote(formData, fieldName);
+
+  if (reason.length < 5) {
+    return {
+      ok: false,
+      message: "Enter a certificate status reason of at least 5 characters.",
+    };
+  }
+
+  return {
+    ok: true,
+    reason,
+  };
 }
