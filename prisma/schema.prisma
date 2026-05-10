@@ -141,6 +141,67 @@ enum EnrollmentMode {
   INVITATION_ONLY
   ADMIN_ENROLL
 }
+
+enum LearnerEnrollmentStatus {
+  INVITED
+  ASSIGNED
+  ENROLLED
+  STARTED
+  COMPLETED
+  WITHDRAWN
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+enum LearnerEnrollmentSource {
+  SELF_ENROLL
+  ADMIN_ASSIGNMENT
+  INVITATION
+  ORGANIZATION_ASSIGNMENT
+  PROGRAM_ASSIGNMENT
+  COHORT_ASSIGNMENT
+  PILOT_ASSIGNMENT
+  LEGACY_INFERRED
+}
+
+enum LearnerInvitationStatus {
+  CREATED
+  SENT
+  PENDING_ACCEPTANCE
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+  REVOKED
+}
+
+enum LearnerParticipantStatus {
+  ASSIGNED
+  ACTIVE
+  COMPLETED
+  WITHDRAWN
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+enum LearnerEnrollmentEventType {
+  INVITATION_CREATED
+  INVITATION_SENT
+  INVITATION_ACCEPTED
+  ENROLLMENT_CREATED
+  ENROLLMENT_STARTED
+  ENROLLMENT_COMPLETED
+  ENROLLMENT_WITHDRAWN
+  ENROLLMENT_EXPIRED
+  ENROLLMENT_CANCELLED
+  ENROLLMENT_SUSPENDED
+  ENROLLMENT_REACTIVATED
+  ASSIGNMENT_CREATED
+  ASSIGNMENT_REMOVED
+  BACKFILLED
+}
+
 enum ProgramStatus {
   DRAFT
   ACTIVE
@@ -163,6 +224,7 @@ enum ParticipationStatus {
   COMPLETED
   ARCHIVED
 }
+
 model Organization {
   id              String   @id @default(cuid())
   name            String
@@ -187,6 +249,10 @@ model Organization {
   ownedPrograms         Program[]                    @relation("ProgramOwnerOrganization")
   programOrganizations  ProgramOrganization[]
   cohorts               Cohort[]
+  learnerEnrollments    LearnerEnrollment[]
+  learnerInvitations    LearnerInvitation[]
+  programParticipants   ProgramParticipant[]
+  cohortParticipants    CohortParticipant[]
 }
 
 model User {
@@ -230,6 +296,15 @@ model User {
   adminAuditLogs                 AdminAuditLog[]                        @relation("AdminAuditActor")
   scopedRoleAssignments          ScopedRoleAssignment[]                 @relation("ScopedRoleAssignmentUser")
   createdScopedRoleAssignments   ScopedRoleAssignment[]                 @relation("ScopedRoleAssignmentCreator")
+  learnerEnrollments             LearnerEnrollment[]                    @relation("LearnerEnrollmentUser")
+  assignedLearnerEnrollments     LearnerEnrollment[]                    @relation("LearnerEnrollmentAssigner")
+  sentLearnerInvitations         LearnerInvitation[]                    @relation("LearnerInvitationInviter")
+  acceptedLearnerInvitations     LearnerInvitation[]                    @relation("LearnerInvitationAcceptedUser")
+  programParticipations          ProgramParticipant[]                   @relation("ProgramParticipantUser")
+  assignedProgramParticipants    ProgramParticipant[]                   @relation("ProgramParticipantAssigner")
+  cohortParticipations           CohortParticipant[]                    @relation("CohortParticipantUser")
+  assignedCohortParticipants     CohortParticipant[]                    @relation("CohortParticipantAssigner")
+  learnerEnrollmentEvents        LearnerEnrollmentEvent[]               @relation("LearnerEnrollmentEventActor")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -281,6 +356,10 @@ model Program {
   organizations         ProgramOrganization[]
   cohorts               Cohort[]
   scopedRoleAssignments ScopedRoleAssignment[]
+  learnerEnrollments    LearnerEnrollment[]
+  learnerInvitations    LearnerInvitation[]
+  programParticipants   ProgramParticipant[]
+  cohortParticipants    CohortParticipant[]
 
   @@index([status])
   @@index([ownerOrganizationId])
@@ -322,6 +401,9 @@ model Cohort {
   organization          Organization?          @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   courses               CohortCourse[]
   scopedRoleAssignments ScopedRoleAssignment[]
+  learnerEnrollments    LearnerEnrollment[]
+  learnerInvitations    LearnerInvitation[]
+  cohortParticipants    CohortParticipant[]
 
   @@index([programId])
   @@index([organizationId])
@@ -367,6 +449,8 @@ model Course {
   versions              CourseVersion[]
   scopedRoleAssignments ScopedRoleAssignment[]
   cohortCourses         CohortCourse[]
+  learnerEnrollments    LearnerEnrollment[]
+  learnerInvitations    LearnerInvitation[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -416,6 +500,8 @@ model CourseVersion {
   verifiedAchievements      LearnerVerifiedAchievement[]
   scopedRoleAssignments     ScopedRoleAssignment[]
   cohortCourses             CohortCourse[]
+  learnerEnrollments        LearnerEnrollment[]
+  learnerInvitations        LearnerInvitation[]
 
   @@unique([courseId, versionNumber])
   @@index([courseId, status])
@@ -948,6 +1034,191 @@ model LearnerCertificateStatusEvent {
   actor       User?              @relation("CertificateStatusActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([certificateId, createdAt])
+  @@index([actorId])
+  @@index([eventType, createdAt])
+}
+
+model LearnerInvitation {
+  id              String                  @id @default(cuid())
+  email           String
+  name            String                  @default("")
+  organizationId  String?
+  programId       String?
+  cohortId        String?
+  courseId        String?
+  courseVersionId String?
+  invitedById     String
+  acceptedUserId  String?
+  tokenHash       String                  @unique
+  status          LearnerInvitationStatus @default(CREATED)
+  sentAt          DateTime?
+  acceptedAt      DateTime?
+  expiresAt       DateTime
+  cancelledAt     DateTime?
+  revokedAt       DateTime?
+  reason          String                  @default("")
+  metadata        String                  @default("{}")
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  organization        Organization?            @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  program             Program?                 @relation(fields: [programId], references: [id], onDelete: SetNull)
+  cohort              Cohort?                  @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  course              Course?                  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  courseVersion       CourseVersion?           @relation(fields: [courseVersionId], references: [id], onDelete: SetNull)
+  invitedBy           User                     @relation("LearnerInvitationInviter", fields: [invitedById], references: [id], onDelete: Restrict)
+  acceptedUser        User?                    @relation("LearnerInvitationAcceptedUser", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+  enrollments         LearnerEnrollment[]
+  programParticipants ProgramParticipant[]
+  cohortParticipants  CohortParticipant[]
+  events              LearnerEnrollmentEvent[]
+
+  @@index([email, status])
+  @@index([status, expiresAt])
+  @@index([organizationId])
+  @@index([programId])
+  @@index([cohortId])
+  @@index([courseId])
+  @@index([courseVersionId])
+  @@index([invitedById])
+  @@index([acceptedUserId])
+}
+
+model LearnerEnrollment {
+  id              String                  @id @default(cuid())
+  userId          String
+  courseId        String
+  courseVersionId String
+  organizationId  String
+  programId       String?
+  cohortId        String?
+  invitationId    String?
+  assignedById    String?
+  source          LearnerEnrollmentSource
+  status          LearnerEnrollmentStatus @default(ENROLLED)
+  enrolledAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  withdrawnAt     DateTime?
+  expiresAt       DateTime?
+  dueAt           DateTime?
+  reason          String                  @default("")
+  metadata        String                  @default("{}")
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  user          User                     @relation("LearnerEnrollmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  course        Course                   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseVersion CourseVersion            @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  organization  Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  program       Program?                 @relation(fields: [programId], references: [id], onDelete: SetNull)
+  cohort        Cohort?                  @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  invitation    LearnerInvitation?       @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  assignedBy    User?                    @relation("LearnerEnrollmentAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  events        LearnerEnrollmentEvent[]
+
+  @@unique([userId, courseVersionId])
+  @@index([userId, status])
+  @@index([courseVersionId, status])
+  @@index([courseId, status])
+  @@index([organizationId, status])
+  @@index([programId, status])
+  @@index([cohortId, status])
+  @@index([invitationId])
+  @@index([assignedById])
+  @@index([source])
+}
+
+model ProgramParticipant {
+  id             String                   @id @default(cuid())
+  programId      String
+  organizationId String
+  userId         String
+  assignedById   String?
+  invitationId   String?
+  status         LearnerParticipantStatus @default(ASSIGNED)
+  profileLabel   String                   @default("")
+  joinedAt       DateTime?
+  endedAt        DateTime?
+  reason         String                   @default("")
+  metadata       String                   @default("{}")
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  program      Program                  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  organization Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                     @relation("ProgramParticipantUser", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy   User?                    @relation("ProgramParticipantAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  invitation   LearnerInvitation?       @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  events       LearnerEnrollmentEvent[]
+
+  @@unique([programId, userId])
+  @@index([programId, status])
+  @@index([organizationId, status])
+  @@index([userId, status])
+  @@index([assignedById])
+  @@index([invitationId])
+}
+
+model CohortParticipant {
+  id             String                   @id @default(cuid())
+  cohortId       String
+  programId      String?
+  organizationId String?
+  userId         String
+  assignedById   String?
+  invitationId   String?
+  status         LearnerParticipantStatus @default(ASSIGNED)
+  profileLabel   String                   @default("")
+  joinedAt       DateTime?
+  endedAt        DateTime?
+  dueAt          DateTime?
+  reason         String                   @default("")
+  metadata       String                   @default("{}")
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  cohort       Cohort                   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  program      Program?                 @relation(fields: [programId], references: [id], onDelete: SetNull)
+  organization Organization?            @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user         User                     @relation("CohortParticipantUser", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy   User?                    @relation("CohortParticipantAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  invitation   LearnerInvitation?       @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  events       LearnerEnrollmentEvent[]
+
+  @@unique([cohortId, userId])
+  @@index([cohortId, status])
+  @@index([programId, status])
+  @@index([organizationId, status])
+  @@index([userId, status])
+  @@index([assignedById])
+  @@index([invitationId])
+}
+
+model LearnerEnrollmentEvent {
+  id                   String                     @id @default(cuid())
+  enrollmentId         String?
+  invitationId         String?
+  programParticipantId String?
+  cohortParticipantId  String?
+  actorId              String?
+  eventType            LearnerEnrollmentEventType
+  fromStatus           String                     @default("")
+  toStatus             String                     @default("")
+  reason               String                     @default("")
+  metadata             String                     @default("{}")
+  createdAt            DateTime                   @default(now())
+
+  enrollment         LearnerEnrollment?  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  invitation         LearnerInvitation?  @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  programParticipant ProgramParticipant? @relation(fields: [programParticipantId], references: [id], onDelete: Cascade)
+  cohortParticipant  CohortParticipant?  @relation(fields: [cohortParticipantId], references: [id], onDelete: Cascade)
+  actor              User?               @relation("LearnerEnrollmentEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([enrollmentId, createdAt])
+  @@index([invitationId, createdAt])
+  @@index([programParticipantId, createdAt])
+  @@index([cohortParticipantId, createdAt])
   @@index([actorId])
   @@index([eventType, createdAt])
 }
