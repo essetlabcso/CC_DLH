@@ -37,7 +37,11 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 }
 
 function normalizeLearnerNext(value: string | undefined) {
-  if (value === "/learn" || value?.startsWith("/learn/")) {
+  if (
+    value === "/learn" ||
+    value?.startsWith("/learn/") ||
+    value?.startsWith("/invite/")
+  ) {
     return value;
   }
 
