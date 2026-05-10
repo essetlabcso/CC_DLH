@@ -1,4 +1,3 @@
-import { CourseVersionStatus } from "@prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -8,6 +7,10 @@ import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { isLessonComplete } from "@/lib/learner/progress";
 import { getLearnerLessonNavigation } from "@/lib/learner/course-access";
+import {
+  loadLearnerRuntimeAccess,
+  type LearnerRuntimeAccessPrisma,
+} from "@/lib/learner/runtime-access";
 import {
   getBlockTypeLabel,
   parseBuildBlockContent,
@@ -39,14 +42,27 @@ export default async function LearnerLessonPage({
   const identity = await requireWorkspaceIdentity(
     `/learn/courses/${courseId}/lessons/${lessonId}`,
   );
+  const runtimeAccess = await loadLearnerRuntimeAccess(
+    prisma as unknown as LearnerRuntimeAccessPrisma,
+    {
+      courseId,
+      lessonId,
+      requiredAction: "OPEN_LESSON",
+      identity: {
+        userId: identity.user.id,
+        organizationId: identity.user.organizationId,
+        roles: identity.user.roles,
+      },
+    },
+  );
+
+  if (!runtimeAccess.allowed || !runtimeAccess.courseVersionId) {
+    notFound();
+  }
+
   const version = await prisma.courseVersion.findFirst({
     where: {
-      courseId,
-      status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-        status: "ACTIVE",
-      },
+      id: runtimeAccess.courseVersionId,
       modules: {
         some: {
           lessons: {

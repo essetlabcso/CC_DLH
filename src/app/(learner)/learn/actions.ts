@@ -1,6 +1,6 @@
 "use server";
 
-import { CertificateStatusEventType, CourseVersionStatus } from "@prisma/client";
+import { CertificateStatusEventType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
@@ -28,6 +28,11 @@ import {
   selfEnrollInPublicCourse,
   type SelfEnrollmentPrisma,
 } from "@/lib/learner/self-enrollment";
+import {
+  loadLearnerRuntimeAccess,
+  type LearnerRuntimeAccessPrisma,
+  type LearnerRuntimeRequiredAction,
+} from "@/lib/learner/runtime-access";
 
 export async function selfEnrollLearnerAction(courseId: string) {
   const coursePath = `/learn/courses/${courseId}`;
@@ -65,14 +70,15 @@ export async function completeLearnerLessonAction(
 ) {
   const lessonPath = `/learn/courses/${courseId}/lessons/${lessonId}`;
   const identity = await requireWorkspaceIdentity(lessonPath);
+  const runtimeAccess = await assertLearnerRuntimeAccess({
+    courseId,
+    identity,
+    lessonId,
+    requiredAction: "OPEN_LESSON",
+  });
   const version = await prisma.courseVersion.findFirst({
     where: {
-      courseId,
-      status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-        status: "ACTIVE",
-      },
+      id: runtimeAccess.courseVersionId,
       modules: {
         some: {
           lessons: {
@@ -141,6 +147,11 @@ export async function submitLearnerFinalTestAction(
 ) {
   const coursePath = `/learn/courses/${courseId}`;
   const identity = await requireWorkspaceIdentity(coursePath);
+  const runtimeAccess = await assertLearnerRuntimeAccess({
+    courseId,
+    identity,
+    requiredAction: "SUBMIT_FINAL_TEST",
+  });
   const selectedAnswer = parseFinalTestAnswerFormData(formData);
 
   if (!selectedAnswer) {
@@ -149,12 +160,7 @@ export async function submitLearnerFinalTestAction(
 
   const version = await prisma.courseVersion.findFirst({
     where: {
-      courseId,
-      status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-        status: "ACTIVE",
-      },
+      id: runtimeAccess.courseVersionId,
       modules: {
         some: {
           lessons: {
@@ -264,6 +270,11 @@ export async function submitLearnerPracticalProofAction(
 ) {
   const coursePath = `/learn/courses/${courseId}`;
   const identity = await requireWorkspaceIdentity(coursePath);
+  const runtimeAccess = await assertLearnerRuntimeAccess({
+    courseId,
+    identity,
+    requiredAction: "SUBMIT_PROOF",
+  });
   const result = parseLearnerPracticalProofFormData(formData);
 
   if (!result.ok) {
@@ -276,12 +287,7 @@ export async function submitLearnerPracticalProofAction(
 
   const version = await prisma.courseVersion.findFirst({
     where: {
-      courseId,
-      status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-        status: "ACTIVE",
-      },
+      id: runtimeAccess.courseVersionId,
     },
     include: {
       practicalProofConfig: true,
@@ -398,4 +404,31 @@ function hasCertificateIntent(value: string | null | undefined) {
   const normalized = value?.trim().toLowerCase();
 
   return Boolean(normalized && normalized !== "none" && normalized !== "n/a");
+}
+
+async function assertLearnerRuntimeAccess(input: {
+  courseId: string;
+  identity: Awaited<ReturnType<typeof requireWorkspaceIdentity>>;
+  requiredAction: LearnerRuntimeRequiredAction;
+  lessonId?: string;
+}) {
+  const runtimeAccess = await loadLearnerRuntimeAccess(
+    prisma as unknown as LearnerRuntimeAccessPrisma,
+    {
+      courseId: input.courseId,
+      lessonId: input.lessonId,
+      requiredAction: input.requiredAction,
+      identity: {
+        userId: input.identity.user.id,
+        organizationId: input.identity.user.organizationId,
+        roles: input.identity.user.roles,
+      },
+    },
+  );
+
+  if (!runtimeAccess.allowed || !runtimeAccess.courseVersionId) {
+    notFound();
+  }
+
+  return runtimeAccess;
 }
