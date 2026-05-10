@@ -8,16 +8,34 @@ import { buildCertificateEligibility } from "@/lib/learner/certificates";
 import { formatLearnerCourseDuration } from "@/lib/learner/course-access";
 import { getBestFinalTestAttempt } from "@/lib/learner/final-test";
 import { buildLearnerProgressSummary } from "@/lib/learner/progress";
+import { activeLearnerEnrollmentStatuses } from "@/lib/learner/self-enrollment";
 
 export default async function LearnerWorkspacePage() {
   const identity = await requireWorkspaceIdentity("/learn");
   const publishedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-        status: "ACTIVE",
-      },
+      OR: [
+        {
+          course: {
+            organizationId: identity.user.organizationId,
+            status: "ACTIVE",
+          },
+        },
+        {
+          course: {
+            status: "ACTIVE",
+          },
+          learnerEnrollments: {
+            some: {
+              userId: identity.user.id,
+              status: {
+                in: [...activeLearnerEnrollmentStatuses],
+              },
+            },
+          },
+        },
+      ],
     },
     include: {
       course: {
@@ -170,7 +188,7 @@ export default async function LearnerWorkspacePage() {
           <div>
             <h2 id="available-title">Available learning</h2>
             <p className="section-subcopy">
-              Courses published for your organization and ready to open.
+              Courses assigned to your organization or explicitly enrolled.
             </p>
           </div>
           <span className="status-badge">
@@ -332,7 +350,8 @@ export default async function LearnerWorkspacePage() {
           <div className="empty-state">
             <h3>No courses available yet</h3>
             <p>
-              Published courses assigned to your organization will appear here.
+              Enrolled courses and courses assigned to your organization will
+              appear here.
             </p>
           </div>
         )}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
+  selfEnrollLearnerAction,
   submitLearnerFinalTestAction,
   submitLearnerPracticalProofAction,
 } from "@/app/(learner)/learn/actions";
@@ -35,6 +36,14 @@ import {
 } from "@/lib/learner/practical-proof";
 import { summarizeLearnerProofAuditEvent } from "@/lib/proof-audit";
 import { buildLearnerProgressSummary } from "@/lib/learner/progress";
+import {
+  canOpenEnrolledCourse,
+  isPublicEligibleCourseVersion,
+} from "@/lib/learner/self-enrollment";
+import {
+  loadLearnerAccessDecision,
+  type LearnerAccessLoaderPrisma,
+} from "@/lib/learner/access-loader";
 import { formatPublishedDate } from "@/lib/review/publishing";
 
 type LearnerCoursePageProps = {
@@ -67,7 +76,6 @@ export default async function LearnerCoursePage({
       courseId,
       status: CourseVersionStatus.PUBLISHED,
       course: {
-        organizationId: identity.user.organizationId,
         status: "ACTIVE",
       },
     },
@@ -131,6 +139,91 @@ export default async function LearnerCoursePage({
   });
 
   if (!version) {
+    notFound();
+  }
+
+  const access = await loadLearnerAccessDecision(
+    prisma as unknown as LearnerAccessLoaderPrisma,
+    {
+      courseId,
+      courseVersionId: version.id,
+      identity: {
+        userId: identity.user.id,
+        organizationId: identity.user.organizationId,
+        roles: identity.user.roles,
+      },
+    },
+  );
+  const publicEligible = isPublicEligibleCourseVersion(version);
+  const canSelfEnroll =
+    publicEligible &&
+    identity.session.role === "learner" &&
+    Boolean(access?.decision.allowedActions.includes("SELF_ENROLL"));
+  const canOpenFromEnrollment = access
+    ? canOpenEnrolledCourse(access.decision)
+    : false;
+  const canUseLegacyOrganizationAccess =
+    !publicEligible && version.course.organizationId === identity.user.organizationId;
+
+  if (canSelfEnroll) {
+    return (
+      <WorkspaceShell eyebrow="Course" title={version.course.title}>
+        <div className="learner-course-hero">
+          <div>
+            <p>
+              {version.setup?.summary ||
+                "A DEC-reviewed course for practical CSO learning."}
+            </p>
+            <div className="review-hero-status" aria-label="Course access summary">
+              <span className="status-badge status-badge-published">
+                Published {formatPublishedDate(version.publishedAt)}
+              </span>
+              <span className="status-badge">Public enrollment available</span>
+            </div>
+          </div>
+          <div className="learner-course-next">
+            <strong>Next learner step</strong>
+            <span>
+              Enroll once to add this course to your learning record and open
+              the course workspace.
+            </span>
+          </div>
+        </div>
+
+        <section className="studio-section" aria-labelledby="self-enroll-title">
+          <div className="section-heading-row">
+            <div>
+              <h2 id="self-enroll-title">Enroll in this course</h2>
+              <p className="section-subcopy">
+                Self-enrollment creates a private learner enrollment record for
+                progress, final test eligibility, and certificate tracking.
+              </p>
+            </div>
+            <span className="status-badge">No payment required</span>
+          </div>
+          <form
+            action={selfEnrollLearnerAction.bind(null, version.course.id)}
+            className="studio-actions"
+          >
+            <button className="workspace-button" type="submit">
+              Enroll and start
+            </button>
+          </form>
+        </section>
+
+        <nav className="workspace-nav" aria-label="Learner course actions">
+          <Link className="workspace-link" href="/courses">
+            Explore courses
+          </Link>
+          <Link className="workspace-link" href="/learn">
+            My learning
+          </Link>
+        </nav>
+      </WorkspaceShell>
+    );
+  }
+
+  if (!canOpenFromEnrollment && !canUseLegacyOrganizationAccess) {
     notFound();
   }
 

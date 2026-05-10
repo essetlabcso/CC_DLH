@@ -6,9 +6,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
-import {
-  createCertificateNumber,
-} from "@/lib/learner/certificates";
+import { createCertificateNumber } from "@/lib/learner/certificates";
 import {
   parseFinalTestAnswerFormData,
   parseFinalTestContent,
@@ -26,6 +24,40 @@ import {
   getNextPracticalProofRevisionNumber,
   practicalProofAuditEventTypes,
 } from "@/lib/proof-audit";
+import {
+  selfEnrollInPublicCourse,
+  type SelfEnrollmentPrisma,
+} from "@/lib/learner/self-enrollment";
+
+export async function selfEnrollLearnerAction(courseId: string) {
+  const coursePath = `/learn/courses/${courseId}`;
+  const identity = await requireWorkspaceIdentity(coursePath);
+
+  if (identity.session.role !== "learner") {
+    redirect(`/forbidden?next=${encodeURIComponent(coursePath)}&workspace=learner`);
+  }
+
+  const result = await selfEnrollInPublicCourse(
+    prisma as unknown as SelfEnrollmentPrisma,
+    {
+      courseId,
+      identity: {
+        userId: identity.user.id,
+        organizationId: identity.user.organizationId,
+        roles: identity.user.roles,
+      },
+    },
+  );
+
+  if (!result.ok) {
+    notFound();
+  }
+
+  revalidatePath("/courses");
+  revalidatePath("/learn");
+  revalidatePath(coursePath);
+  redirect(coursePath);
+}
 
 export async function completeLearnerLessonAction(
   courseId: string,
