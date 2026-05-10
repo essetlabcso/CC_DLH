@@ -24,6 +24,13 @@ const adminAreaGroups = [
           "Invite users, update roles, and protect Platform Admin authority.",
       },
       {
+        title: "Learner Invitations",
+        href: "/admin/learner-invitations",
+        status: "Create",
+        summary:
+          "Create one learner invitation and review invitation status safely.",
+      },
+      {
         title: "Admin Authority",
         href: "/admin/admin-authority",
         status: "View",
