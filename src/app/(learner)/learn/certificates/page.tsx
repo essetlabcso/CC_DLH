@@ -11,16 +11,34 @@ import {
   getLatestCompletedAt,
 } from "@/lib/learner/certificates";
 import { getBestFinalTestAttempt } from "@/lib/learner/final-test";
+import { activeLearnerEnrollmentStatuses } from "@/lib/learner/self-enrollment";
 
 export default async function LearnerCertificatesPage() {
   const identity = await requireWorkspaceIdentity("/learn/certificates");
   const publishedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
-      course: {
-        organizationId: identity.user.organizationId,
-        status: "ACTIVE",
-      },
+      OR: [
+        {
+          course: {
+            organizationId: identity.user.organizationId,
+            status: "ACTIVE",
+          },
+        },
+        {
+          course: {
+            status: "ACTIVE",
+          },
+          learnerEnrollments: {
+            some: {
+              userId: identity.user.id,
+              status: {
+                in: [...activeLearnerEnrollmentStatuses],
+              },
+            },
+          },
+        },
+      ],
     },
     include: {
       course: true,

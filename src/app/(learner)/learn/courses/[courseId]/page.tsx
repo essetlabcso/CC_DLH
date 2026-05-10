@@ -37,13 +37,9 @@ import {
 import { summarizeLearnerProofAuditEvent } from "@/lib/proof-audit";
 import { buildLearnerProgressSummary } from "@/lib/learner/progress";
 import {
-  canOpenEnrolledCourse,
-  isPublicEligibleCourseVersion,
-} from "@/lib/learner/self-enrollment";
-import {
-  loadLearnerAccessDecision,
-  type LearnerAccessLoaderPrisma,
-} from "@/lib/learner/access-loader";
+  loadLearnerRuntimeAccess,
+  type LearnerRuntimeAccessPrisma,
+} from "@/lib/learner/runtime-access";
 import { formatPublishedDate } from "@/lib/review/publishing";
 
 type LearnerCoursePageProps = {
@@ -142,11 +138,12 @@ export default async function LearnerCoursePage({
     notFound();
   }
 
-  const access = await loadLearnerAccessDecision(
-    prisma as unknown as LearnerAccessLoaderPrisma,
+  const runtimeAccess = await loadLearnerRuntimeAccess(
+    prisma as unknown as LearnerRuntimeAccessPrisma,
     {
       courseId,
       courseVersionId: version.id,
+      requiredAction: "OPEN_COURSE",
       identity: {
         userId: identity.user.id,
         organizationId: identity.user.organizationId,
@@ -154,16 +151,10 @@ export default async function LearnerCoursePage({
       },
     },
   );
-  const publicEligible = isPublicEligibleCourseVersion(version);
   const canSelfEnroll =
-    publicEligible &&
+    runtimeAccess.publicEligible &&
     identity.session.role === "learner" &&
-    Boolean(access?.decision.allowedActions.includes("SELF_ENROLL"));
-  const canOpenFromEnrollment = access
-    ? canOpenEnrolledCourse(access.decision)
-    : false;
-  const canUseLegacyOrganizationAccess =
-    !publicEligible && version.course.organizationId === identity.user.organizationId;
+    Boolean(runtimeAccess.decision?.allowedActions.includes("SELF_ENROLL"));
 
   if (canSelfEnroll) {
     return (
@@ -223,7 +214,7 @@ export default async function LearnerCoursePage({
     );
   }
 
-  if (!canOpenFromEnrollment && !canUseLegacyOrganizationAccess) {
+  if (!runtimeAccess.allowed) {
     notFound();
   }
 

@@ -6,6 +6,7 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { formatCertificateDate } from "@/lib/learner/certificates";
+import { activeLearnerEnrollmentStatuses } from "@/lib/learner/self-enrollment";
 
 type LearnerCertificateDetailPageProps = {
   params?: Promise<{
@@ -32,9 +33,23 @@ export default async function LearnerCertificateDetailPage({
       userId: identity.user.id,
       revokedAt: null,
       courseVersion: {
-        course: {
-          organizationId: identity.user.organizationId,
-        },
+        OR: [
+          {
+            course: {
+              organizationId: identity.user.organizationId,
+            },
+          },
+          {
+            learnerEnrollments: {
+              some: {
+                userId: identity.user.id,
+                status: {
+                  in: [...activeLearnerEnrollmentStatuses],
+                },
+              },
+            },
+          },
+        ],
       },
     },
     include: {
