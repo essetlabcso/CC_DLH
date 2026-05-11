@@ -33,4 +33,3 @@
 - Program/cohort-only invitations do not automatically unlock course runtime.
 - Raw proof must remain private by default.
 - Admin monitoring should stay aggregate unless a dedicated safe participant management page is designed.
-

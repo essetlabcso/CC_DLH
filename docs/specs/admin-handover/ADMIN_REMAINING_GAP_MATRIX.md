@@ -29,4 +29,3 @@
 ## Main Phase 1 Gap
 
 The strongest remaining Phase 1 gap is operational participant/access management. The system can now create and accept invitations, but Admin does not yet have a complete workspace to see and manage participant access across invitations, enrollments, programs, cohorts, organizations, and courses.
-

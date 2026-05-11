@@ -76,4 +76,3 @@ Expected:
 - Use the enriched local demo DB only when explicitly requested.
 - Use normal viewport screenshots, not full-page screenshots, to avoid repeated-content artifacts.
 - Keep demo language clear: this is local synthetic data, not live program data.
-

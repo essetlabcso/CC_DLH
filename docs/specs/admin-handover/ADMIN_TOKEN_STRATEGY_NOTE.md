@@ -27,4 +27,3 @@ This keeps the next agent focused on understanding access records before adding 
 - Raw invite links are shown only once after creation.
 - Cancel/revoke actions must not expose `tokenHash` or raw token.
 - Invitation acceptance must not bypass `LearnerEnrollment`.
-

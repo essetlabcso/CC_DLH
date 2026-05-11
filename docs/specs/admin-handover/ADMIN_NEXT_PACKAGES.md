@@ -121,4 +121,3 @@
 | What not to change | Runtime behavior or schema. |
 | Risk level | Low |
 | Evidence pack | Confirm docs/evidence scope only. |
-

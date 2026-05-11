@@ -96,4 +96,3 @@ Do not start large Admin features without a plan-first review. The Admin module 
 4. Implement one small package only.
 5. Run focused tests and the standard validation set.
 6. Provide an evidence pack.
-
