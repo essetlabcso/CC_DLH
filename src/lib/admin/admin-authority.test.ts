@@ -13,23 +13,38 @@ import { prisma } from "@/lib/db/client";
 import {
   canChangePlatformAdminAuthority,
   getAdminAuthorityOverview,
+  grantPlatformAdminAuthority,
   isSuperAdminEquivalentForPhase1,
   touchesPlatformAdminAuthority,
+  updatePlatformAdminAuthorityStatus,
+  ADMIN_AUTHORITY_CHANGE_ERROR,
 } from "./admin-authority";
 
-vi.mock("@/lib/db/client", () => ({
-  prisma: {
+vi.mock("@/lib/db/client", () => {
+  const mockPrisma = {
+    $transaction: vi.fn().mockImplementation(async (cb) => await cb(mockPrisma)),
     adminAuditLog: {
+      create: vi.fn(),
       findMany: vi.fn(),
     },
     organizationMembership: {
+      findFirst: vi.fn(),
       findMany: vi.fn(),
     },
     scopedRoleAssignment: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
-  },
-}));
+    user: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+    },
+  };
+  return { prisma: mockPrisma };
+});
 
 describe("Admin authority boundary", () => {
   beforeEach(() => {
@@ -229,6 +244,8 @@ describe("Admin authority boundary", () => {
               "USER_INVITED",
               "MEMBERSHIP_ADDED",
               "MEMBERSHIP_UPDATED",
+              "AUTHORITY_GRANTED",
+              "AUTHORITY_UPDATED",
             ],
           },
         },
@@ -240,5 +257,292 @@ describe("Admin authority boundary", () => {
     expect(auditCall?.select).not.toHaveProperty("beforeJson");
     expect(auditCall?.select).not.toHaveProperty("afterJson");
     expect(auditCall?.select).not.toHaveProperty("metadata");
+  });
+
+  describe("Mutators: Platform Admin Management", () => {
+    const validActorId = "actor_1";
+    const targetUserId = "user_2";
+    const targetEmail = "candidate@example.org";
+    const validReason = "Establishing regular administrative coverage for reporting periods.";
+
+    describe("grantPlatformAdminAuthority", () => {
+      it("enforces Super Admin privileges for the actor", async () => {
+        await expect(
+          grantPlatformAdminAuthority({
+            actorId: validActorId,
+            actorRole: "learner",
+            email: targetEmail,
+            reason: validReason,
+          })
+        ).rejects.toThrow(ADMIN_AUTHORITY_CHANGE_ERROR);
+      });
+
+      it("rejects reasons shorter than 10 characters", async () => {
+        await expect(
+          grantPlatformAdminAuthority({
+            actorId: validActorId,
+            actorRole: "admin",
+            email: targetEmail,
+            reason: "Short.",
+          })
+        ).rejects.toThrow("A descriptive reason (min 10 characters) is required.");
+      });
+
+      it("rejects if user record does not exist", async () => {
+        vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+        await expect(
+          grantPlatformAdminAuthority({
+            actorId: validActorId,
+            actorRole: "admin",
+            email: targetEmail,
+            reason: validReason,
+          })
+        ).rejects.toThrow(`No existing user record found for email: ${targetEmail}`);
+      });
+
+      it("rejects non-ACTIVE user statuses", async () => {
+        vi.mocked(prisma.user.findFirst).mockResolvedValue({
+          id: targetUserId,
+          status: UserStatus.DISABLED,
+        } as never);
+
+        await expect(
+          grantPlatformAdminAuthority({
+            actorId: validActorId,
+            actorRole: "admin",
+            email: targetEmail,
+            reason: validReason,
+          })
+        ).rejects.toThrow("Authority can only be granted to active user accounts.");
+      });
+
+      it("rejects redundant active Platform assignments", async () => {
+        vi.mocked(prisma.user.findFirst).mockResolvedValue({
+          id: targetUserId,
+          status: UserStatus.ACTIVE,
+          organizationId: "org_123",
+        } as never);
+        vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({
+          id: "mem_123",
+        } as never);
+        vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue({
+          id: "existing_scoped_1",
+          status: "ACTIVE",
+        } as never);
+
+        await expect(
+          grantPlatformAdminAuthority({
+            actorId: validActorId,
+            actorRole: "admin",
+            email: targetEmail,
+            reason: validReason,
+          })
+        ).rejects.toThrow(
+          `${targetEmail} already has a Platform Admin assignment record (Status: ACTIVE).`
+        );
+      });
+
+      it("rejects if target user lacks active organization membership", async () => {
+        vi.mocked(prisma.user.findFirst).mockResolvedValue({
+          id: targetUserId,
+          status: UserStatus.ACTIVE,
+          organizationId: "org_123",
+        } as never);
+        vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue(null);
+
+        await expect(
+          grantPlatformAdminAuthority({
+            actorId: validActorId,
+            actorRole: "admin",
+            email: targetEmail,
+            reason: validReason,
+          })
+        ).rejects.toThrow(
+          "Target user must hold an ACTIVE membership within their system organization"
+        );
+      });
+
+      it("successfully grants authority and appends audit log", async () => {
+        vi.mocked(prisma.user.findFirst).mockResolvedValue({
+          id: targetUserId,
+          status: UserStatus.ACTIVE,
+          organizationId: "org_123",
+        } as never);
+        vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({
+          id: "mem_123",
+        } as never);
+        vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue(null);
+        vi.mocked(prisma.scopedRoleAssignment.create).mockResolvedValue({
+          id: "new_scoped_99",
+        } as never);
+
+        await grantPlatformAdminAuthority({
+          actorId: validActorId,
+          actorRole: "admin",
+          email: targetEmail,
+          reason: validReason,
+        });
+
+        expect(prisma.scopedRoleAssignment.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              userId: targetUserId,
+              roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+              scopeType: PermissionScopeType.PLATFORM,
+              status: ScopedRoleAssignmentStatus.ACTIVE,
+              createdById: validActorId,
+              reason: validReason,
+            }),
+          })
+        );
+
+        expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              action: "AUTHORITY_GRANTED",
+              actorId: validActorId,
+              entityId: "new_scoped_99",
+              entityType: "ScopedRoleAssignment",
+            }),
+          })
+        );
+      });
+    });
+
+    describe("updatePlatformAdminAuthorityStatus", () => {
+      const targetAssignmentId = "assign_55";
+
+      it("enforces Super Admin privileges on status changes", async () => {
+        await expect(
+          updatePlatformAdminAuthorityStatus({
+            actorId: validActorId,
+            actorRole: "learner",
+            assignmentId: targetAssignmentId,
+            reason: validReason,
+            status: ScopedRoleAssignmentStatus.DISABLED,
+          })
+        ).rejects.toThrow(ADMIN_AUTHORITY_CHANGE_ERROR);
+      });
+
+      it("blocks self-modification of status", async () => {
+        vi.mocked(prisma.scopedRoleAssignment.findUnique).mockResolvedValue({
+          id: targetAssignmentId,
+          roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+          userId: validActorId, // Actor matches target
+        } as never);
+
+        await expect(
+          updatePlatformAdminAuthorityStatus({
+            actorId: validActorId,
+            actorRole: "admin",
+            assignmentId: targetAssignmentId,
+            reason: validReason,
+            status: ScopedRoleAssignmentStatus.DISABLED,
+          })
+        ).rejects.toThrow("Self-modification check failed");
+      });
+
+      it("successfully updates status and creates audit trail", async () => {
+        vi.mocked(prisma.scopedRoleAssignment.findUnique).mockResolvedValue({
+          id: targetAssignmentId,
+          roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+          userId: targetUserId,
+        } as never);
+        vi.mocked(prisma.scopedRoleAssignment.update).mockResolvedValue({
+          id: targetAssignmentId,
+        } as never);
+
+        await updatePlatformAdminAuthorityStatus({
+          actorId: validActorId,
+          actorRole: "admin",
+          assignmentId: targetAssignmentId,
+          reason: validReason,
+          status: ScopedRoleAssignmentStatus.DISABLED,
+        });
+
+        expect(prisma.scopedRoleAssignment.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { id: targetAssignmentId },
+            data: expect.objectContaining({
+              status: ScopedRoleAssignmentStatus.DISABLED,
+              reason: validReason,
+            }),
+          })
+        );
+
+        expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              action: "AUTHORITY_UPDATED",
+              actorId: validActorId,
+              entityId: targetAssignmentId,
+              entityType: "ScopedRoleAssignment",
+            }),
+          })
+        );
+      });
+
+      it("populates expiresAt timestamp when marking assignment DISABLED", async () => {
+        vi.mocked(prisma.scopedRoleAssignment.findUnique).mockResolvedValue({
+          id: targetAssignmentId,
+          roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+          userId: targetUserId,
+        } as never);
+
+        await updatePlatformAdminAuthorityStatus({
+          actorId: validActorId,
+          actorRole: "admin",
+          assignmentId: targetAssignmentId,
+          reason: validReason,
+          status: ScopedRoleAssignmentStatus.DISABLED,
+        });
+
+        expect(prisma.scopedRoleAssignment.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              status: ScopedRoleAssignmentStatus.DISABLED,
+              expiresAt: expect.any(Date),
+            }),
+          })
+        );
+      });
+
+      it("clears expiresAt safely when reactivating assignment to ACTIVE", async () => {
+        vi.mocked(prisma.scopedRoleAssignment.findUnique).mockResolvedValue({
+          id: targetAssignmentId,
+          roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+          userId: targetUserId,
+        } as never);
+
+        await updatePlatformAdminAuthorityStatus({
+          actorId: validActorId,
+          actorRole: "admin",
+          assignmentId: targetAssignmentId,
+          reason: validReason,
+          status: ScopedRoleAssignmentStatus.ACTIVE,
+        });
+
+        expect(prisma.scopedRoleAssignment.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              status: ScopedRoleAssignmentStatus.ACTIVE,
+              expiresAt: null,
+            }),
+          })
+        );
+      });
+
+      it("rejects unsupported non-whitelist status codes", async () => {
+        await expect(
+          updatePlatformAdminAuthorityStatus({
+            actorId: validActorId,
+            actorRole: "admin",
+            assignmentId: targetAssignmentId,
+            reason: validReason,
+            status: ScopedRoleAssignmentStatus.INVITED, // Not in whitelist
+          })
+        ).rejects.toThrow("is unsupported for Platform Admin updates");
+      });
+    });
   });
 });

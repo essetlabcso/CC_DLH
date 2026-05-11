@@ -3,15 +3,21 @@ import Link from "next/link";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import {
   getAdminAuthorityOverview,
+  isSuperAdminEquivalentForPhase1,
   type AuthorityAuditActivity,
   type ScopedPlatformAdminAuthority,
   type SuperAdminEquivalentUser,
 } from "@/lib/admin/admin-authority";
 import { getAdminStatusLabel } from "@/lib/admin/role-labels";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import {
+  GrantPlatformAdminPanel,
+  PlatformAdminStatusControl,
+} from "./PlatformAdminControls";
 
 export default async function AdminAuthorityPage() {
-  await requireWorkspaceIdentity("/admin/admin-authority");
+  const identity = await requireWorkspaceIdentity("/admin/admin-authority");
+  const isSuperAdmin = isSuperAdminEquivalentForPhase1(identity.session.role);
   const overview = await getAdminAuthorityOverview();
 
   return (
@@ -22,9 +28,7 @@ export default async function AdminAuthorityPage() {
             <h2>Super Admin-equivalent and Platform Admin authority</h2>
             <p>
               Review who holds the current Phase 1 Admin authority levels and
-              what recent authority-related changes were recorded. This page is
-              read-only and does not grant, remove, disable, or reactivate
-              authority.
+              what recent authority-related changes were recorded. Manage Platform Admin authority assignments below.
             </p>
           </div>
           <Link className="workspace-link secondary" href="/admin">
@@ -132,10 +136,11 @@ export default async function AdminAuthorityPage() {
           <div className="admin-section-heading">
             <h2 id="platform-admins-title">Scoped Platform Admin authority</h2>
             <p>
-              Existing scoped Platform Admin assignments are shown without
-              adding any new management actions.
+              Manage assignments that grant specific workspace-level access.
             </p>
           </div>
+
+          {isSuperAdmin && <GrantPlatformAdminPanel />}
           {overview.scopedPlatformAdmins.length > 0 ? (
             <div className="admin-table-card">
               <table className="admin-table">
@@ -148,12 +153,14 @@ export default async function AdminAuthorityPage() {
                     <th>Starts</th>
                     <th>Ends</th>
                     <th>Created by</th>
+                    {isSuperAdmin && <th style={{ width: "120px" }}>Action</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {overview.scopedPlatformAdmins.map((authority) => (
                     <ScopedPlatformAdminRow
                       authority={authority}
+                      isSuperAdmin={isSuperAdmin}
                       key={authority.id}
                     />
                   ))}
@@ -168,8 +175,7 @@ export default async function AdminAuthorityPage() {
               <h2>No scoped Platform Admin authority found</h2>
               <p>
                 Day-to-day Admin access may still be covered by current ADMIN
-                users. Scoped Platform Admin assignment workflows are not added
-                in this package.
+                users. Grant the first scoped assignment to activate delegation.
               </p>
             </section>
           )}
@@ -271,8 +277,10 @@ function SuperAdminEquivalentCard({
 
 function ScopedPlatformAdminRow({
   authority,
+  isSuperAdmin,
 }: {
   authority: ScopedPlatformAdminAuthority;
+  isSuperAdmin: boolean;
 }) {
   return (
     <tr>
@@ -296,6 +304,14 @@ function ScopedPlatformAdminRow({
       <td>{formatDate(authority.startsAt)}</td>
       <td>{formatDate(authority.endsAt)}</td>
       <td>{authority.createdByLabel}</td>
+      {isSuperAdmin && (
+        <td>
+          <PlatformAdminStatusControl
+            assignmentId={authority.id}
+            currentStatus={authority.status}
+          />
+        </td>
+      )}
     </tr>
   );
 }

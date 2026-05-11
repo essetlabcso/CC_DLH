@@ -91,6 +91,8 @@ const authorityAuditActions = [
   "USER_INVITED",
   "MEMBERSHIP_ADDED",
   "MEMBERSHIP_UPDATED",
+  "AUTHORITY_GRANTED",
+  "AUTHORITY_UPDATED",
 ] as const;
 
 export async function getAdminAuthorityOverview(): Promise<AdminAuthorityOverview> {
@@ -375,6 +377,10 @@ function getAuthorityAuditActionLabel(action: string) {
       return "Organization member added";
     case "MEMBERSHIP_UPDATED":
       return "Organization membership updated";
+    case "AUTHORITY_GRANTED":
+      return "Platform Admin authority granted";
+    case "AUTHORITY_UPDATED":
+      return "Platform Admin authority updated";
     default:
       return formatAdminAuthorityLabel(action);
   }
@@ -386,6 +392,8 @@ function getAuthorityAuditEntityLabel(entityType: string) {
       return "User account";
     case "OrganizationMembership":
       return "Organization membership";
+    case "ScopedRoleAssignment":
+      return "Scoped role assignment";
     default:
       return formatAdminAuthorityLabel(entityType);
   }
@@ -401,4 +409,197 @@ function formatAdminAuthorityLabel(value: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
+}
+
+// ---------------------------------------------------------------------------
+// Mutators
+// ---------------------------------------------------------------------------
+
+export type GrantPlatformAdminInput = {
+  actorId: string;
+  actorRole: DecRole;
+  email: string;
+  reason: string;
+};
+
+export async function grantPlatformAdminAuthority(input: GrantPlatformAdminInput) {
+  // 1. Actor Gate
+  if (!isSuperAdminEquivalentForPhase1(input.actorRole)) {
+    throw new Error(ADMIN_AUTHORITY_CHANGE_ERROR);
+  }
+
+  // 2. Validations
+  const reason = input.reason?.trim() ?? "";
+  if (reason.length < 10) {
+    throw new Error("A descriptive reason (min 10 characters) is required.");
+  }
+
+  const email = input.email?.trim().toLowerCase();
+  if (!email) {
+    throw new Error("Email address is required.");
+  }
+
+  // 3. Look up target user
+  const targetUser = await prisma.user.findFirst({
+    where: { email },
+    select: { id: true, status: true, organizationId: true },
+  });
+
+  if (!targetUser) {
+    throw new Error(`No existing user record found for email: ${email}`);
+  }
+
+  if (targetUser.status !== "ACTIVE") {
+    throw new Error(
+      `Authority can only be granted to active user accounts. Current status: ${targetUser.status}`
+    );
+  }
+
+  // NEW: Enforce active organization membership for the target user
+  const membership = await prisma.organizationMembership.findFirst({
+    where: {
+      userId: targetUser.id,
+      organizationId: targetUser.organizationId,
+      status: "ACTIVE",
+    },
+    select: { id: true },
+  });
+
+  if (!membership) {
+    throw new Error(
+      "Target user must hold an ACTIVE membership within their system organization to hold platform authority."
+    );
+  }
+
+  // 4. Prevent confusing duplicate assignments (covers both active and inactive)
+  const existingAssignment = await prisma.scopedRoleAssignment.findFirst({
+    where: {
+      userId: targetUser.id,
+      roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+      scopeType: PermissionScopeType.PLATFORM,
+    },
+    select: { id: true, status: true },
+  });
+
+  if (existingAssignment) {
+    throw new Error(
+      `${email} already has a Platform Admin assignment record (Status: ${existingAssignment.status}). Please manage their status directly through the dashboard.`
+    );
+  }
+
+  // 5. Execute creation
+  return await prisma.$transaction(async (tx) => {
+    const assignment = await tx.scopedRoleAssignment.create({
+      data: {
+        createdById: input.actorId,
+        reason,
+        roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+        scopeId: "platform",
+        scopeType: PermissionScopeType.PLATFORM,
+        startsAt: new Date(),
+        status: ScopedRoleAssignmentStatus.ACTIVE,
+        userId: targetUser.id,
+      },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "AUTHORITY_GRANTED",
+        actorId: input.actorId,
+        entityId: assignment.id,
+        entityType: "ScopedRoleAssignment",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return assignment;
+  });
+}
+
+export type UpdatePlatformAdminStatusInput = {
+  actorId: string;
+  actorRole: DecRole;
+  assignmentId: string;
+  reason: string;
+  status: ScopedRoleAssignmentStatus;
+};
+
+export async function updatePlatformAdminAuthorityStatus(
+  input: UpdatePlatformAdminStatusInput,
+) {
+  // 1. Actor Gate
+  if (!isSuperAdminEquivalentForPhase1(input.actorRole)) {
+    throw new Error(ADMIN_AUTHORITY_CHANGE_ERROR);
+  }
+
+  // 2. Validation
+  if (
+    input.status !== ScopedRoleAssignmentStatus.ACTIVE &&
+    input.status !== ScopedRoleAssignmentStatus.DISABLED
+  ) {
+    throw new Error(
+      `Requested status ${input.status} is unsupported for Platform Admin updates. Only ACTIVE and DISABLED are allowed.`
+    );
+  }
+
+  const reason = input.reason?.trim() ?? "";
+  if (reason.length < 10) {
+    throw new Error("A descriptive reason (min 10 characters) is required.");
+  }
+
+  // 3. Lookup assignment
+  const assignment = await prisma.scopedRoleAssignment.findUnique({
+    select: {
+      id: true,
+      roleKey: true,
+      userId: true,
+    },
+    where: { id: input.assignmentId },
+  });
+
+  if (!assignment) {
+    throw new Error("Platform Admin assignment not found.");
+  }
+
+  if (assignment.roleKey !== ScopedRoleKey.PLATFORM_ADMIN) {
+    throw new Error("Modification denied: Assignment is not a Platform Admin role.");
+  }
+
+  // 4. Self-modification gate
+  if (assignment.userId === input.actorId) {
+    throw new Error("Self-modification check failed: You cannot modify your own Platform Admin authority status.");
+  }
+
+  // 5. Execute update
+  return await prisma.$transaction(async (tx) => {
+    const updated = await tx.scopedRoleAssignment.update({
+      data: {
+        reason,
+        status: input.status,
+        // Populate on disable, nullify on activation
+        expiresAt:
+          input.status === ScopedRoleAssignmentStatus.DISABLED
+            ? new Date()
+            : input.status === ScopedRoleAssignmentStatus.ACTIVE
+              ? null
+              : undefined,
+      },
+
+      where: { id: input.assignmentId },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "AUTHORITY_UPDATED",
+        actorId: input.actorId,
+        entityId: assignment.id,
+        entityType: "ScopedRoleAssignment",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return updated;
+  });
 }
