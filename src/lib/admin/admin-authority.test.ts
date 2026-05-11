@@ -28,6 +28,7 @@ vi.mock("@/lib/db/client", () => {
       findMany: vi.fn(),
     },
     organizationMembership: {
+      findFirst: vi.fn(),
       findMany: vi.fn(),
     },
     scopedRoleAssignment: {
@@ -319,9 +320,14 @@ describe("Admin authority boundary", () => {
         vi.mocked(prisma.user.findFirst).mockResolvedValue({
           id: targetUserId,
           status: UserStatus.ACTIVE,
+          organizationId: "org_123",
+        } as never);
+        vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({
+          id: "mem_123",
         } as never);
         vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue({
           id: "existing_scoped_1",
+          status: "ACTIVE",
         } as never);
 
         await expect(
@@ -331,13 +337,39 @@ describe("Admin authority boundary", () => {
             email: targetEmail,
             reason: validReason,
           })
-        ).rejects.toThrow(`${targetEmail} already holds active Platform Admin authority.`);
+        ).rejects.toThrow(
+          `${targetEmail} already has a Platform Admin assignment record (Status: ACTIVE).`
+        );
+      });
+
+      it("rejects if target user lacks active organization membership", async () => {
+        vi.mocked(prisma.user.findFirst).mockResolvedValue({
+          id: targetUserId,
+          status: UserStatus.ACTIVE,
+          organizationId: "org_123",
+        } as never);
+        vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue(null);
+
+        await expect(
+          grantPlatformAdminAuthority({
+            actorId: validActorId,
+            actorRole: "admin",
+            email: targetEmail,
+            reason: validReason,
+          })
+        ).rejects.toThrow(
+          "Target user must hold an ACTIVE membership within their system organization"
+        );
       });
 
       it("successfully grants authority and appends audit log", async () => {
         vi.mocked(prisma.user.findFirst).mockResolvedValue({
           id: targetUserId,
           status: UserStatus.ACTIVE,
+          organizationId: "org_123",
+        } as never);
+        vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({
+          id: "mem_123",
         } as never);
         vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue(null);
         vi.mocked(prisma.scopedRoleAssignment.create).mockResolvedValue({
@@ -473,6 +505,43 @@ describe("Admin authority boundary", () => {
             }),
           })
         );
+      });
+
+      it("clears expiresAt safely when reactivating assignment to ACTIVE", async () => {
+        vi.mocked(prisma.scopedRoleAssignment.findUnique).mockResolvedValue({
+          id: targetAssignmentId,
+          roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+          userId: targetUserId,
+        } as never);
+
+        await updatePlatformAdminAuthorityStatus({
+          actorId: validActorId,
+          actorRole: "admin",
+          assignmentId: targetAssignmentId,
+          reason: validReason,
+          status: ScopedRoleAssignmentStatus.ACTIVE,
+        });
+
+        expect(prisma.scopedRoleAssignment.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              status: ScopedRoleAssignmentStatus.ACTIVE,
+              expiresAt: null,
+            }),
+          })
+        );
+      });
+
+      it("rejects unsupported non-whitelist status codes", async () => {
+        await expect(
+          updatePlatformAdminAuthorityStatus({
+            actorId: validActorId,
+            actorRole: "admin",
+            assignmentId: targetAssignmentId,
+            reason: validReason,
+            status: ScopedRoleAssignmentStatus.INVITED, // Not in whitelist
+          })
+        ).rejects.toThrow("is unsupported for Platform Admin updates");
       });
     });
   });

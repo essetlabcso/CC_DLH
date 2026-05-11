@@ -442,7 +442,7 @@ export async function grantPlatformAdminAuthority(input: GrantPlatformAdminInput
   // 3. Look up target user
   const targetUser = await prisma.user.findFirst({
     where: { email },
-    select: { id: true, status: true },
+    select: { id: true, status: true, organizationId: true },
   });
 
   if (!targetUser) {
@@ -450,21 +450,41 @@ export async function grantPlatformAdminAuthority(input: GrantPlatformAdminInput
   }
 
   if (targetUser.status !== "ACTIVE") {
-    throw new Error(`Authority can only be granted to active user accounts. Current status: ${targetUser.status}`);
+    throw new Error(
+      `Authority can only be granted to active user accounts. Current status: ${targetUser.status}`
+    );
   }
 
-  // 4. Prevent redundant active assignments
-  const existingActive = await prisma.scopedRoleAssignment.findFirst({
+  // NEW: Enforce active organization membership for the target user
+  const membership = await prisma.organizationMembership.findFirst({
+    where: {
+      userId: targetUser.id,
+      organizationId: targetUser.organizationId,
+      status: "ACTIVE",
+    },
+    select: { id: true },
+  });
+
+  if (!membership) {
+    throw new Error(
+      "Target user must hold an ACTIVE membership within their system organization to hold platform authority."
+    );
+  }
+
+  // 4. Prevent confusing duplicate assignments (covers both active and inactive)
+  const existingAssignment = await prisma.scopedRoleAssignment.findFirst({
     where: {
       userId: targetUser.id,
       roleKey: ScopedRoleKey.PLATFORM_ADMIN,
       scopeType: PermissionScopeType.PLATFORM,
-      status: ScopedRoleAssignmentStatus.ACTIVE,
     },
+    select: { id: true, status: true },
   });
 
-  if (existingActive) {
-    throw new Error(`${email} already holds active Platform Admin authority.`);
+  if (existingAssignment) {
+    throw new Error(
+      `${email} already has a Platform Admin assignment record (Status: ${existingAssignment.status}). Please manage their status directly through the dashboard.`
+    );
   }
 
   // 5. Execute creation
@@ -514,6 +534,15 @@ export async function updatePlatformAdminAuthorityStatus(
   }
 
   // 2. Validation
+  if (
+    input.status !== ScopedRoleAssignmentStatus.ACTIVE &&
+    input.status !== ScopedRoleAssignmentStatus.DISABLED
+  ) {
+    throw new Error(
+      `Requested status ${input.status} is unsupported for Platform Admin updates. Only ACTIVE and DISABLED are allowed.`
+    );
+  }
+
   const reason = input.reason?.trim() ?? "";
   if (reason.length < 10) {
     throw new Error("A descriptive reason (min 10 characters) is required.");
@@ -548,10 +577,15 @@ export async function updatePlatformAdminAuthorityStatus(
       data: {
         reason,
         status: input.status,
-        ...(input.status === ScopedRoleAssignmentStatus.DISABLED
-          ? { expiresAt: new Date() }
-          : {}),
+        // Populate on disable, nullify on activation
+        expiresAt:
+          input.status === ScopedRoleAssignmentStatus.DISABLED
+            ? new Date()
+            : input.status === ScopedRoleAssignmentStatus.ACTIVE
+              ? null
+              : undefined,
       },
+
       where: { id: input.assignmentId },
     });
 

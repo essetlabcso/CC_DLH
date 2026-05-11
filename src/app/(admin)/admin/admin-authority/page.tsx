@@ -3,6 +3,7 @@ import Link from "next/link";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import {
   getAdminAuthorityOverview,
+  isSuperAdminEquivalentForPhase1,
   type AuthorityAuditActivity,
   type ScopedPlatformAdminAuthority,
   type SuperAdminEquivalentUser,
@@ -15,7 +16,8 @@ import {
 } from "./PlatformAdminControls";
 
 export default async function AdminAuthorityPage() {
-  await requireWorkspaceIdentity("/admin/admin-authority");
+  const identity = await requireWorkspaceIdentity("/admin/admin-authority");
+  const isSuperAdmin = isSuperAdminEquivalentForPhase1(identity.session.role);
   const overview = await getAdminAuthorityOverview();
 
   return (
@@ -138,7 +140,7 @@ export default async function AdminAuthorityPage() {
             </p>
           </div>
 
-          <GrantPlatformAdminPanel />
+          {isSuperAdmin && <GrantPlatformAdminPanel />}
           {overview.scopedPlatformAdmins.length > 0 ? (
             <div className="admin-table-card">
               <table className="admin-table">
@@ -151,13 +153,14 @@ export default async function AdminAuthorityPage() {
                     <th>Starts</th>
                     <th>Ends</th>
                     <th>Created by</th>
-                    <th style={{ width: "120px" }}>Action</th>
+                    {isSuperAdmin && <th style={{ width: "120px" }}>Action</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {overview.scopedPlatformAdmins.map((authority) => (
                     <ScopedPlatformAdminRow
                       authority={authority}
+                      isSuperAdmin={isSuperAdmin}
                       key={authority.id}
                     />
                   ))}
@@ -274,8 +277,10 @@ function SuperAdminEquivalentCard({
 
 function ScopedPlatformAdminRow({
   authority,
+  isSuperAdmin,
 }: {
   authority: ScopedPlatformAdminAuthority;
+  isSuperAdmin: boolean;
 }) {
   return (
     <tr>
@@ -299,12 +304,14 @@ function ScopedPlatformAdminRow({
       <td>{formatDate(authority.startsAt)}</td>
       <td>{formatDate(authority.endsAt)}</td>
       <td>{authority.createdByLabel}</td>
-      <td>
-        <PlatformAdminStatusControl
-          assignmentId={authority.id}
-          currentStatus={authority.status}
-        />
-      </td>
+      {isSuperAdmin && (
+        <td>
+          <PlatformAdminStatusControl
+            assignmentId={authority.id}
+            currentStatus={authority.status}
+          />
+        </td>
+      )}
     </tr>
   );
 }
