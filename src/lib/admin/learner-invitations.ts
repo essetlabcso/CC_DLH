@@ -2,7 +2,9 @@ import {
   CourseStatus,
   CourseVersionStatus,
   LearnerEnrollmentEventType,
+  LearnerEnrollmentStatus,
   LearnerInvitationStatus,
+  LearnerParticipantStatus,
 } from "@prisma/client";
 
 import {
@@ -15,8 +17,27 @@ export const adminLearnerInvitationCreationReason =
 export const adminLearnerInvitationCreationMetadata = JSON.stringify({
   source: "admin-learner-invitation",
 });
+export const adminLearnerInvitationStatusMetadata = JSON.stringify({
+  source: "admin-learner-invitation-status",
+});
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const cancellableInvitationStatuses = [
+  LearnerInvitationStatus.CREATED,
+  LearnerInvitationStatus.SENT,
+  LearnerInvitationStatus.PENDING_ACCEPTANCE,
+] as const;
+const activeEnrollmentStatuses = [
+  LearnerEnrollmentStatus.ASSIGNED,
+  LearnerEnrollmentStatus.ENROLLED,
+  LearnerEnrollmentStatus.STARTED,
+  LearnerEnrollmentStatus.COMPLETED,
+] as const;
+const activeParticipantStatuses = [
+  LearnerParticipantStatus.ASSIGNED,
+  LearnerParticipantStatus.ACTIVE,
+  LearnerParticipantStatus.COMPLETED,
+] as const;
 
 export type AdminLearnerInvitationOption = {
   id: string;
@@ -42,6 +63,8 @@ export type AdminLearnerInvitationSummary = {
   createdAt: Date;
   expiresAt: Date;
   acceptedAt: Date | null;
+  canCancel: boolean;
+  canRevoke: boolean;
 };
 
 export type AdminLearnerInvitationWorkspace = {
@@ -91,6 +114,27 @@ export type AdminCreateLearnerInvitationResult =
       message: string;
     };
 
+export type AdminLearnerInvitationStatusResult =
+  | {
+      ok: true;
+      invitationId: string;
+      status: LearnerInvitationStatus;
+      suspendedEnrollments: number;
+      suspendedProgramParticipants: number;
+      suspendedCohortParticipants: number;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
+export type AdminLearnerInvitationStatusInput = {
+  invitationId: string;
+  actorId: string;
+  reason: string;
+  now?: Date;
+};
+
 type FindUniqueArgs = {
   where: Record<string, unknown>;
   select?: Record<string, unknown>;
@@ -107,11 +151,39 @@ type CreateArgs = {
   select?: Record<string, unknown>;
 };
 
+type UpdateArgs = {
+  where: Record<string, unknown>;
+  data: Record<string, unknown>;
+  select?: Record<string, unknown>;
+};
+
+type UpdateManyArgs = {
+  where: Record<string, unknown>;
+  data: Record<string, unknown>;
+};
+
 type AdminLearnerInvitationTransaction = {
   learnerInvitation: {
+    findUnique(args: FindUniqueArgs): Promise<InvitationStatusRecord | null>;
     create(args: CreateArgs): Promise<{ id: string }>;
+    update(args: UpdateArgs): Promise<InvitationStatusRecord>;
+  };
+  learnerEnrollment: {
+    findMany(args: FindFirstArgs): Promise<LinkedStatusRecord[]>;
+    updateMany(args: UpdateManyArgs): Promise<{ count: number }>;
+  };
+  programParticipant: {
+    findMany(args: FindFirstArgs): Promise<LinkedStatusRecord[]>;
+    updateMany(args: UpdateManyArgs): Promise<{ count: number }>;
+  };
+  cohortParticipant: {
+    findMany(args: FindFirstArgs): Promise<LinkedStatusRecord[]>;
+    updateMany(args: UpdateManyArgs): Promise<{ count: number }>;
   };
   learnerEnrollmentEvent: {
+    create(args: CreateArgs): Promise<unknown>;
+  };
+  adminAuditLog: {
     create(args: CreateArgs): Promise<unknown>;
   };
 };
@@ -240,6 +312,17 @@ type LearnerInvitationListRecord = {
   };
 };
 
+type InvitationStatusRecord = {
+  id: string;
+  status: LearnerInvitationStatus;
+  acceptedAt: Date | null;
+};
+
+type LinkedStatusRecord = {
+  id: string;
+  status: string;
+};
+
 export function parseAdminLearnerInvitationForm(
   formData: FormData,
   options: { now?: Date } = {},
@@ -289,6 +372,22 @@ export function parseAdminLearnerInvitationForm(
       reason,
     },
   };
+}
+
+export function parseAdminLearnerInvitationStatusReason(formData: FormData) {
+  const reason = readString(formData, "reason");
+
+  if (!reason) {
+    return {
+      ok: false,
+      message: "Enter a reason for this invitation status change.",
+    } as const;
+  }
+
+  return {
+    ok: true,
+    reason,
+  } as const;
 }
 
 export async function createAdminLearnerInvitation(
@@ -345,6 +444,26 @@ export async function createAdminLearnerInvitation(
     invitationId: invitation.id,
     rawToken,
   };
+}
+
+export async function cancelAdminLearnerInvitation(
+  prisma: AdminLearnerInvitationPrisma,
+  input: AdminLearnerInvitationStatusInput,
+): Promise<AdminLearnerInvitationStatusResult> {
+  return updateAdminLearnerInvitationAccessStatus(prisma, {
+    ...input,
+    targetStatus: LearnerInvitationStatus.CANCELLED,
+  });
+}
+
+export async function revokeAdminLearnerInvitation(
+  prisma: AdminLearnerInvitationPrisma,
+  input: AdminLearnerInvitationStatusInput,
+): Promise<AdminLearnerInvitationStatusResult> {
+  return updateAdminLearnerInvitationAccessStatus(prisma, {
+    ...input,
+    targetStatus: LearnerInvitationStatus.REVOKED,
+  });
 }
 
 export async function getAdminLearnerInvitationWorkspace(
@@ -691,7 +810,228 @@ function toInvitationSummary(invitation: LearnerInvitationListRecord) {
     createdAt: invitation.createdAt,
     expiresAt: invitation.expiresAt,
     acceptedAt: invitation.acceptedAt ?? null,
+    canCancel: cancellableInvitationStatuses.includes(
+      invitation.status as (typeof cancellableInvitationStatuses)[number],
+    ),
+    canRevoke: invitation.status === LearnerInvitationStatus.ACCEPTED,
   } satisfies AdminLearnerInvitationSummary;
+}
+
+async function updateAdminLearnerInvitationAccessStatus(
+  prisma: AdminLearnerInvitationPrisma,
+  input: AdminLearnerInvitationStatusInput & {
+    targetStatus: LearnerInvitationStatus;
+  },
+): Promise<AdminLearnerInvitationStatusResult> {
+  if (!input.reason.trim()) {
+    return {
+      ok: false,
+      message: "Enter a reason for this invitation status change.",
+    };
+  }
+
+  const now = input.now ?? new Date();
+
+  return prisma.$transaction(async (transaction) => {
+    const invitation = await transaction.learnerInvitation.findUnique({
+      where: {
+        id: input.invitationId,
+      },
+      select: invitationStatusSelect,
+    });
+
+    if (!invitation) {
+      return {
+        ok: false,
+        message: "Invitation was not found.",
+      };
+    }
+
+    if (
+      input.targetStatus === LearnerInvitationStatus.CANCELLED &&
+      !cancellableInvitationStatuses.includes(
+        invitation.status as (typeof cancellableInvitationStatuses)[number],
+      )
+    ) {
+      return {
+        ok: false,
+        message: "Only pending invitations can be cancelled.",
+      };
+    }
+
+    if (
+      input.targetStatus === LearnerInvitationStatus.REVOKED &&
+      invitation.status !== LearnerInvitationStatus.ACCEPTED
+    ) {
+      return {
+        ok: false,
+        message: "Only accepted invitations can be revoked.",
+      };
+    }
+
+    const updated = await transaction.learnerInvitation.update({
+      where: {
+        id: invitation.id,
+      },
+      data:
+        input.targetStatus === LearnerInvitationStatus.CANCELLED
+          ? {
+              status: LearnerInvitationStatus.CANCELLED,
+              cancelledAt: now,
+              reason: input.reason,
+            }
+          : {
+              status: LearnerInvitationStatus.REVOKED,
+              revokedAt: now,
+              reason: input.reason,
+            },
+      select: invitationStatusSelect,
+    });
+
+    await transaction.adminAuditLog.create({
+      data: {
+        action:
+          input.targetStatus === LearnerInvitationStatus.CANCELLED
+            ? "LEARNER_INVITATION_CANCELLED"
+            : "LEARNER_INVITATION_REVOKED",
+        actorId: input.actorId,
+        beforeJson: JSON.stringify({ status: invitation.status }),
+        afterJson: JSON.stringify({ status: updated.status }),
+        entityId: invitation.id,
+        entityType: "LearnerInvitation",
+        reason: input.reason,
+        riskLevel:
+          input.targetStatus === LearnerInvitationStatus.REVOKED
+            ? "MEDIUM"
+            : "LOW",
+        metadata: adminLearnerInvitationStatusMetadata,
+      },
+    });
+
+    if (input.targetStatus === LearnerInvitationStatus.CANCELLED) {
+      return {
+        ok: true,
+        invitationId: updated.id,
+        status: updated.status,
+        suspendedEnrollments: 0,
+        suspendedProgramParticipants: 0,
+        suspendedCohortParticipants: 0,
+      };
+    }
+
+    const suspendedEnrollments = await suspendLinkedRecords(transaction, {
+      actorId: input.actorId,
+      invitationId: updated.id,
+      now,
+      reason: input.reason,
+      model: "learnerEnrollment",
+      activeStatuses: [...activeEnrollmentStatuses],
+      eventType: LearnerEnrollmentEventType.ENROLLMENT_SUSPENDED,
+      eventLinkField: "enrollmentId",
+      targetStatus: LearnerEnrollmentStatus.SUSPENDED,
+    });
+    const suspendedProgramParticipants = await suspendLinkedRecords(transaction, {
+      actorId: input.actorId,
+      invitationId: updated.id,
+      now,
+      reason: input.reason,
+      model: "programParticipant",
+      activeStatuses: [...activeParticipantStatuses],
+      eventType: LearnerEnrollmentEventType.ASSIGNMENT_REMOVED,
+      eventLinkField: "programParticipantId",
+      targetStatus: LearnerParticipantStatus.SUSPENDED,
+    });
+    const suspendedCohortParticipants = await suspendLinkedRecords(transaction, {
+      actorId: input.actorId,
+      invitationId: updated.id,
+      now,
+      reason: input.reason,
+      model: "cohortParticipant",
+      activeStatuses: [...activeParticipantStatuses],
+      eventType: LearnerEnrollmentEventType.ASSIGNMENT_REMOVED,
+      eventLinkField: "cohortParticipantId",
+      targetStatus: LearnerParticipantStatus.SUSPENDED,
+    });
+
+    return {
+      ok: true,
+      invitationId: updated.id,
+      status: updated.status,
+      suspendedEnrollments,
+      suspendedProgramParticipants,
+      suspendedCohortParticipants,
+    };
+  });
+}
+
+async function suspendLinkedRecords(
+  transaction: AdminLearnerInvitationTransaction,
+  input: {
+    actorId: string;
+    invitationId: string;
+    now: Date;
+    reason: string;
+    model: "learnerEnrollment" | "programParticipant" | "cohortParticipant";
+    activeStatuses: string[];
+    eventType: LearnerEnrollmentEventType;
+    eventLinkField:
+      | "enrollmentId"
+      | "programParticipantId"
+      | "cohortParticipantId";
+    targetStatus: LearnerEnrollmentStatus | LearnerParticipantStatus;
+  },
+) {
+  const store = transaction[input.model];
+  const records = await store.findMany({
+    where: {
+      invitationId: input.invitationId,
+      status: {
+        in: input.activeStatuses,
+      },
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+
+  if (records.length === 0) {
+    return 0;
+  }
+
+  await store.updateMany({
+    where: {
+      id: {
+        in: records.map((record) => record.id),
+      },
+    },
+    data:
+      input.model === "learnerEnrollment"
+        ? {
+            status: input.targetStatus,
+          }
+        : {
+            status: input.targetStatus,
+            endedAt: input.now,
+          },
+  });
+
+  for (const record of records) {
+    await transaction.learnerEnrollmentEvent.create({
+      data: {
+        invitationId: input.invitationId,
+        [input.eventLinkField]: record.id,
+        actorId: input.actorId,
+        eventType: input.eventType,
+        fromStatus: record.status,
+        toStatus: input.targetStatus,
+        reason: input.reason,
+        metadata: adminLearnerInvitationStatusMetadata,
+      },
+    });
+  }
+
+  return records.length;
 }
 
 function readString(formData: FormData, key: string) {
@@ -714,4 +1054,10 @@ const courseVersionValidationSelect = {
       organizationId: true,
     },
   },
+} as const;
+
+const invitationStatusSelect = {
+  id: true,
+  status: true,
+  acceptedAt: true,
 } as const;
