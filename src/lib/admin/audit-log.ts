@@ -27,6 +27,9 @@ const adminAuditEntityMetadata = {
   PracticalProofSubmission: "Practical proof submission",
   User: "User account",
   VerifiedAchievement: "Verified achievement",
+  LearnerEnrollment: "Learner enrollment",
+  ProgramParticipant: "Program participant",
+  CohortParticipant: "Cohort participant",
 } as const;
 
 const adminAuditActionMetadata = {
@@ -57,6 +60,10 @@ const adminAuditActionMetadata = {
   COURSE_VERSION_SPECIALIST_REVIEW_REQUIRED: {
     area: "COURSES_WORKFLOW",
     label: "Course sent for specialist review",
+  },
+  ENROLLMENT_ASSIGNED: {
+    area: "PEOPLE_ROLES",
+    label: "Learner assigned to course",
   },
   DIAGNOSIS_DATASET_APPROVED: {
     area: "EVIDENCE_SOURCES",
@@ -125,6 +132,14 @@ const adminAuditActionMetadata = {
   ORGANIZATION_UPDATED: {
     area: "ORGANIZATIONS",
     label: "Organization updated",
+  },
+  PARTICIPANT_ASSIGNED_TO_PROGRAM: {
+    area: "PEOPLE_ROLES",
+    label: "Learner assigned to program",
+  },
+  PARTICIPANT_ASSIGNED_TO_COHORT: {
+    area: "PEOPLE_ROLES",
+    label: "Learner assigned to cohort",
   },
   REDACTION_REQUIREMENT_RESOLVED: {
     area: "PROOF_DATA_SAFETY",
