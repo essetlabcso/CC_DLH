@@ -12,6 +12,8 @@ import {
 import { formatAdminLabel } from "@/lib/admin/role-labels";
 import Link from "next/link";
 
+import { AssignmentPanels } from "./AssignmentPanels";
+
 type AdminParticipantAccessPageProps = {
   searchParams?: Promise<{
     organizationId?: string;
@@ -59,13 +61,14 @@ export default async function AdminParticipantAccessPage({
               Participant Access Overview
             </h2>
             <p>
-              Safe read-only view of learner access records across invitations,
-              enrollments, program participants, and cohort participants.
+              View learner access records across invitations, enrollments,
+              program participants, and cohort participants. Assign learners
+              directly to courses, programs, or cohorts.
             </p>
           </div>
           <div className="admin-hero-actions">
             <span className="status-badge status-badge-published">
-              Read-only overview
+              Overview and assignment
             </span>
             <Link className="workspace-link secondary" href="/admin">
               Back to Admin
@@ -221,6 +224,26 @@ export default async function AdminParticipantAccessPage({
             />
           </div>
         </section>
+
+        <AssignmentPanels
+          organizationOptions={overview.filterOptions.organizations.map(
+            (org) => ({ label: org.name, value: org.id }),
+          )}
+          courseOptions={overview.filterOptions.courses.map((course) => ({
+            label: course.title,
+            value: course.id,
+          }))}
+          programOptions={overview.filterOptions.programs.map((prog) => ({
+            label: prog.code
+              ? `${prog.name} (${prog.code})`
+              : prog.name,
+            value: prog.id,
+          }))}
+          cohortOptions={overview.filterOptions.cohorts.map((coh) => ({
+            label: coh.name,
+            value: coh.id,
+          }))}
+        />
 
         <EnrollmentTable
           enrollments={overview.enrollments}
