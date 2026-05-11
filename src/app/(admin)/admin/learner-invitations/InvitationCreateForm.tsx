@@ -9,7 +9,7 @@ import type {
 
 import {
   createLearnerInvitationAction,
-  initialCreateLearnerInvitationActionState,
+  type CreateLearnerInvitationActionState,
 } from "./actions";
 
 type InvitationCreateFormProps = {
@@ -21,6 +21,12 @@ type InvitationCreateFormProps = {
     courseVersions: AdminLearnerInvitationCourseVersionOption[];
   };
 };
+
+const initialCreateLearnerInvitationActionState: CreateLearnerInvitationActionState =
+  {
+    ok: false,
+    message: "",
+  };
 
 export function InvitationCreateForm({ options }: InvitationCreateFormProps) {
   const [state, formAction, pending] = useActionState(

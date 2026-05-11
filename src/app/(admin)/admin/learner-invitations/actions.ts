@@ -1,12 +1,16 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import {
+  cancelAdminLearnerInvitation,
   createAdminLearnerInvitation,
   parseAdminLearnerInvitationForm,
+  parseAdminLearnerInvitationStatusReason,
+  revokeAdminLearnerInvitation,
   type AdminLearnerInvitationPrisma,
 } from "@/lib/admin/learner-invitations";
 
@@ -15,12 +19,6 @@ export type CreateLearnerInvitationActionState = {
   message: string;
   inviteLink?: string;
 };
-
-export const initialCreateLearnerInvitationActionState: CreateLearnerInvitationActionState =
-  {
-    ok: false,
-    message: "",
-  };
 
 export async function createLearnerInvitationAction(
   _previousState: CreateLearnerInvitationActionState,
@@ -58,6 +56,60 @@ export async function createLearnerInvitationAction(
   };
 }
 
+export async function cancelLearnerInvitationAction(
+  invitationId: string,
+  formData: FormData,
+) {
+  const identity = await requireWorkspaceIdentity("/admin/learner-invitations");
+  const parsed = parseAdminLearnerInvitationStatusReason(formData);
+
+  if (!parsed.ok) {
+    redirectWithInvitationStatusError(parsed.message);
+  }
+
+  const result = await cancelAdminLearnerInvitation(
+    prisma as unknown as AdminLearnerInvitationPrisma,
+    {
+      invitationId,
+      actorId: identity.user.id,
+      reason: parsed.reason,
+    },
+  );
+
+  if (!result.ok) {
+    redirectWithInvitationStatusError(result.message);
+  }
+
+  redirect("/admin/learner-invitations?updated=cancelled");
+}
+
+export async function revokeLearnerInvitationAction(
+  invitationId: string,
+  formData: FormData,
+) {
+  const identity = await requireWorkspaceIdentity("/admin/learner-invitations");
+  const parsed = parseAdminLearnerInvitationStatusReason(formData);
+
+  if (!parsed.ok) {
+    redirectWithInvitationStatusError(parsed.message);
+  }
+
+  const result = await revokeAdminLearnerInvitation(
+    prisma as unknown as AdminLearnerInvitationPrisma,
+    {
+      invitationId,
+      actorId: identity.user.id,
+      reason: parsed.reason,
+    },
+  );
+
+  if (!result.ok) {
+    redirectWithInvitationStatusError(result.message);
+  }
+
+  redirect("/admin/learner-invitations?updated=revoked");
+}
+
 async function buildInviteLink(rawToken: string) {
   const requestHeaders = await headers();
   const host = requestHeaders.get("host");
@@ -69,4 +121,10 @@ async function buildInviteLink(rawToken: string) {
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
 
   return `${protocol}://${host}/invite/${encodeURIComponent(rawToken)}`;
+}
+
+function redirectWithInvitationStatusError(message: string): never {
+  redirect(
+    `/admin/learner-invitations?error=${encodeURIComponent(message)}`,
+  );
 }

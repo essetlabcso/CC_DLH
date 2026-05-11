@@ -11,8 +11,22 @@ import {
 import { getAdminStatusLabel } from "@/lib/admin/role-labels";
 
 import { InvitationCreateForm } from "./InvitationCreateForm";
+import {
+  cancelLearnerInvitationAction,
+  revokeLearnerInvitationAction,
+} from "./actions";
 
-export default async function AdminLearnerInvitationsPage() {
+type AdminLearnerInvitationsPageProps = {
+  searchParams?: Promise<{
+    error?: string;
+    updated?: string;
+  }>;
+};
+
+export default async function AdminLearnerInvitationsPage({
+  searchParams,
+}: AdminLearnerInvitationsPageProps) {
+  const resolvedSearchParams = await searchParams;
   await requireWorkspaceIdentity("/admin/learner-invitations");
   const workspace = await getAdminLearnerInvitationWorkspace(
     prisma as unknown as AdminLearnerInvitationPrisma,
@@ -36,6 +50,8 @@ export default async function AdminLearnerInvitationsPage() {
             </Link>
           </div>
         </section>
+
+        <StatusMessage searchParams={resolvedSearchParams} />
 
         <section className="admin-section" aria-labelledby="create-title">
           <div className="admin-section-heading">
@@ -79,6 +95,29 @@ export default async function AdminLearnerInvitationsPage() {
       </div>
     </WorkspaceShell>
   );
+}
+
+function StatusMessage({
+  searchParams,
+}: {
+  searchParams?: {
+    error?: string;
+    updated?: string;
+  };
+}) {
+  if (searchParams?.error) {
+    return <p className="workspace-error">{searchParams.error}</p>;
+  }
+
+  if (searchParams?.updated === "cancelled") {
+    return <p className="workspace-note">Invitation cancelled.</p>;
+  }
+
+  if (searchParams?.updated === "revoked") {
+    return <p className="workspace-note">Invitation revoked.</p>;
+  }
+
+  return null;
 }
 
 function InvitationCard({
@@ -137,6 +176,35 @@ function InvitationCard({
           </dd>
         </div>
       </dl>
+
+      {invitation.canCancel || invitation.canRevoke ? (
+        <form
+          action={
+            invitation.canCancel
+              ? cancelLearnerInvitationAction.bind(null, invitation.id)
+              : revokeLearnerInvitationAction.bind(null, invitation.id)
+          }
+          className="admin-inline-form"
+        >
+          <label>
+            <span>
+              Reason to {invitation.canCancel ? "cancel" : "revoke"} invitation
+            </span>
+            <textarea
+              name="reason"
+              placeholder="Briefly explain why access is being changed."
+              required
+              rows={3}
+            />
+          </label>
+          <button
+            className="workspace-link secondary"
+            type="submit"
+          >
+            {invitation.canCancel ? "Cancel invitation" : "Revoke invitation"}
+          </button>
+        </form>
+      ) : null}
     </article>
   );
 }
