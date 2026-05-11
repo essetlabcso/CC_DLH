@@ -30,6 +30,7 @@ const adminAuditEntityMetadata = {
   LearnerEnrollment: "Learner enrollment",
   ProgramParticipant: "Program participant",
   CohortParticipant: "Cohort participant",
+  ScopedRoleAssignment: "Scoped role assignment",
 } as const;
 
 const adminAuditActionMetadata = {
@@ -40,6 +41,14 @@ const adminAuditActionMetadata = {
   CERTIFICATE_REVOKED: {
     area: "CERTIFICATES",
     label: "Certificate revoked",
+  },
+  AUTHORITY_GRANTED: {
+    area: "PEOPLE_ROLES",
+    label: "Authority granted",
+  },
+  AUTHORITY_UPDATED: {
+    area: "PEOPLE_ROLES",
+    label: "Authority updated",
   },
   COURSE_REVISION_REQUESTED: {
     area: "COURSES_WORKFLOW",

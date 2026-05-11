@@ -91,6 +91,8 @@ const authorityAuditActions = [
   "USER_INVITED",
   "MEMBERSHIP_ADDED",
   "MEMBERSHIP_UPDATED",
+  "AUTHORITY_GRANTED",
+  "AUTHORITY_UPDATED",
 ] as const;
 
 export async function getAdminAuthorityOverview(): Promise<AdminAuthorityOverview> {
@@ -375,6 +377,10 @@ function getAuthorityAuditActionLabel(action: string) {
       return "Organization member added";
     case "MEMBERSHIP_UPDATED":
       return "Organization membership updated";
+    case "AUTHORITY_GRANTED":
+      return "Platform Admin authority granted";
+    case "AUTHORITY_UPDATED":
+      return "Platform Admin authority updated";
     default:
       return formatAdminAuthorityLabel(action);
   }
@@ -386,6 +392,8 @@ function getAuthorityAuditEntityLabel(entityType: string) {
       return "User account";
     case "OrganizationMembership":
       return "Organization membership";
+    case "ScopedRoleAssignment":
+      return "Scoped role assignment";
     default:
       return formatAdminAuthorityLabel(entityType);
   }
@@ -401,4 +409,163 @@ function formatAdminAuthorityLabel(value: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
+}
+
+// ---------------------------------------------------------------------------
+// Mutators
+// ---------------------------------------------------------------------------
+
+export type GrantPlatformAdminInput = {
+  actorId: string;
+  actorRole: DecRole;
+  email: string;
+  reason: string;
+};
+
+export async function grantPlatformAdminAuthority(input: GrantPlatformAdminInput) {
+  // 1. Actor Gate
+  if (!isSuperAdminEquivalentForPhase1(input.actorRole)) {
+    throw new Error(ADMIN_AUTHORITY_CHANGE_ERROR);
+  }
+
+  // 2. Validations
+  const reason = input.reason?.trim() ?? "";
+  if (reason.length < 10) {
+    throw new Error("A descriptive reason (min 10 characters) is required.");
+  }
+
+  const email = input.email?.trim().toLowerCase();
+  if (!email) {
+    throw new Error("Email address is required.");
+  }
+
+  // 3. Look up target user
+  const targetUser = await prisma.user.findFirst({
+    where: { email },
+    select: { id: true, status: true },
+  });
+
+  if (!targetUser) {
+    throw new Error(`No existing user record found for email: ${email}`);
+  }
+
+  if (targetUser.status !== "ACTIVE") {
+    throw new Error(`Authority can only be granted to active user accounts. Current status: ${targetUser.status}`);
+  }
+
+  // 4. Prevent redundant active assignments
+  const existingActive = await prisma.scopedRoleAssignment.findFirst({
+    where: {
+      userId: targetUser.id,
+      roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+      scopeType: PermissionScopeType.PLATFORM,
+      status: ScopedRoleAssignmentStatus.ACTIVE,
+    },
+  });
+
+  if (existingActive) {
+    throw new Error(`${email} already holds active Platform Admin authority.`);
+  }
+
+  // 5. Execute creation
+  return await prisma.$transaction(async (tx) => {
+    const assignment = await tx.scopedRoleAssignment.create({
+      data: {
+        createdById: input.actorId,
+        reason,
+        roleKey: ScopedRoleKey.PLATFORM_ADMIN,
+        scopeId: "platform",
+        scopeType: PermissionScopeType.PLATFORM,
+        startsAt: new Date(),
+        status: ScopedRoleAssignmentStatus.ACTIVE,
+        userId: targetUser.id,
+      },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "AUTHORITY_GRANTED",
+        actorId: input.actorId,
+        entityId: assignment.id,
+        entityType: "ScopedRoleAssignment",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return assignment;
+  });
+}
+
+export type UpdatePlatformAdminStatusInput = {
+  actorId: string;
+  actorRole: DecRole;
+  assignmentId: string;
+  reason: string;
+  status: ScopedRoleAssignmentStatus;
+};
+
+export async function updatePlatformAdminAuthorityStatus(
+  input: UpdatePlatformAdminStatusInput,
+) {
+  // 1. Actor Gate
+  if (!isSuperAdminEquivalentForPhase1(input.actorRole)) {
+    throw new Error(ADMIN_AUTHORITY_CHANGE_ERROR);
+  }
+
+  // 2. Validation
+  const reason = input.reason?.trim() ?? "";
+  if (reason.length < 10) {
+    throw new Error("A descriptive reason (min 10 characters) is required.");
+  }
+
+  // 3. Lookup assignment
+  const assignment = await prisma.scopedRoleAssignment.findUnique({
+    select: {
+      id: true,
+      roleKey: true,
+      userId: true,
+    },
+    where: { id: input.assignmentId },
+  });
+
+  if (!assignment) {
+    throw new Error("Platform Admin assignment not found.");
+  }
+
+  if (assignment.roleKey !== ScopedRoleKey.PLATFORM_ADMIN) {
+    throw new Error("Modification denied: Assignment is not a Platform Admin role.");
+  }
+
+  // 4. Self-modification gate
+  if (assignment.userId === input.actorId) {
+    throw new Error("Self-modification check failed: You cannot modify your own Platform Admin authority status.");
+  }
+
+  // 5. Execute update
+  return await prisma.$transaction(async (tx) => {
+    const updated = await tx.scopedRoleAssignment.update({
+      data: {
+        reason,
+        status: input.status,
+        ...(input.status === ScopedRoleAssignmentStatus.DISABLED
+          ? { expiresAt: new Date() }
+          : {}),
+      },
+      where: { id: input.assignmentId },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "AUTHORITY_UPDATED",
+        actorId: input.actorId,
+        entityId: assignment.id,
+        entityType: "ScopedRoleAssignment",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return updated;
+  });
 }
