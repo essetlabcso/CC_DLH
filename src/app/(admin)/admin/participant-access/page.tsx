@@ -10,9 +10,11 @@ import {
   type AdminProgramParticipantRow,
 } from "@/lib/admin/participant-access";
 import { formatAdminLabel } from "@/lib/admin/role-labels";
+import { LearnerParticipantStatus } from "@prisma/client";
 import Link from "next/link";
 
 import { AssignmentPanels } from "./AssignmentPanels";
+import { ParticipantStatusControl } from "./ParticipantStatusControl";
 
 type AdminParticipantAccessPageProps = {
   searchParams?: Promise<{
@@ -461,6 +463,7 @@ function ProgramParticipantTable({
                 <th>Status</th>
                 <th>Joined</th>
                 <th>Ended</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -477,6 +480,13 @@ function ProgramParticipantTable({
                   </td>
                   <td>{formatDate(row.joinedAt)}</td>
                   <td>{formatDate(row.endedAt)}</td>
+                  <td>
+                    <ParticipantStatusControl
+                      participantId={row.id}
+                      currentStatus={row.status as LearnerParticipantStatus}
+                      type="PROGRAM"
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -530,6 +540,7 @@ function CohortParticipantTable({
                 <th>Joined</th>
                 <th>Ended</th>
                 <th>Due</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -548,6 +559,13 @@ function CohortParticipantTable({
                   <td>{formatDate(row.joinedAt)}</td>
                   <td>{formatDate(row.endedAt)}</td>
                   <td>{formatDate(row.dueAt)}</td>
+                  <td>
+                    <ParticipantStatusControl
+                      participantId={row.id}
+                      currentStatus={row.status as LearnerParticipantStatus}
+                      type="COHORT"
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
