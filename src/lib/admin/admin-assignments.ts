@@ -31,7 +31,7 @@ export type AdminProgramAssignmentInput = {
 export type AdminCohortAssignmentInput = {
   email: string;
   cohortId: string;
-  organizationId?: string;
+  organizationId: string;
   reason: string;
   actorId: string;
 };
@@ -146,6 +146,10 @@ export type AdminAssignmentPrisma = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     findFirst(args: FindFirstArgs): Promise<any>;
   };
+  organizationMembership: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    findFirst(args: FindFirstArgs): Promise<any>;
+  };
   courseVersion: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     findFirst(args: FindFirstArgs): Promise<any>;
@@ -181,9 +185,24 @@ export async function assignLearnerToCourse(
     };
   }
 
+  const membership = await verifyUserOrgMembership(
+    prisma,
+    user.id,
+    input.organizationId,
+  );
+
+  if (!membership) {
+    return {
+      ok: false,
+      message:
+        "User is not an active member of the selected organization.",
+    };
+  }
+
   const courseVersion = await prisma.courseVersion.findFirst({
     where: {
       courseId: input.courseId,
+      course: { organizationId: input.organizationId },
       status: CourseVersionStatus.PUBLISHED,
     },
     select: courseVersionSelect,
@@ -194,7 +213,7 @@ export async function assignLearnerToCourse(
     return {
       ok: false,
       message:
-        "No published course version found. Only published courses can be assigned.",
+        "No published course version found for this organization. Only published courses can be assigned.",
     };
   }
 
@@ -216,6 +235,14 @@ export async function assignLearnerToCourse(
           "Learner already has an active enrollment for this course version.",
         recordId: existing.id,
         alreadyExisted: true,
+      };
+    }
+
+    if (existing) {
+      return {
+        ok: false,
+        message:
+          "Learner has an inactive enrollment for this course version. Reactivation is not yet supported — contact support or manage status manually.",
       };
     }
 
@@ -293,6 +320,20 @@ export async function assignLearnerToProgram(
     };
   }
 
+  const membership = await verifyUserOrgMembership(
+    prisma,
+    user.id,
+    input.organizationId,
+  );
+
+  if (!membership) {
+    return {
+      ok: false,
+      message:
+        "User is not an active member of the selected organization.",
+    };
+  }
+
   const program = await prisma.program.findFirst({
     where: { id: input.programId },
     select: programSelect,
@@ -326,6 +367,14 @@ export async function assignLearnerToProgram(
         message: "Learner is already an active participant in this program.",
         recordId: existing.id,
         alreadyExisted: true,
+      };
+    }
+
+    if (existing) {
+      return {
+        ok: false,
+        message:
+          "Learner has an inactive participation record for this program. Reactivation is not yet supported — contact support or manage status manually.",
       };
     }
 
@@ -400,6 +449,20 @@ export async function assignLearnerToCohort(
     };
   }
 
+  const membership = await verifyUserOrgMembership(
+    prisma,
+    user.id,
+    input.organizationId,
+  );
+
+  if (!membership) {
+    return {
+      ok: false,
+      message:
+        "User is not an active member of the selected organization.",
+    };
+  }
+
   const cohort = await prisma.cohort.findFirst({
     where: { id: input.cohortId },
     select: cohortSelect,
@@ -415,12 +478,6 @@ export async function assignLearnerToCohort(
       message: "Only active cohorts can receive participant assignments.",
     };
   }
-
-  const organizationId =
-    input.organizationId ??
-    cohort.organizationId ??
-    cohort.program?.ownerOrganizationId ??
-    null;
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.cohortParticipant.findUnique({
@@ -442,12 +499,20 @@ export async function assignLearnerToCohort(
       };
     }
 
+    if (existing) {
+      return {
+        ok: false,
+        message:
+          "Learner has an inactive participation record for this cohort. Reactivation is not yet supported — contact support or manage status manually.",
+      };
+    }
+
     const now = new Date();
     const participant = await tx.cohortParticipant.create({
       data: {
         cohortId: input.cohortId,
         programId: cohort.programId,
-        organizationId,
+        organizationId: input.organizationId,
         userId: user.id,
         assignedById: input.actorId,
         status: LearnerParticipantStatus.ASSIGNED,
@@ -478,7 +543,7 @@ export async function assignLearnerToCohort(
           userEmail: user.email,
           cohortId: input.cohortId,
           programId: cohort.programId,
-          organizationId,
+          organizationId: input.organizationId,
           source: "ADMIN_ASSIGNMENT",
         }),
         entityId: participant.id,
@@ -529,7 +594,7 @@ export function parseAdminAssignmentForm(
     };
   }
 
-  if (type !== "cohort" && !organizationId) {
+  if (!organizationId) {
     return { ok: false, message: "Select an organization." };
   }
 
@@ -563,6 +628,18 @@ async function lookupUserByEmail(
     where: { email: email.trim().toLowerCase() },
     select: userSelect,
   });
+}
+
+async function verifyUserOrgMembership(
+  prisma: Pick<AdminAssignmentPrisma, "organizationMembership">,
+  userId: string,
+  organizationId: string,
+): Promise<boolean> {
+  const membership = await prisma.organizationMembership.findFirst({
+    where: { userId, organizationId, status: "ACTIVE" },
+    select: { id: true },
+  });
+  return membership !== null;
 }
 
 function isActiveEnrollment(status: LearnerEnrollmentStatus): boolean {

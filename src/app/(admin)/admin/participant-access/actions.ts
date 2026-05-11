@@ -103,7 +103,7 @@ export async function assignToCohortAction(
   const result = await assignLearnerToCohort(db, {
     email: parsed.data.email,
     cohortId: parsed.data.targetId,
-    organizationId: parsed.data.organizationId || undefined,
+    organizationId: parsed.data.organizationId,
     reason: parsed.data.reason,
     actorId: identity.user.id,
   });

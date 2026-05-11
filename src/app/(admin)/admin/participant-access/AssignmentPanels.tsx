@@ -62,7 +62,10 @@ export function AssignmentPanels({
           organizationOptions={organizationOptions}
           programOptions={programOptions}
         />
-        <CohortAssignmentPanel cohortOptions={cohortOptions} />
+        <CohortAssignmentPanel
+          cohortOptions={cohortOptions}
+          organizationOptions={organizationOptions}
+        />
       </div>
     </section>
   );
@@ -262,8 +265,10 @@ function ProgramAssignmentPanel({
 
 function CohortAssignmentPanel({
   cohortOptions,
+  organizationOptions,
 }: {
   cohortOptions: DropdownOption[];
+  organizationOptions: DropdownOption[];
 }) {
   const [state, formAction, isPending] = useActionState(
     assignToCohortAction,
@@ -290,6 +295,21 @@ function CohortAssignmentPanel({
               required
               type="email"
             />
+          </label>
+          <label>
+            <span>Organization</span>
+            <select
+              className="reference-select-input"
+              name="organizationId"
+              required
+            >
+              <option value="">Select organization</option>
+              {organizationOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             <span>Cohort</span>

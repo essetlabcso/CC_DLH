@@ -55,6 +55,9 @@ function createMockPrisma(overrides: Partial<Record<string, unknown>> = {}) {
           .fn()
           .mockResolvedValue({ id: "user-1", email: "learner@example.com" }),
       },
+      organizationMembership: {
+        findFirst: vi.fn().mockResolvedValue({ id: "membership-1" }),
+      },
       courseVersion: {
         findFirst: vi.fn().mockResolvedValue({
           id: "cv-1",
@@ -196,6 +199,35 @@ describe("assignLearnerToCourse", () => {
       expect(result.message).toContain("No published course version");
     }
   });
+
+  it("blocks on inactive existing enrollment without creating duplicate", async () => {
+    const { prisma, tx } = createMockPrisma();
+    tx.learnerEnrollment.findUnique.mockResolvedValue({
+      id: "withdrawn-enrollment",
+      status: LearnerEnrollmentStatus.WITHDRAWN,
+    });
+
+    const result = await assignLearnerToCourse(prisma, baseInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("inactive enrollment");
+    }
+    expect(tx.learnerEnrollment.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects if user is not a member of the selected organization", async () => {
+    const { prisma } = createMockPrisma({
+      organizationMembership: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+
+    const result = await assignLearnerToCourse(prisma, baseInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("not an active member");
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -293,6 +325,35 @@ describe("assignLearnerToProgram", () => {
       expect(result.message).toContain("Only active programs");
     }
   });
+
+  it("blocks on inactive existing participant without creating duplicate", async () => {
+    const { prisma, tx } = createMockPrisma();
+    tx.programParticipant.findUnique.mockResolvedValue({
+      id: "withdrawn-pp",
+      status: LearnerParticipantStatus.WITHDRAWN,
+    });
+
+    const result = await assignLearnerToProgram(prisma, baseInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("inactive participation");
+    }
+    expect(tx.programParticipant.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects if user is not a member of the selected organization", async () => {
+    const { prisma } = createMockPrisma({
+      organizationMembership: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+
+    const result = await assignLearnerToProgram(prisma, baseInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("not an active member");
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -303,6 +364,7 @@ describe("assignLearnerToCohort", () => {
   const baseInput = {
     email: "learner@example.com",
     cohortId: "cohort-1",
+    organizationId: "org-1",
     reason: "Assigning learner to field training cohort",
     actorId: "admin-1",
   };
@@ -393,12 +455,41 @@ describe("assignLearnerToCohort", () => {
     }
   });
 
-  it("derives organizationId from cohort program if not supplied", async () => {
+  it("derives organizationId from input", async () => {
     const { prisma, tx } = createMockPrisma();
     await assignLearnerToCohort(prisma, baseInput);
 
     const createCall = tx.cohortParticipant.create.mock.calls[0][0];
     expect(createCall.data.organizationId).toBe("org-1");
+  });
+
+  it("blocks on inactive existing participant without creating duplicate", async () => {
+    const { prisma, tx } = createMockPrisma();
+    tx.cohortParticipant.findUnique.mockResolvedValue({
+      id: "withdrawn-cp",
+      status: LearnerParticipantStatus.WITHDRAWN,
+    });
+
+    const result = await assignLearnerToCohort(prisma, baseInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("inactive participation");
+    }
+    expect(tx.cohortParticipant.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects if user is not a member of the selected organization", async () => {
+    const { prisma } = createMockPrisma({
+      organizationMembership: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+
+    const result = await assignLearnerToCohort(prisma, baseInput);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("not an active member");
+    }
   });
 });
 
@@ -471,10 +562,26 @@ describe("parseAdminAssignmentForm", () => {
     }
   });
 
-  it("does not require organizationId for cohort assignments", () => {
+  it("requires organizationId for cohort assignments", () => {
     const formData = createFormData({
       email: "learner@example.com",
       cohortId: "cohort-1",
+      reason: "Assigning for field training cohort",
+    });
+
+    const result = parseAdminAssignmentForm(formData, "cohort");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("organization");
+    }
+  });
+
+  it("accepts cohort form with organizationId", () => {
+    const formData = createFormData({
+      email: "learner@example.com",
+      cohortId: "cohort-1",
+      organizationId: "org-1",
       reason: "Assigning for field training cohort",
     });
 
