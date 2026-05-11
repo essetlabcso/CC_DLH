@@ -51,6 +51,13 @@ const adminAreaGroups = [
         summary:
           "Review how programs, cohorts, organizations, and courses are grouped.",
       },
+      {
+        title: "Participant Access",
+        href: "/admin/participant-access",
+        status: "View",
+        summary:
+          "Review learner access across invitations, enrollments, programs, and cohorts.",
+      },
     ],
   },
   {
