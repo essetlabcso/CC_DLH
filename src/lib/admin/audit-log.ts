@@ -141,6 +141,10 @@ const adminAuditActionMetadata = {
     area: "PEOPLE_ROLES",
     label: "Learner assigned to cohort",
   },
+  PARTICIPANT_STATUS_UPDATED: {
+    area: "PEOPLE_ROLES",
+    label: "Participant status updated",
+  },
   REDACTION_REQUIREMENT_RESOLVED: {
     area: "PROOF_DATA_SAFETY",
     label: "Redaction requirement resolved",
