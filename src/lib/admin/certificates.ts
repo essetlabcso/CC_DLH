@@ -1,4 +1,4 @@
-import type { CertificateStatusEventType } from "@prisma/client";
+import type { CertificateStatusEventType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/client";
 
@@ -31,17 +31,41 @@ export type AdminCertificateOverview = {
   };
 };
 
+export type AdminCertificateOverviewFilters = {
+  query?: string;
+  status?: "ACTIVE" | "REVOKED";
+  courseId?: string;
+};
+
 export async function getAdminCertificateOverview(
   organizationId: string,
+  filters?: AdminCertificateOverviewFilters,
 ): Promise<AdminCertificateOverview> {
-  const certificates = await prisma.learnerCertificate.findMany({
-    where: {
-      courseVersion: {
-        course: {
-          organizationId,
-        },
+  const whereClause: Prisma.LearnerCertificateWhereInput = {
+    courseVersion: {
+      course: {
+        organizationId,
+        ...(filters?.courseId ? { id: filters.courseId } : {}),
       },
     },
+  };
+
+  if (filters?.query) {
+    whereClause.OR = [
+      { certificateNumber: { contains: filters.query } },
+      { user: { name: { contains: filters.query } } },
+      { user: { email: { contains: filters.query } } },
+    ];
+  }
+
+  if (filters?.status === "ACTIVE") {
+    whereClause.revokedAt = null;
+  } else if (filters?.status === "REVOKED") {
+    whereClause.revokedAt = { not: null };
+  }
+
+  const certificates = await prisma.learnerCertificate.findMany({
+    where: whereClause,
     orderBy: {
       issuedAt: "desc",
     },
