@@ -4,14 +4,19 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { getProofVerifierAssignmentsOverview } from "@/lib/admin/proof-verifier-assignments";
 import { isSuperAdminEquivalentForPhase1 } from "@/lib/admin/admin-authority";
 import { requirePermissionIdentity } from "@/lib/auth/server";
-import { GrantProofVerifierPanel, ProofVerifierStatusControl } from "./ProofAssignmentControls";
+import {
+  GrantProofVerifierPanel,
+  ProofVerifierStatusControl,
+} from "./ProofAssignmentControls";
 
 export default async function ProofVerifierAssignmentsPage({
   searchParams,
 }: {
   searchParams: Promise<{ prefillType?: string; prefillValue?: string }>;
 }) {
-  const identity = await requirePermissionIdentity("/admin/proof-badges/assignments");
+  const identity = await requirePermissionIdentity(
+    "/admin/proof-badges/assignments",
+  );
   const isSuperAdmin = isSuperAdminEquivalentForPhase1(identity.session.role);
   const overview = await getProofVerifierAssignmentsOverview();
   const resolvedParams = await searchParams;
@@ -23,12 +28,15 @@ export default async function ProofVerifierAssignmentsPage({
           <div>
             <h2>Practical Proof Verifier Management</h2>
             <p>
-              Assign users the right to view and verify private evidence. 
+              Assign users the right to view and verify private evidence.
               Controls apply according to scoped data-governance workflows.
             </p>
           </div>
           <div style={{ display: "flex", gap: "1rem" }}>
-            <Link className="workspace-link secondary" href="/admin/proof-badges">
+            <Link
+              className="workspace-link secondary"
+              href="/admin/proof-badges"
+            >
               Back to Proof Dashboard
             </Link>
           </div>
@@ -37,9 +45,12 @@ export default async function ProofVerifierAssignmentsPage({
         <section className="admin-section" aria-labelledby="unassigned-title">
           <div className="admin-section-heading">
             <h2 id="unassigned-title">Recent unassigned proofs</h2>
-            <p>Evidence submissions that have no active explicit verifier assignment.</p>
+            <p>
+              Evidence submissions that have no active explicit verifier
+              assignment.
+            </p>
           </div>
-          
+
           {overview.recentProofsWithoutAssignment.length > 0 ? (
             <div className="admin-table-card">
               <table className="admin-table">
@@ -54,11 +65,13 @@ export default async function ProofVerifierAssignmentsPage({
                 <tbody>
                   {overview.recentProofsWithoutAssignment.map((proof) => (
                     <tr key={proof.id}>
-                      <td><strong>{proof.learnerName}</strong></td>
+                      <td>
+                        <strong>{proof.learnerName}</strong>
+                      </td>
                       <td>{proof.courseTitle}</td>
                       <td>{formatDate(proof.submittedAt)}</td>
                       <td>
-                        <Link 
+                        <Link
                           href={`/admin/proof-badges/assignments?prefillType=PRACTICAL_PROOF_SUBMISSION&prefillValue=${proof.id}`}
                           className="workspace-link"
                           style={{ fontSize: "0.875rem" }}
@@ -73,20 +86,27 @@ export default async function ProofVerifierAssignmentsPage({
             </div>
           ) : (
             <div className="admin-empty-panel" style={{ padding: "1.5rem" }}>
-              <span className="status-badge status-badge-ready">Queue cleared</span>
-              <p style={{ marginTop: "0.5rem" }}>All recent submissions are accounted for.</p>
+              <span className="status-badge status-badge-ready">
+                Queue cleared
+              </span>
+              <p style={{ marginTop: "0.5rem" }}>
+                All recent submissions are accounted for.
+              </p>
             </div>
           )}
         </section>
 
-        <section className="admin-section" aria-labelledby="active-assignments-title">
+        <section
+          className="admin-section"
+          aria-labelledby="active-assignments-title"
+        >
           <div className="admin-section-heading">
             <h2 id="active-assignments-title">Verifier assignments</h2>
             <p>Active and recent security scope allocations.</p>
           </div>
 
           {isSuperAdmin && (
-            <GrantProofVerifierPanel 
+            <GrantProofVerifierPanel
               prefillType={resolvedParams.prefillType}
               prefillValue={resolvedParams.prefillValue}
             />
@@ -110,29 +130,41 @@ export default async function ProofVerifierAssignmentsPage({
                     <tr key={item.id}>
                       <td>
                         <strong>{item.userName}</strong>
-                        <small style={{ display: "block", opacity: 0.7 }}>{item.userEmail}</small>
+                        <small style={{ display: "block", opacity: 0.7 }}>
+                          {item.userEmail}
+                        </small>
                       </td>
                       <td>
                         <span>{item.scopeLabel}</span>
-                        <small style={{ display: "block", opacity: 0.7 }}>{item.scopeType}</small>
+                        <small style={{ display: "block", opacity: 0.7 }}>
+                          {item.scopeType}
+                        </small>
                       </td>
                       <td>
-                        <span style={{ fontSize: "0.875rem" }}>{item.reason}</span>
+                        <span style={{ fontSize: "0.875rem" }}>
+                          {item.reason}
+                        </span>
                       </td>
                       <td>
-                        <span className={`status-badge ${item.status === "ACTIVE" ? "status-badge-ready" : "status-badge-blocked"}`}>
+                        <span
+                          className={`status-badge ${item.status === "ACTIVE" ? "status-badge-ready" : "status-badge-blocked"}`}
+                        >
                           {item.status}
                         </span>
                       </td>
                       <td>
-                        <small style={{ display: "block" }}>{formatDate(item.createdAt)}</small>
-                        <small style={{ display: "block", opacity: 0.7 }}>by {item.createdByLabel}</small>
+                        <small style={{ display: "block" }}>
+                          {formatDate(item.createdAt)}
+                        </small>
+                        <small style={{ display: "block", opacity: 0.7 }}>
+                          by {item.createdByLabel}
+                        </small>
                       </td>
                       {isSuperAdmin && (
                         <td>
-                          <ProofVerifierStatusControl 
-                            assignmentId={item.id} 
-                            currentStatus={item.status} 
+                          <ProofVerifierStatusControl
+                            assignmentId={item.id}
+                            currentStatus={item.status}
                           />
                         </td>
                       )}
@@ -143,8 +175,12 @@ export default async function ProofVerifierAssignmentsPage({
             </div>
           ) : (
             <div className="admin-empty-panel">
-              <span className="status-badge status-badge-ready">No assignments</span>
-              <p style={{ marginTop: "0.5rem" }}>No proof verifier allocations found.</p>
+              <span className="status-badge status-badge-ready">
+                No assignments
+              </span>
+              <p style={{ marginTop: "0.5rem" }}>
+                No proof verifier allocations found.
+              </p>
             </div>
           )}
         </section>
