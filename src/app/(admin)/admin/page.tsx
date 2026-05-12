@@ -1,5 +1,9 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
-import { getAdminDashboardCounts } from "@/lib/admin/dashboard";
+import {
+  getAdminDashboardCounts,
+  getAdminDashboardQueues,
+  type AdminDashboardQueueItem,
+} from "@/lib/admin/dashboard";
 import Link from "next/link";
 
 const governanceRules = [
@@ -159,8 +163,51 @@ const adminAreaGroups = [
   },
 ];
 
+function DashboardQueue({
+  title,
+  items,
+}: {
+  title: string;
+  items: AdminDashboardQueueItem[];
+}) {
+  return (
+    <div className="admin-queue-card">
+      <div className="admin-queue-header">
+        <h3>{title}</h3>
+      </div>
+      {items.length === 0 ? (
+        <div className="admin-queue-empty">No active items</div>
+      ) : (
+        <ul className="admin-queue-list">
+          {items.map((item) => (
+            <li key={item.id}>
+              <Link href={item.href} className="admin-queue-item">
+                <span className="admin-queue-title" title={item.title}>
+                  {item.title}
+                </span>
+                <div className="admin-queue-meta">
+                  <span>{item.subtitle}</span>
+                  <span>
+                    {item.updatedAt.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default async function AdminWorkspacePage() {
-  const counts = await getAdminDashboardCounts();
+  const [counts, queues] = await Promise.all([
+    getAdminDashboardCounts(),
+    getAdminDashboardQueues(),
+  ]);
 
   const healthCards = [
     {
@@ -414,6 +461,39 @@ export default async function AdminWorkspacePage() {
                 <p>{card.detail}</p>
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section className="admin-section" aria-labelledby="admin-queues-title">
+          <div className="admin-section-heading">
+            <h2 id="admin-queues-title">Operational Queues</h2>
+            <p>Prioritized workflow items that need direct action.</p>
+          </div>
+          <div className="admin-queue-grid">
+            <DashboardQueue
+              title="Pending Course Reviews"
+              items={queues.pendingCourseReviews}
+            />
+            <DashboardQueue
+              title="Pending Diagnosis Records"
+              items={queues.pendingDiagnosisRecords}
+            />
+            <DashboardQueue
+              title="Practical Proof Review"
+              items={queues.proofSubmissions}
+            />
+            <DashboardQueue
+              title="Data Safety Flags"
+              items={queues.dataSafetyFlags}
+            />
+            <DashboardQueue
+              title="Active Invitations"
+              items={queues.activeInvitations}
+            />
+            <DashboardQueue
+              title="Access Issues"
+              items={queues.accessIssues}
+            />
           </div>
         </section>
 

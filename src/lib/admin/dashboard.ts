@@ -1,4 +1,8 @@
-import { CourseVersionStatus } from "@prisma/client";
+import {
+  CourseVersionStatus,
+  LearnerEnrollmentStatus,
+  LearnerInvitationStatus,
+} from "@prisma/client";
 
 import { prisma } from "@/lib/db/client";
 
@@ -173,4 +177,189 @@ export async function getAdminFieldMetadataSummaries(): Promise<
     sectionCount: summary.sections.size,
     dashboardFieldCount: summary.dashboardFieldCount,
   }));
+}
+
+export type AdminDashboardQueueItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  updatedAt: Date;
+  href: string;
+};
+
+export type AdminDashboardQueues = {
+  pendingCourseReviews: AdminDashboardQueueItem[];
+  pendingDiagnosisRecords: AdminDashboardQueueItem[];
+  proofSubmissions: AdminDashboardQueueItem[];
+  dataSafetyFlags: AdminDashboardQueueItem[];
+  activeInvitations: AdminDashboardQueueItem[];
+  accessIssues: AdminDashboardQueueItem[];
+};
+
+export async function getAdminDashboardQueues(): Promise<AdminDashboardQueues> {
+  const [
+    pendingCourseReviews,
+    pendingDiagnosisRecords,
+    proofSubmissions,
+    dataSafetyFlags,
+    activeInvitations,
+    suspendedEnrollments,
+    expiredInvitations,
+  ] = await Promise.all([
+    prisma.courseVersion.findMany({
+      where: { status: CourseVersionStatus.SUBMITTED },
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        courseId: true,
+        versionNumber: true,
+        updatedAt: true,
+        course: { select: { title: true } },
+      },
+    }),
+    prisma.diagnosisRecord.findMany({
+      where: { approvalStatus: "UNDER_REVIEW" },
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        diagnosisTitle: true,
+        diagnosisCode: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.learnerPracticalProofSubmission.findMany({
+      where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } },
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
+        courseVersion: {
+          select: {
+            course: { select: { title: true } },
+          },
+        },
+      },
+    }),
+    prisma.learnerPracticalProofSubmission.findMany({
+      where: {
+        OR: [{ specialistReviewRequired: true }, { redactionRequired: true }],
+      },
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        specialistReviewRequired: true,
+        redactionRequired: true,
+        updatedAt: true,
+        courseVersion: {
+          select: {
+            course: { select: { title: true } },
+          },
+        },
+      },
+    }),
+    prisma.learnerInvitation.findMany({
+      where: {
+        status: {
+          in: [
+            LearnerInvitationStatus.SENT,
+            LearnerInvitationStatus.PENDING_ACCEPTANCE,
+          ],
+        },
+      },
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
+        organization: { select: { name: true } },
+      },
+    }),
+    prisma.learnerEnrollment.findMany({
+      where: { status: LearnerEnrollmentStatus.SUSPENDED },
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        organizationId: true,
+        courseId: true,
+        updatedAt: true,
+        organization: { select: { name: true } },
+        course: { select: { title: true } },
+      },
+    }),
+    prisma.learnerInvitation.findMany({
+      where: { status: LearnerInvitationStatus.EXPIRED },
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        updatedAt: true,
+        organization: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  const mappedAccessIssues: AdminDashboardQueueItem[] = [
+    ...suspendedEnrollments.map((enrollment) => ({
+      id: enrollment.id,
+      title: enrollment.course.title,
+      subtitle: `Suspended - ${enrollment.organization.name}`,
+      updatedAt: enrollment.updatedAt,
+      href: `/admin/participant-access?organizationId=${enrollment.organizationId}&courseId=${enrollment.courseId}&enrollmentStatus=SUSPENDED`,
+    })),
+    ...expiredInvitations.map((invitation) => ({
+      id: invitation.id,
+      title: invitation.organization?.name ?? "Unknown Organization",
+      subtitle: "Expired Invitation",
+      updatedAt: invitation.updatedAt,
+      href: "/admin/learner-invitations",
+    })),
+  ]
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    .slice(0, 5);
+
+  return {
+    pendingCourseReviews: pendingCourseReviews.map((v) => ({
+      id: v.id,
+      title: v.course.title,
+      subtitle: `Version ${v.versionNumber}`,
+      updatedAt: v.updatedAt,
+      href: `/review/courses/${v.courseId}/versions/${v.id}`,
+    })),
+    pendingDiagnosisRecords: pendingDiagnosisRecords.map((r) => ({
+      id: r.id,
+      title: r.diagnosisTitle,
+      subtitle: r.diagnosisCode,
+      updatedAt: r.updatedAt,
+      href: `/admin/diagnosis-records/${r.id}`,
+    })),
+    proofSubmissions: proofSubmissions.map((p) => ({
+      id: p.id,
+      title: p.courseVersion.course.title,
+      subtitle: `Proof: ${p.status}`,
+      updatedAt: p.updatedAt,
+      href: `/review/proof/${p.id}`,
+    })),
+    dataSafetyFlags: dataSafetyFlags.map((p) => ({
+      id: p.id,
+      title: p.courseVersion.course.title,
+      subtitle: p.specialistReviewRequired ? "Specialist Flag" : "Redaction Flag",
+      updatedAt: p.updatedAt,
+      href: `/admin/data-safety`,
+    })),
+    activeInvitations: activeInvitations.map((inv) => ({
+      id: inv.id,
+      title: inv.organization?.name ?? "Unknown Organization",
+      subtitle: inv.status.replace("_", " "),
+      updatedAt: inv.updatedAt,
+      href: "/admin/learner-invitations",
+    })),
+    accessIssues: mappedAccessIssues,
+  };
 }
