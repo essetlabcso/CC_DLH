@@ -57,13 +57,50 @@ export default async function ProofReviewDetailPage({
   const identity = await requirePermissionIdentity(
     `/review/proof/${submissionId}`,
   );
-  const submission = await prisma.learnerPracticalProofSubmission.findFirst({
+  // Step 1: Fetch minimal scope fields for authorization.
+  const authSubmission = await prisma.learnerPracticalProofSubmission.findFirst({
     where: {
       id: submissionId,
       visibilityDefault: "PRIVATE",
       donorVisibilityConsent: false,
       aiVerificationUsed: false,
     },
+    select: {
+      id: true,
+      userId: true,
+      courseVersionId: true,
+      practicalProofConfig: {
+        select: {
+          capacityArea: true,
+        },
+      },
+      courseVersion: {
+        select: {
+          id: true,
+          courseId: true,
+          course: {
+            select: {
+              id: true,
+              organizationId: true,
+              ownerId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!authSubmission) {
+    notFound();
+  }
+
+  if (!canReviewAssignedProof(identity, authSubmission)) {
+    notFound();
+  }
+
+  // Step 2: Fetch full proof details after authorization passes.
+  const submission = await prisma.learnerPracticalProofSubmission.findUnique({
+    where: { id: submissionId },
     include: {
       user: {
         select: {
@@ -106,10 +143,6 @@ export default async function ProofReviewDetailPage({
   });
 
   if (!submission) {
-    notFound();
-  }
-
-  if (!canReviewAssignedProof(identity, submission)) {
     notFound();
   }
 
