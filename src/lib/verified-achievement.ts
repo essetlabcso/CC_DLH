@@ -62,9 +62,6 @@ export function getVerifiedAchievementEligibility(
     blockers.push("raw-proof-not-private");
   }
 
-  if (submission.donorVisibilityConsent) {
-    blockers.push("donor-visibility-consented");
-  }
 
   if (submission.aiVerificationUsed) {
     blockers.push("ai-verification-used");
@@ -114,7 +111,7 @@ export function buildVerifiedAchievementCreateData(
     verificationDecision: "ACCEPTED",
     verificationNote: options.verificationNote?.trim() || "",
     visibilityDefault: practicalProofVisibilityDefault,
-    donorVisibilityEnabled: false,
+    donorVisibilityEnabled: submission.donorVisibilityConsent,
     publicBadgeEnabled: false,
     badgeVisualIssued: false,
     aiIssued: false,

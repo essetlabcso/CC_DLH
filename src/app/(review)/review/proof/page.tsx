@@ -14,7 +14,6 @@ export default async function ProofReviewQueuePage() {
 
   let whereClause: Prisma.LearnerPracticalProofSubmissionWhereInput = {
     visibilityDefault: "PRIVATE",
-    donorVisibilityConsent: false,
     aiVerificationUsed: false,
   };
 
@@ -108,7 +107,7 @@ export default async function ProofReviewQueuePage() {
                   {submission.practicalProofConfig.capacityIndicator ||
                     "Not set"}{" "}
                   · Raw proof visibility {submission.visibilityDefault} · Donor
-                  visibility disabled · AI verification not used
+                  visibility {submission.donorVisibilityConsent ? "consented" : "disabled"} · AI verification not used
                 </p>
                 {submission.redactionRequired ||
                 submission.specialistReviewRequired ? (

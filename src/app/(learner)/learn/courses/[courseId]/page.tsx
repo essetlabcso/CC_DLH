@@ -121,7 +121,6 @@ export default async function LearnerCoursePage({
         where: {
           userId: identity.user.id,
           visibilityDefault: "PRIVATE",
-          donorVisibilityEnabled: false,
           aiIssued: false,
         },
         orderBy: {
@@ -709,8 +708,10 @@ export default async function LearnerCoursePage({
                         },
                       )}{" "}
                       for {verifiedAchievement.capacityIndicator}. This is
-                      separate from your course certificate. No public badge or
-                      donor-facing display is active.
+                      separate from your course certificate.{" "}
+                      {verifiedAchievement.donorVisibilityEnabled
+                        ? "Donor-facing indicator visibility is active."
+                        : "No public badge or donor-facing display is active."}
                     </p>
                   </div>
                 ) : null}
@@ -786,6 +787,17 @@ export default async function LearnerCoursePage({
                         separate from my course certificate.
                       </span>
                     </label>
+                    <label className="checkbox-row">
+                      <input
+                        name="donorVisibilityConsent"
+                        type="checkbox"
+                        defaultChecked={proofSubmission.donorVisibilityConsent}
+                      />
+                      <span>
+                        I consent to sharing anonymized course-level achievement
+                        indicators with funding donors, keeping my raw proof private.
+                      </span>
+                    </label>
                     <button className="workspace-button" type="submit">
                       Resubmit private proof
                     </button>
@@ -837,6 +849,13 @@ export default async function LearnerCoursePage({
                   <span>
                     I understand this practical proof is optional and separate
                     from my course certificate.
+                  </span>
+                </label>
+                <label className="checkbox-row">
+                  <input name="donorVisibilityConsent" type="checkbox" />
+                  <span>
+                    I consent to sharing anonymized course-level achievement
+                    indicators with funding donors, keeping my raw proof private.
                   </span>
                 </label>
                 <button className="workspace-button" type="submit">
