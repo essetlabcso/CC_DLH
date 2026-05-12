@@ -55,6 +55,9 @@ export default async function AdminCoursesPage({
             <Link className="workspace-link secondary" href="/review/publishing">
               Publish queue
             </Link>
+            <Link className="workspace-link secondary" href="/admin/courses/assignments">
+              Reviewer assignments
+            </Link>
             <Link className="workspace-link secondary" href="/admin">
               Back to Admin
             </Link>
