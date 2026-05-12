@@ -9,8 +9,10 @@ import {
   cancelAdminLearnerInvitation,
   createAdminLearnerInvitation,
   parseAdminLearnerInvitationForm,
+  parseAdminLearnerInvitationRotationForm,
   parseAdminLearnerInvitationStatusReason,
   revokeAdminLearnerInvitation,
+  rotateAdminLearnerInvitation,
   type AdminLearnerInvitationPrisma,
 } from "@/lib/admin/learner-invitations";
 
@@ -52,6 +54,52 @@ export async function createLearnerInvitationAction(
   return {
     ok: true,
     message: "Invitation created. Copy this link now. It will not be shown again.",
+    inviteLink: await buildInviteLink(result.rawToken),
+  };
+}
+
+export type RotateLearnerInvitationActionState = {
+  ok: boolean;
+  message: string;
+  inviteLink?: string;
+};
+
+export async function rotateLearnerInvitationAction(
+  invitationId: string,
+  _previousState: RotateLearnerInvitationActionState,
+  formData: FormData,
+): Promise<RotateLearnerInvitationActionState> {
+  const identity = await requireWorkspaceIdentity("/admin/learner-invitations");
+  const parsed = parseAdminLearnerInvitationRotationForm(formData);
+
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      message: parsed.message,
+    };
+  }
+
+  const result = await rotateAdminLearnerInvitation(
+    prisma as unknown as AdminLearnerInvitationPrisma,
+    {
+      invitationId,
+      actorId: identity.user.id,
+      expiresAt: parsed.expiresAt,
+      reason: parsed.reason,
+    },
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: result.message,
+    };
+  }
+
+  return {
+    ok: true,
+    message:
+      "Invitation token rotated. Copy this new link now. The older link is now invalid.",
     inviteLink: await buildInviteLink(result.rawToken),
   };
 }

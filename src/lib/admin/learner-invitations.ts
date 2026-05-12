@@ -27,6 +27,12 @@ const cancellableInvitationStatuses = [
   LearnerInvitationStatus.SENT,
   LearnerInvitationStatus.PENDING_ACCEPTANCE,
 ] as const;
+const rotatableInvitationStatuses = [
+  LearnerInvitationStatus.CREATED,
+  LearnerInvitationStatus.SENT,
+  LearnerInvitationStatus.PENDING_ACCEPTANCE,
+  LearnerInvitationStatus.EXPIRED,
+] as const;
 const activeEnrollmentStatuses = [
   LearnerEnrollmentStatus.ASSIGNED,
   LearnerEnrollmentStatus.ENROLLED,
@@ -65,6 +71,7 @@ export type AdminLearnerInvitationSummary = {
   acceptedAt: Date | null;
   canCancel: boolean;
   canRevoke: boolean;
+  canRotate: boolean;
 };
 
 export type AdminLearnerInvitationWorkspace = {
@@ -134,6 +141,24 @@ export type AdminLearnerInvitationStatusInput = {
   reason: string;
   now?: Date;
 };
+
+export type AdminRotateLearnerInvitationInput = {
+  invitationId: string;
+  expiresAt?: Date;
+  actorId: string;
+  reason: string;
+  now?: Date;
+};
+
+export type AdminRotateLearnerInvitationResult =
+  | {
+      ok: true;
+      rawToken: string;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
 
 type FindUniqueArgs = {
   where: Record<string, unknown>;
@@ -316,6 +341,7 @@ type InvitationStatusRecord = {
   id: string;
   status: LearnerInvitationStatus;
   acceptedAt: Date | null;
+  expiresAt: Date;
 };
 
 type LinkedStatusRecord = {
@@ -386,6 +412,39 @@ export function parseAdminLearnerInvitationStatusReason(formData: FormData) {
 
   return {
     ok: true,
+    reason,
+  } as const;
+}
+
+export function parseAdminLearnerInvitationRotationForm(
+  formData: FormData,
+  options: { now?: Date } = {},
+) {
+  const expiresAtRaw = readString(formData, "expiresAt");
+  const reason = readString(formData, "reason");
+  const now = options.now ?? new Date();
+  let expiresAt: Date | undefined;
+
+  if (!expiresAtRaw) {
+    // Optional, so we fall through without expiresAt
+  } else {
+    const date = new Date(expiresAtRaw);
+    if (Number.isNaN(date.getTime())) {
+      return { ok: false, message: "Choose a valid invitation expiry date." } as const;
+    }
+    if (date <= now) {
+      return { ok: false, message: "Invitation expiry must be in the future." } as const;
+    }
+    expiresAt = date;
+  }
+
+  if (!reason) {
+    return { ok: false, message: "Enter a reason for this invitation rotation." } as const;
+  }
+
+  return {
+    ok: true,
+    expiresAt,
     reason,
   } as const;
 }
@@ -463,6 +522,84 @@ export async function revokeAdminLearnerInvitation(
   return updateAdminLearnerInvitationAccessStatus(prisma, {
     ...input,
     targetStatus: LearnerInvitationStatus.REVOKED,
+  });
+}
+
+export async function rotateAdminLearnerInvitation(
+  prisma: AdminLearnerInvitationPrisma,
+  input: AdminRotateLearnerInvitationInput,
+): Promise<AdminRotateLearnerInvitationResult> {
+  const now = input.now ?? new Date();
+
+  return prisma.$transaction(async (transaction) => {
+    const invitation = await transaction.learnerInvitation.findUnique({
+      where: {
+        id: input.invitationId,
+      },
+      select: invitationStatusSelect,
+    });
+
+    if (!invitation) {
+      return {
+        ok: false,
+        message: "Invitation was not found.",
+      };
+    }
+
+    if (
+      !rotatableInvitationStatuses.includes(
+        invitation.status as (typeof rotatableInvitationStatuses)[number],
+      )
+    ) {
+      return {
+        ok: false,
+        message: "Only pending or expired invitations can be rotated.",
+      };
+    }
+
+    const expiresAt = input.expiresAt ?? invitation.expiresAt;
+
+    if (expiresAt <= now) {
+      return {
+        ok: false,
+        message: "The effective invitation expiry must be in the future.",
+      };
+    }
+
+    const rawToken = generateLearnerInvitationToken();
+    const tokenHash = hashLearnerInvitationToken(rawToken);
+
+    await transaction.learnerInvitation.update({
+      where: {
+        id: invitation.id,
+      },
+      data: {
+        tokenHash,
+        status: LearnerInvitationStatus.CREATED,
+        expiresAt,
+        reason: input.reason,
+      },
+      select: invitationStatusSelect,
+    });
+
+    await transaction.adminAuditLog.create({
+      data: {
+        action: "LEARNER_INVITATION_TOKEN_ROTATED",
+        actorId: input.actorId,
+        beforeJson: JSON.stringify({ status: invitation.status }),
+        afterJson: JSON.stringify({ status: LearnerInvitationStatus.CREATED }),
+        entityId: invitation.id,
+        entityType: "LearnerInvitation",
+        reason: input.reason,
+        riskLevel: "LOW",
+        metadata: adminLearnerInvitationStatusMetadata,
+      },
+    });
+
+    return {
+      ok: true,
+      rawToken,
+    };
   });
 }
 
@@ -814,6 +951,9 @@ function toInvitationSummary(invitation: LearnerInvitationListRecord) {
       invitation.status as (typeof cancellableInvitationStatuses)[number],
     ),
     canRevoke: invitation.status === LearnerInvitationStatus.ACCEPTED,
+    canRotate: rotatableInvitationStatuses.includes(
+      invitation.status as (typeof rotatableInvitationStatuses)[number],
+    ),
   } satisfies AdminLearnerInvitationSummary;
 }
 
@@ -1060,4 +1200,5 @@ const invitationStatusSelect = {
   id: true,
   status: true,
   acceptedAt: true,
+  expiresAt: true,
 } as const;
