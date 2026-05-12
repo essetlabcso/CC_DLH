@@ -15,6 +15,7 @@ import {
   parseAdminLearnerInvitationForm,
   parseAdminLearnerInvitationStatusReason,
   revokeAdminLearnerInvitation,
+  rotateAdminLearnerInvitation,
   type AdminLearnerInvitationPrisma,
 } from "./learner-invitations";
 
@@ -490,6 +491,77 @@ describe("Admin learner invitation helper", () => {
       suspendedCohortParticipants: 0,
     });
     expect(calls.some((call) => call.operation === "updateMany")).toBe(false);
+  });
+
+  it("rotates an expired invitation successfully", async () => {
+    const { calls, prisma } = createPrisma({
+      invitationStatus: invitationStatusRecord({
+        status: LearnerInvitationStatus.EXPIRED,
+      }),
+    });
+
+    const futureDate = new Date("2026-07-01T09:00:00.000Z");
+
+    const result = await rotateAdminLearnerInvitation(prisma, {
+      invitationId: "invitation-1",
+      actorId: "admin-1",
+      reason: "Extend valid period.",
+      expiresAt: futureDate,
+      now,
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+    });
+    expect(result.ok ? result.rawToken : "").toBeTruthy();
+
+    expect(calls).toContainEqual(
+      expect.objectContaining({
+        model: "learnerInvitation",
+        operation: "update",
+        args: expect.objectContaining({
+          data: expect.objectContaining({
+            status: LearnerInvitationStatus.CREATED,
+            expiresAt: futureDate,
+            tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+          }),
+        }),
+      }),
+    );
+
+    expect(calls).toContainEqual(
+      expect.objectContaining({
+        model: "adminAuditLog",
+        operation: "create",
+        args: expect.objectContaining({
+          data: expect.objectContaining({
+            action: "LEARNER_INVITATION_TOKEN_ROTATED",
+            reason: "Extend valid period.",
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("blocks rotating an accepted invitation", async () => {
+    const { prisma } = createPrisma({
+      invitationStatus: invitationStatusRecord({
+        status: LearnerInvitationStatus.ACCEPTED,
+      }),
+    });
+
+    const result = await rotateAdminLearnerInvitation(prisma, {
+      invitationId: "invitation-1",
+      actorId: "admin-1",
+      reason: "Attempt rotation.",
+      expiresAt: new Date("2026-07-01T09:00:00.000Z"),
+      now,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      message: "Only pending or expired invitations can be rotated.",
+    });
   });
 });
 

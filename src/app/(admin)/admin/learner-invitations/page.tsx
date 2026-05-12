@@ -11,6 +11,7 @@ import {
 import { getAdminStatusLabel } from "@/lib/admin/role-labels";
 
 import { InvitationCreateForm } from "./InvitationCreateForm";
+import { InvitationRotateForm } from "./InvitationRotateForm";
 import {
   cancelLearnerInvitationAction,
   revokeLearnerInvitationAction,
@@ -39,9 +40,9 @@ export default async function AdminLearnerInvitationsPage({
           <div>
             <h2>Invitation access</h2>
             <p>
-              Create a single learner invitation and review safe invitation
-              status. Email delivery, bulk invites, resend, cancel, and revoke
-              workflows are not enabled in this slice.
+              Create learner invitations, rotate secure access tokens, and manage
+              lifecycle status. Email delivery and bulk invites are not enabled
+              in this slice.
             </p>
           </div>
           <div className="admin-hero-actions">
@@ -68,8 +69,8 @@ export default async function AdminLearnerInvitationsPage({
           <div className="admin-section-heading">
             <h2 id="list-title">Invitation list</h2>
             <p>
-              Read-only status view. Token hashes and raw invitation links are
-              not shown.
+              Active and previous invitations. Token hashes are never shown in
+              the view.
             </p>
           </div>
 
@@ -176,6 +177,13 @@ function InvitationCard({
           </dd>
         </div>
       </dl>
+
+      {invitation.canRotate ? (
+        <InvitationRotateForm
+          invitationId={invitation.id}
+          isExpired={invitation.status === "EXPIRED"}
+        />
+      ) : null}
 
       {invitation.canCancel || invitation.canRevoke ? (
         <form

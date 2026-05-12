@@ -31,6 +31,7 @@ const adminAuditEntityMetadata = {
   ProgramParticipant: "Program participant",
   CohortParticipant: "Cohort participant",
   ScopedRoleAssignment: "Scoped role assignment",
+  LearnerInvitation: "Learner invitation",
 } as const;
 
 const adminAuditActionMetadata = {
@@ -169,6 +170,10 @@ const adminAuditActionMetadata = {
   SPECIALIST_REVIEW_RESOLVED: {
     area: "PROOF_DATA_SAFETY",
     label: "Specialist review resolved",
+  },
+  LEARNER_INVITATION_TOKEN_ROTATED: {
+    area: "PEOPLE_ROLES",
+    label: "Learner invitation token rotated",
   },
   USER_INVITED: {
     area: "PEOPLE_ROLES",
