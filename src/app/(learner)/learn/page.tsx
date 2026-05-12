@@ -9,9 +9,18 @@ import { formatLearnerCourseDuration } from "@/lib/learner/course-access";
 import { getBestFinalTestAttempt } from "@/lib/learner/final-test";
 import { buildLearnerProgressSummary } from "@/lib/learner/progress";
 import { activeLearnerEnrollmentStatuses } from "@/lib/learner/self-enrollment";
+import { loadPermissionIdentity } from "@/lib/auth/permission-identity";
+import { canViewSafeOrganizationSummary } from "@/lib/permissions/scoped-access";
 
 export default async function LearnerWorkspacePage() {
   const identity = await requireWorkspaceIdentity("/learn");
+  const permissionIdentity = await loadPermissionIdentity(prisma, identity);
+  const showOversight =
+    permissionIdentity &&
+    canViewSafeOrganizationSummary(
+      permissionIdentity,
+      identity.user.organizationId,
+    );
   const publishedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
@@ -181,6 +190,14 @@ export default async function LearnerWorkspacePage() {
         <Link className="workspace-link" href="/courses">
           Explore courses
         </Link>
+        {showOversight && (
+          <Link
+            className="workspace-link"
+            href={`/oversight/organizations/${identity.user.organizationId}`}
+          >
+            Organizational oversight
+          </Link>
+        )}
       </nav>
 
       <section className="studio-section" aria-labelledby="available-title">

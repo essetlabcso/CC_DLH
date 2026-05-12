@@ -41,11 +41,17 @@ export default async function OrganizationDetailPage({
             <p>Slug: {org.slug}</p>
           </div>
           <div className="admin-hero-actions">
-            <Link 
-              className="workspace-link" 
+            <Link
+              className="workspace-link"
               href={`/admin/organizations/${org.id}/edit`}
             >
               Edit Organization
+            </Link>
+            <Link
+              className="workspace-link secondary"
+              href={`/oversight/organizations/${org.id}`}
+            >
+              Preview Safe Summary
             </Link>
             <Link className="workspace-link secondary" href="/admin/organizations">
               Back to Organizations
