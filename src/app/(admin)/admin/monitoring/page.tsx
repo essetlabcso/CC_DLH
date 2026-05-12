@@ -4,6 +4,8 @@ import {
   getAdminMonitoringCounts,
   getCapacityAreaAchievementSummaries,
   getRecentVerifiedAchievements,
+  getMonthlyMonitoringTrends,
+  getCoursePerformanceSignals,
   parseAdminMonitoringFilters,
   type AdminMonitoringFilterOptions,
   type AdminMonitoringFilters,
@@ -17,6 +19,8 @@ type AdminMonitoringPageProps = {
     courseId?: string;
     organizationId?: string;
     programId?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
 };
 
@@ -25,36 +29,48 @@ export default async function AdminMonitoringPage({
 }: AdminMonitoringPageProps) {
   const params = await searchParams;
   const filters = parseAdminMonitoringFilters(params ?? {});
-  const [counts, capacitySummaries, recentAchievements, filterOptions] =
-    await Promise.all([
-      getAdminMonitoringCounts(filters),
-      getCapacityAreaAchievementSummaries(filters),
-      getRecentVerifiedAchievements(filters),
-      getAdminMonitoringFilterOptions(),
-    ]);
+  const [
+    counts,
+    capacitySummaries,
+    recentAchievements,
+    trends,
+    courseSignals,
+    filterOptions,
+  ] = await Promise.all([
+    getAdminMonitoringCounts(filters),
+    getCapacityAreaAchievementSummaries(filters),
+    getRecentVerifiedAchievements(filters),
+    getMonthlyMonitoringTrends(filters),
+    getCoursePerformanceSignals(filters),
+    getAdminMonitoringFilterOptions(),
+  ]);
   const selectedFilters = buildSelectedFilterChips(filters, filterOptions);
   const hasSelectedFilters = selectedFilters.length > 0;
 
+  const startRate = counts.totalEnrolled > 0 ? Math.round((counts.totalLearners / counts.totalEnrolled) * 100) : 0;
+  const completionRate = counts.totalLearners > 0 ? Math.round((counts.totalCertificates / counts.totalLearners) * 100) : 0;
+  const proofRate = counts.totalLearners > 0 ? Math.round((counts.totalVerifiedAchievements / counts.totalLearners) * 100) : 0;
+
   const monitoringCards = [
+    {
+      label: "Total Enrolled",
+      value: counts.totalEnrolled,
+      detail: "Total primary learner assignments recorded.",
+    },
     {
       label: "Learners With Progress",
       value: counts.totalLearners,
-      detail: "Learners who have started at least one matching course lesson.",
+      detail: `Learners who started at least one lesson. (${startRate}% Start Rate)`,
     },
     {
       label: "Course Certificates",
       value: counts.totalCertificates,
-      detail: "Automated course certificates issued for 80%+ final test scores.",
-    },
-    {
-      label: "Proof Submissions Under Review",
-      value: counts.proofsUnderReview,
-      detail: "Private practical proof submissions awaiting human verifier review.",
+      detail: `Automated certificates issued for 80%+ scores. (${completionRate}% of Started)`,
     },
     {
       label: "Verified Achievements",
       value: counts.totalVerifiedAchievements,
-      detail: "Human-reviewed achievement records based on accepted practical proof.",
+      detail: `Accepted applied evidence records. (${proofRate}% of Started)`,
     },
   ];
 
@@ -129,6 +145,24 @@ export default async function AdminMonitoringPage({
                 }))}
                 value={filters.capacityArea}
               />
+              <label>
+                <span>From Date</span>
+                <input
+                  type="date"
+                  name="startDate"
+                  className="reference-search-input"
+                  defaultValue={filters.startDate ?? ""}
+                />
+              </label>
+              <label>
+                <span>To Date</span>
+                <input
+                  type="date"
+                  name="endDate"
+                  className="reference-search-input"
+                  defaultValue={filters.endDate ?? ""}
+                />
+              </label>
             </div>
             <div className="reference-filter-row compact">
               <button className="workspace-button" type="submit">
@@ -189,7 +223,7 @@ export default async function AdminMonitoringPage({
         <section className="admin-section" aria-labelledby="platform-metrics-title">
           <div className="admin-section-heading">
             <h2 id="platform-metrics-title">Platform Metrics</h2>
-            <p>Aggregate counts across courses and organizations. No raw proof is shown.</p>
+            <p>Aggregate counts and benchmark rates across courses and organizations.</p>
           </div>
           <div className="admin-metrics-grid">
             {monitoringCards.map((card) => (
@@ -199,6 +233,90 @@ export default async function AdminMonitoringPage({
                 <p>{card.detail}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="admin-section" aria-labelledby="monthly-trends-title">
+          <div className="admin-section-heading">
+            <h2 id="monthly-trends-title">Chronological Volume Trends</h2>
+            <p>Certificates and verified achievements volume over the past 6 months.</p>
+          </div>
+          <div className="admin-table-container" style={{ padding: "1.5rem", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #eee" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+              {trends.map((point) => {
+                const maxVal = Math.max(...trends.flatMap(t => [t.certificates, t.achievements]));
+                const safeMax = maxVal > 0 ? maxVal : 1;
+                const certPct = (point.certificates / safeMax) * 100;
+                const achPct = (point.achievements / safeMax) * 100;
+                
+                return (
+                  <div key={point.monthLabel} style={{ display: "grid", gridTemplateColumns: "80px 1fr", alignItems: "center", gap: "1rem" }}>
+                    <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "#666" }}>{point.monthLabel}</span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ height: "12px", backgroundColor: "#2563eb", width: `${Math.max(certPct, 1)}%`, minWidth: point.certificates > 0 ? "2px" : "0", borderRadius: "2px", transition: "width 0.3s" }} title={`Certificates: ${point.certificates}`} />
+                        {point.certificates > 0 && <span style={{ fontSize: "0.75rem" }}>{point.certificates} certs</span>}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ height: "12px", backgroundColor: "#16a34a", width: `${Math.max(achPct, 1)}%`, minWidth: point.achievements > 0 ? "2px" : "0", borderRadius: "2px", transition: "width 0.3s" }} title={`Achievements: ${point.achievements}`} />
+                        {point.achievements > 0 && <span style={{ fontSize: "0.75rem" }}>{point.achievements} achv.</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: "1rem", display: "flex", gap: "1rem", fontSize: "0.75rem", color: "#666" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", backgroundColor: "#2563eb", display: "inline-block" }}></span> Certificates</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", backgroundColor: "#16a34a", display: "inline-block" }}></span> Achievements</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="admin-section" aria-labelledby="course-signals-title">
+          <div className="admin-section-heading">
+            <h2 id="course-signals-title">Course Performance Signals</h2>
+            <p>Active courses filtered by enrollment volumes and completion rates to detect potential bottlenecks.</p>
+          </div>
+          <div className="admin-table-container">
+            {courseSignals.length > 0 ? (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Organization</th>
+                    <th>Enrolled</th>
+                    <th>Started</th>
+                    <th>Start Rate</th>
+                    <th>Completion Rate</th>
+                    <th>Proof Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courseSignals.map((signal) => (
+                    <tr key={signal.courseId}>
+                      <td style={{ fontWeight: "500" }}>{signal.courseTitle}</td>
+                      <td style={{ fontSize: "0.85rem", color: "#666" }}>{signal.organizationName}</td>
+                      <td>{signal.totalEnrolled}</td>
+                      <td>{signal.startedLearners}</td>
+                      <td>
+                        <span style={{ color: signal.startRate < 30 && signal.totalEnrolled > 5 ? "#b91c1c" : "inherit" }}>
+                          {signal.startRate}%
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ color: signal.completionRate < 30 && signal.startedLearners > 5 ? "#b91c1c" : "inherit", fontWeight: signal.completionRate < 30 && signal.startedLearners > 5 ? "bold" : "normal" }}>
+                          {signal.completionRate}%
+                        </span>
+                      </td>
+                      <td>{signal.proofRate}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="empty-state">No active courses matched existing filters to display performance signals.</p>
+            )}
           </div>
         </section>
 
@@ -356,6 +474,8 @@ function buildSelectedFilterChips(
       })),
     ),
     filters.capacityArea ? `Capacity area: ${filters.capacityArea}` : null,
+    filters.startDate ? `From: ${filters.startDate}` : null,
+    filters.endDate ? `To: ${filters.endDate}` : null,
   ];
 
   return chips.filter((chip): chip is string => Boolean(chip));
