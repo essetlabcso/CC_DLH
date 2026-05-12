@@ -5,43 +5,40 @@
 | Item | Status |
 | --- | --- |
 | Branch | `main` |
-| Expected `origin/main` commit | `4850cba79dd700fc41aec953256de206431c1240` |
+| Expected `origin/main` commit | `098a4c0fbac922c9cc8310af7acde173895cbcb0` |
 | Handover scope | Documentation, audit, and continuation readiness only |
 | Source code changes in this pack | None |
 | Schema or migration changes in this pack | None |
-| Current Admin build estimate | Around 60 percent complete overall |
-| Demo-ready Phase 1 Admin estimate | Around 70 percent ready |
-| Mature production Admin estimate | Around 50 to 55 percent complete |
+| Current Admin build estimate | Around 80 percent complete overall |
+| Demo-ready Phase 1 Admin estimate | Around 90 percent ready |
+| Mature production Admin estimate | Around 65 to 70 percent complete |
 
 This handover pack is intended to help a future Codex session, Antigravity, or another AI coding agent continue the Admin build safely without losing context or breaking recently merged learner access work.
 
 ## Recent Merged Work Summary
 
-Recent merged work established the learner access and invitation foundation:
+Recent merged work finalized operational learner access, invitation lifecycle controls, and dashboard triage queues:
 
-- Public learner course discovery and authenticated self-enrollment.
-- Public/self-enrolled learner runtime access enforcement.
-- Learner invitation acceptance through `/invite/[token]`.
-- Admin single learner invitation creation.
-- One-time raw invite link display.
-- `tokenHash`-only invitation persistence.
-- Safe read-only invitation list.
-- Admin cancel/revoke invitation lifecycle.
-- Pending invitations can be `CANCELLED`.
-- Accepted invitations can be `REVOKED`.
-- Linked active enrollments and participants are set to `SUSPENDED` where supported.
-- `AdminAuditLog` records invitation cancel/revoke actions.
+- Public learner course discovery, authenticated self-enrollment, and runtime access enforcement.
+- Full learner invitation acceptance through `/invite/[token]`.
+- Admin single learner invitation creation and one-time raw invite link display.
+- Invitation Resend & Token Rotation (Package 14) allowing token re-issue with required reasons.
+- Admin cancel/revoke invitation lifecycle preserving historical metrics.
+- Direct participant assignment to courses, programs, or cohorts with audit reasons.
+- Admin Action-Required Dashboard Queues (Package 15) aggregating course reviews, pending diagnoses, proof reviews, data safety flags, and access issues.
+- Scoped Prisma database selectors enforcing explicit zero-leakage privacy rules.
 
 ## What Admin Can Currently Do
 
-- Open an Admin Control Center with grouped navigation and governance reminders.
+- Open an Admin Control Center with specialized action-required triage queues.
 - View and update users and membership roles with reason/audit controls.
 - Review Super Admin-equivalent and scoped Platform Admin authority.
 - Create and update organizations.
 - Add, invite, and update organization memberships.
 - View program and cohort grouping summaries.
-- Create learner invitations and copy the raw invite link once.
+- Create learner invitations, rotate active/expired tokens, and copy links once.
 - View safe learner invitation status without exposing token hashes.
+- Assign learners directly to courses, programs, or cohorts with reasons.
 - Cancel pending invitations and revoke accepted invitations with reasons.
 - Manage reference data categories and values with protection and audit logging.
 - Create, approve, archive, and manage diagnosis datasets.
@@ -56,10 +53,11 @@ Recent merged work established the learner access and invitation foundation:
 
 ## Complete Or Mostly Complete
 
-- Admin dashboard and navigation foundation.
+- Admin dashboard navigation and Action-Required Queues.
 - Reference data management.
 - Diagnosis dataset and diagnosis record governance.
-- Learner invitation creation, acceptance, cancel, and revoke foundation.
+- Learner invitation creation, acceptance, cancel, revoke, and token rotation.
+- Participant access overview and direct assignments.
 - Certificate registry and certificate status administration.
 - Data safety queues and safe visibility controls.
 - Audit log overview and filters.
@@ -67,8 +65,6 @@ Recent merged work established the learner access and invitation foundation:
 
 ## Partial Or Missing
 
-- Direct Admin participant assignment to courses, programs, and cohorts.
-- Full participant/enrollment access overview.
 - Program and cohort management actions.
 - Super Admin workflow to create, approve, suspend, and remove scoped Platform Admin authority.
 - Organization focal-person safe summary view.
@@ -76,15 +72,14 @@ Recent merged work established the learner access and invitation foundation:
 - Practical proof verifier assignment workspace.
 - Advanced monitoring denominators, trends, exports, and improvement loop.
 - Consent lifecycle and visibility lifecycle beyond current safety controls.
-- Admin QA/demo polish and refreshed screenshots after the latest merges.
 
 ## Recommended Next Action
 
 Start with a **plan-first package** for:
 
-> Admin Participant Access Overview, read-only first.
+> Super Admin / Platform Admin Authority Management.
 
-This should map users, invitations, enrollments, program participants, cohort participants, organizations, courses, versions, and access statuses without adding writes or changing runtime access.
+This should allow Super Admin-equivalent users to create, approve, suspend, and remove Platform Admin roles with strict reason enforcement and specialized audit logs.
 
 ## Warning For Future Agents
 

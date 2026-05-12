@@ -22,11 +22,12 @@ Expected:
 
 | Check | Expected result | Notes |
 | --- | --- | --- |
-| `/admin` loads | Admin Control Center appears. | Confirm governance reminders and navigation cards. |
+| `/admin` loads | Admin Control Center with specialized action triage queues appears. | Confirm operational dashboard queues render correctly. |
 | `/admin/users` loads | Users and role management appears. | Confirm role update requires reason. |
 | `/admin/admin-authority` loads | Super Admin-equivalent and Platform Admin authority overview appears. | Read-only currently. |
 | `/admin/organizations` loads | Organization list and summary appear. | Confirm safe organization summaries. |
 | `/admin/programs-cohorts` loads | Program/cohort overview appears. | Read-only currently. |
+| `/admin/participant-access` loads | Safe access overview and direct assignment panels appear. | Confirm direct enrollment assignments work. |
 | `/admin/reference-data` loads | Lookup category/value browser appears. | Confirm add/edit links exist. |
 | `/admin/diagnosis-datasets` loads | Evidence source package browser appears. | Confirm draft/new entry point. |
 | `/admin/diagnosis-records` loads | Validated capacity gap browser appears. | Confirm filters and release status. |
@@ -53,6 +54,8 @@ Expected:
 | Course-scoped accepted invitation creates enrollment | `LearnerEnrollment` exists or is reused. |
 | Program/cohort scoped accepted invitation creates participants where applicable | `ProgramParticipant`/`CohortParticipant` exist or are reused. |
 | Program/cohort-only invitation does not unlock runtime automatically | Runtime access still requires explicit course enrollment. |
+| Admin can rotate active or expired invitation token | `CREATED`, `SENT`, `PENDING_ACCEPTANCE`, or `EXPIRED` token generates a new `tokenHash`, sets status to `CREATED`, and returns raw token only once with required trimmed reason. |
+| Expired invitation blocks acceptance | `/invite/[token]` blocks acceptance until a future expiration timestamp and token rotation occurs. |
 | Admin can cancel pending invitation | `CREATED`, `SENT`, or `PENDING_ACCEPTANCE` becomes `CANCELLED` with reason. |
 | Cancelled invitation cannot be accepted | `/invite/[token]` blocks acceptance safely. |
 | Admin can revoke accepted invitation | `ACCEPTED` becomes `REVOKED` with reason. |
@@ -70,6 +73,7 @@ Expected:
 | Raw proof private by default | Admin dashboards and data safety overview do not show raw proof text. |
 | Invitation access does not bypass enrollment | Runtime access comes from `LearnerEnrollment` and status. |
 | No hard delete of learning/access history | Cancel/revoke/suspend actions preserve historical records. |
+| Token rotation enforces required reason | Whitespace-only reasons are blocked server-side; raw token is never stored in DB. |
 
 ## Demo Notes
 

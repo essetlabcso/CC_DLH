@@ -2,7 +2,7 @@
 
 ## Recommended Sequence
 
-### 1. Admin Participant Access Overview, Read-Only First
+### 1. Admin Participant Access Overview, Read-Only First [ COMPLETED ]
 
 | Item | Detail |
 | --- | --- |
@@ -14,7 +14,7 @@
 | Risk level | Medium |
 | Evidence pack | Confirm read-only selectors, safe fields only, no runtime behavior changes, tests and build. |
 
-### 2. Direct Admin Assignment To Course/Program/Cohort
+### 2. Direct Admin Assignment To Course/Program/Cohort [ COMPLETED ]
 
 | Item | Detail |
 | --- | --- |
@@ -110,7 +110,7 @@
 | Risk level | Medium |
 | Evidence pack | Confirm donor/public visibility uses safe summaries only. |
 
-### 10. Admin QA/Demo Readiness Polish
+### 10. Admin QA/Demo Readiness Polish [ COMPLETED ]
 
 | Item | Detail |
 | --- | --- |

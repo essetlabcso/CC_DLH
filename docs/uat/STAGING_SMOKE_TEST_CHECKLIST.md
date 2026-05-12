@@ -62,7 +62,16 @@ This checklist is used to verify that the DEC Learning Hub Course Creator Portal
 
 ---
 
-## 8. Staging Deployment Execution Reference
+## 8. Admin Dashboard Triage & Invitation Lifecycle
+
+- [ ] **Operational Dashboard Queues**: Navigate to `/admin` as `admin@dec.local`. Verify the presence of specialized action-required queues (Pending Reviews, Flags, Access Issues) and confirm they link to their target functional views.
+- [ ] **Learner Invitation Flow**: Create an invitation, verify the one-time copyable link appears once, and accept it as a learner to unlock course enrollment records.
+- [ ] **Invitation Token Rotation**: Locate an existing invitation (active or expired). Rotate the token, enter a required governance reason, and confirm a new unique copyable URL is issued while resetting the record status to `CREATED`.
+- [ ] **Direct Participant Assignment**: Navigate to `/admin/participant-access`. Assign a learner directly to a course, program, or cohort with required justification reason. Verify their runtime access is enabled instantly.
+
+---
+
+## 9. Staging Deployment Execution Reference
 
 For detailed instructions on preparing, executing, and rolling back staging deployments, please refer to:
 - **[Staging Deployment Execution Checklist](../deployment/STAGING_DEPLOYMENT_EXECUTION_CHECKLIST.md)**: Complete step-by-step technical deployment checklists.
