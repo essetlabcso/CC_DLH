@@ -1,0 +1,628 @@
+﻿diff --git a/src/app/(admin)/admin/organizations/[organizationId]/page.tsx b/src/app/(admin)/admin/organizations/[organizationId]/page.tsx
+index 9771075..dbe7ee2 100644
+--- a/src/app/(admin)/admin/organizations/[organizationId]/page.tsx
++++ b/src/app/(admin)/admin/organizations/[organizationId]/page.tsx
+@@ -41,12 +41,18 @@ export default async function OrganizationDetailPage({
+             <p>Slug: {org.slug}</p>
+           </div>
+           <div className="admin-hero-actions">
+-            <Link 
+-              className="workspace-link" 
++            <Link
++              className="workspace-link"
+               href={`/admin/organizations/${org.id}/edit`}
+             >
+               Edit Organization
+             </Link>
++            <Link
++              className="workspace-link secondary"
++              href={`/oversight/organizations/${org.id}`}
++            >
++              Preview Safe Summary
++            </Link>
+             <Link className="workspace-link secondary" href="/admin/organizations">
+               Back to Organizations
+             </Link>
+diff --git a/src/app/(learner)/learn/page.tsx b/src/app/(learner)/learn/page.tsx
+index 766a809..60164bd 100644
+--- a/src/app/(learner)/learn/page.tsx
++++ b/src/app/(learner)/learn/page.tsx
+@@ -9,9 +9,18 @@ import { formatLearnerCourseDuration } from "@/lib/learner/course-access";
+ import { getBestFinalTestAttempt } from "@/lib/learner/final-test";
+ import { buildLearnerProgressSummary } from "@/lib/learner/progress";
+ import { activeLearnerEnrollmentStatuses } from "@/lib/learner/self-enrollment";
++import { loadPermissionIdentity } from "@/lib/auth/permission-identity";
++import { canViewSafeOrganizationSummary } from "@/lib/permissions/scoped-access";
+ 
+ export default async function LearnerWorkspacePage() {
+   const identity = await requireWorkspaceIdentity("/learn");
++  const permissionIdentity = await loadPermissionIdentity(prisma, identity);
++  const showOversight =
++    permissionIdentity &&
++    canViewSafeOrganizationSummary(
++      permissionIdentity,
++      identity.user.organizationId,
++    );
+   const publishedVersions = await prisma.courseVersion.findMany({
+     where: {
+       status: CourseVersionStatus.PUBLISHED,
+@@ -181,6 +190,14 @@ export default async function LearnerWorkspacePage() {
+         <Link className="workspace-link" href="/courses">
+           Explore courses
+         </Link>
++        {showOversight && (
++          <Link
++            className="workspace-link"
++            href={`/oversight/organizations/${identity.user.organizationId}`}
++          >
++            Organizational oversight
++          </Link>
++        )}
+       </nav>
+ 
+       <section className="studio-section" aria-labelledby="available-title">
+diff --git a/src/app/(oversight)/layout.tsx b/src/app/(oversight)/layout.tsx
+new file mode 100644
+index 0000000..16aa868
+--- /dev/null
++++ b/src/app/(oversight)/layout.tsx
+@@ -0,0 +1,11 @@
++import { requireWorkspaceAccess } from "@/lib/auth/server";
++
++export default async function OversightLayout({
++  children,
++}: Readonly<{
++  children: React.ReactNode;
++}>) {
++  await requireWorkspaceAccess("/oversight");
++
++  return <>{children}</>;
++}
+diff --git a/src/app/(oversight)/oversight/organizations/[organizationId]/page.tsx b/src/app/(oversight)/oversight/organizations/[organizationId]/page.tsx
+new file mode 100644
+index 0000000..4a180bd
+--- /dev/null
++++ b/src/app/(oversight)/oversight/organizations/[organizationId]/page.tsx
+@@ -0,0 +1,215 @@
++import Link from "next/link";
++import { notFound, redirect } from "next/navigation";
++
++import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
++import { requirePermissionIdentity } from "@/lib/auth/server";
++import { canViewSafeOrganizationSummary } from "@/lib/permissions/scoped-access";
++import { getOrganizationSafeSummary } from "@/lib/organization-safe-summary";
++
++type SafeSummaryPageProps = {
++  params: Promise<{
++    organizationId: string;
++  }>;
++};
++
++export default async function SafeSummaryPage({ params }: SafeSummaryPageProps) {
++  const { organizationId } = await params;
++  const pathname = `/oversight/organizations/${organizationId}`;
++  
++  // 1. Core Security Evaluation
++  const identity = await requirePermissionIdentity(pathname);
++  const hasAccess = canViewSafeOrganizationSummary(identity, organizationId);
++
++  if (!hasAccess) {
++    redirect(`/forbidden?reason=OVERSIGHT_RESTRICTED&next=${encodeURIComponent(pathname)}`);
++  }
++
++  // 2. Data Loading
++  const summary = await getOrganizationSafeSummary(organizationId);
++
++  if (!summary) {
++    notFound();
++  }
++
++  return (
++    <WorkspaceShell eyebrow="Organizational Oversight" title={summary.organizationName}>
++      <div className="admin-dashboard">
++        {/* Summary Banner */}
++        <section className="admin-hero">
++          <div>
++            <h2>Safe Performance Summary</h2>
++            <p>
++              Aggregated view of organizational engagement, course completion, 
++              and applied evidence. All confidential proof texts, reflections, and 
++              emails are excluded to safeguard learner privacy.
++            </p>
++          </div>
++          <div className="admin-hero-actions">
++            <Link className="workspace-link secondary" href="/learn">
++              Back to Learning
++            </Link>
++          </div>
++        </section>
++
++        {/* Metrics Overview */}
++        <section className="admin-section" aria-labelledby="kpi-summary-title">
++          <div className="admin-section-heading">
++            <h2 id="kpi-summary-title">Core Metrics</h2>
++            <p>High-level summary of learning activity.</p>
++          </div>
++          <div className="admin-metrics-grid">
++            <MetricCard 
++              label="Active Staff Members" 
++              value={summary.activeMemberCount} 
++              detail="Current active user accounts" 
++            />
++            <MetricCard 
++              label="Enrollments" 
++              value={summary.totalEnrollments} 
++              detail={`${summary.completedEnrollments} courses completed (${summary.completionRatePercent}%)`} 
++            />
++            <MetricCard 
++              label="Certificates Issued" 
++              value={summary.certificatesIssued} 
++              detail="Verified via final test passing scores" 
++            />
++            <MetricCard 
++              label="Verified Achievements" 
++              value={summary.verifiedAchievementsAwarded} 
++              detail="Practical learning successfully applied" 
++            />
++          </div>
++        </section>
++
++        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "1.5rem" }}>
++          {/* Evidence Pipeline */}
++          <section className="admin-section" aria-labelledby="pipeline-title">
++            <div className="admin-section-heading">
++              <h2 id="pipeline-title">Evidence Pipeline</h2>
++              <p>Lifecycle of practical proof submissions across the staff.</p>
++            </div>
++            <div className="admin-card-grid">
++              <article className="admin-readiness-card">
++                <dl className="reference-meta-list">
++                  <div>
++                    <dt>Submitted (Awaiting Review)</dt>
++                    <dd className="admin-stat-mini">{summary.evidencePipeline.submittedCount}</dd>
++                  </div>
++                  <div>
++                    <dt>Under Review / Escalated</dt>
++                    <dd className="admin-stat-mini">{summary.evidencePipeline.underReviewCount}</dd>
++                  </div>
++                  <div>
++                    <dt>Revision Requested</dt>
++                    <dd className="admin-stat-mini">{summary.evidencePipeline.revisionRequestedCount}</dd>
++                  </div>
++                  <div>
++                    <dt>Accepted</dt>
++                    <dd className="admin-stat-mini">{summary.evidencePipeline.acceptedCount}</dd>
++                  </div>
++                  <div>
++                    <dt>Rejected</dt>
++                    <dd className="admin-stat-mini">{summary.evidencePipeline.rejectedCount}</dd>
++                  </div>
++                </dl>
++              </article>
++            </div>
++          </section>
++
++          {/* Capacity Areas */}
++          <section className="admin-section" aria-labelledby="capacity-title">
++            <div className="admin-section-heading">
++              <h2 id="capacity-title">Capacity Areas</h2>
++              <p>Applied focus areas validated by review.</p>
++            </div>
++            <div className="admin-card-grid">
++              <article className="admin-readiness-card">
++                {summary.capacityAreasCovered.length > 0 ? (
++                  <ul className="workspace-bullet-list">
++                    {summary.capacityAreasCovered.map((area) => (
++                      <li key={area}>{area}</li>
++                    ))}
++                  </ul>
++                ) : (
++                  <p className="workspace-note">No achievements recorded across capacity areas yet.</p>
++                )}
++              </article>
++            </div>
++          </section>
++        </div>
++
++        {/* Staff Roster List */}
++        <section className="admin-section" aria-labelledby="roster-title">
++          <div className="admin-section-heading">
++            <h2 id="roster-title">Staff Learning Roster</h2>
++            <p>Individual metrics safely scoped to simple volume and overall pipeline status.</p>
++          </div>
++          <div className="admin-table-card">
++            {summary.staffRoster.length > 0 ? (
++              <table className="admin-table">
++                <thead>
++                  <tr>
++                    <th>Staff Member</th>
++                    <th>Enrolled Courses</th>
++                    <th>Completed Courses</th>
++                    <th>Certificates</th>
++                    <th>Latest Applied Proof Status</th>
++                  </tr>
++                </thead>
++                <tbody>
++                  {summary.staffRoster.map((staff) => (
++                    <tr key={staff.userId}>
++                      <td><strong>{staff.userName}</strong></td>
++                      <td>{staff.enrolledCoursesCount}</td>
++                      <td>{staff.completedCoursesCount}</td>
++                      <td>{staff.certificatesCount}</td>
++                      <td>
++                        <ProofStatusBadge status={staff.practicalProofStatus} />
++                      </td>
++                    </tr>
++                  ))}
++                </tbody>
++              </table>
++            ) : (
++              <p className="workspace-empty-message" style={{ padding: "1rem" }}>
++                No staff members are currently mapped to this organization.
++              </p>
++            )}
++          </div>
++        </section>
++      </div>
++    </WorkspaceShell>
++  );
++}
++
++function MetricCard({ label, value, detail }: { label: string; value: number; detail: string }) {
++  return (
++    <article className="admin-stat-card">
++      <span>{label}</span>
++      <strong>{value}</strong>
++      <p>{detail}</p>
++    </article>
++  );
++}
++
++function ProofStatusBadge({ status }: { status: string | null }) {
++  if (!status) {
++    return <span className="status-badge">None Submitted</span>;
++  }
++
++  let displayLabel = status.replace(/_/g, " ");
++  let badgeClass = "status-badge";
++
++  if (status === "ACCEPTED") {
++    badgeClass += " status-badge-ready";
++    displayLabel = "Accepted";
++  } else if (["REJECTED", "REVISION_REQUESTED", "UNSAFE_REDACTION_REQUIRED"].includes(status)) {
++    badgeClass += " status-badge-blocked";
++    displayLabel = "Revision Needed";
++  } else if (["SUBMITTED", "UNDER_REVIEW", "ESCALATED"].includes(status)) {
++    badgeClass += " status-badge-published";
++    displayLabel = "Under Review";
++  }
++
++  return <span className={badgeClass}>{displayLabel}</span>;
++}
+diff --git a/src/lib/access.ts b/src/lib/access.ts
+index 0d0b3da..9cd4691 100644
+--- a/src/lib/access.ts
++++ b/src/lib/access.ts
+@@ -29,6 +29,11 @@ export const protectedWorkspaces: readonly ProtectedWorkspace[] = [
+     label: "Admin",
+     allowedRoles: ["admin"],
+   },
++  {
++    pathPrefix: "/oversight",
++    label: "Oversight",
++    allowedRoles: ["learner", "admin"],
++  },
+ ];
+ 
+ export function isDecRole(value: string | undefined): value is DecRole {
+diff --git a/src/lib/organization-safe-summary.test.ts b/src/lib/organization-safe-summary.test.ts
+new file mode 100644
+index 0000000..6303535
+--- /dev/null
++++ b/src/lib/organization-safe-summary.test.ts
+@@ -0,0 +1,120 @@
++/* eslint-disable @typescript-eslint/no-explicit-any */
++import { beforeEach, describe, expect, it, vi } from "vitest";
++
++import { prisma } from "@/lib/db/client";
++import { getOrganizationSafeSummary } from "./organization-safe-summary";
++
++vi.mock("@/lib/db/client", () => ({
++  prisma: {
++    organization: { findUnique: vi.fn() },
++    organizationMembership: { count: vi.fn() },
++    user: { findMany: vi.fn() },
++    learnerEnrollment: { count: vi.fn(), groupBy: vi.fn() },
++    learnerVerifiedAchievement: { count: vi.fn(), findMany: vi.fn() },
++    learnerCertificate: { count: vi.fn() },
++    learnerPracticalProofSubmission: { findMany: vi.fn() },
++  },
++}));
++
++describe("Organization Safe Summary", () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++  });
++
++  it("returns null if organization does not exist", async () => {
++    vi.mocked(prisma.organization.findUnique).mockResolvedValue(null);
++    const result = await getOrganizationSafeSummary("missing-org");
++    expect(result).toBeNull();
++  });
++
++  it("compiles accurate summary and avoids exposing raw proof content", async () => {
++    vi.mocked(prisma.organization.findUnique).mockResolvedValue({
++      name: "Save the Rainforest",
++    } as any);
++
++    // Mock aggregate counts in the correct resolution sequence
++    vi.mocked(prisma.organizationMembership.count).mockResolvedValue(5);
++    
++    vi.mocked(prisma.learnerEnrollment.count)
++      .mockResolvedValueOnce(20) // Total
++      .mockResolvedValueOnce(12); // Completed
++      
++    vi.mocked(prisma.learnerVerifiedAchievement.count).mockResolvedValue(3);
++    vi.mocked(prisma.learnerCertificate.count).mockResolvedValue(15);
++
++    // Mock grouped & nested data
++    vi.mocked(prisma.learnerPracticalProofSubmission.findMany).mockResolvedValue([
++      { userId: "u1", status: "ACCEPTED", updatedAt: new Date("2024-01-05") },
++      { userId: "u1", status: "SUBMITTED", updatedAt: new Date("2024-01-01") },
++      { userId: "u2", status: "ESCALATED", updatedAt: new Date("2024-01-02") },
++      { userId: "u3", status: "REVISION_REQUESTED", updatedAt: new Date("2024-01-02") },
++    ] as any);
++
++    vi.mocked(prisma.learnerVerifiedAchievement.findMany).mockResolvedValue([
++      { capacityArea: "Environmental Policy" },
++      { capacityArea: "Public Safety" },
++    ] as any);
++
++    vi.mocked(prisma.user.findMany).mockResolvedValue([
++      {
++        id: "u1",
++        name: "Alice",
++        _count: { learnerEnrollments: 5, certificates: 2 },
++      },
++      {
++        id: "u2",
++        name: "Bob",
++        _count: { learnerEnrollments: 2, certificates: 1 },
++      },
++    ] as any);
++
++    vi.mocked(prisma.learnerEnrollment.groupBy).mockResolvedValue([
++      { userId: "u1", _count: { _all: 4 } },
++      { userId: "u2", _count: { _all: 1 } },
++    ] as any);
++
++    const result = await getOrganizationSafeSummary("org-valid");
++
++    expect(result).not.toBeNull();
++    expect(result?.organizationName).toBe("Save the Rainforest");
++    
++    // Verify math
++    expect(result?.completionRatePercent).toBe(60); // (12 / 20) * 100
++    
++    // Verify overall counts mapping
++    expect(result?.activeMemberCount).toBe(5);
++    expect(result?.totalEnrollments).toBe(20);
++    expect(result?.completedEnrollments).toBe(12);
++    expect(result?.certificatesIssued).toBe(15);
++    
++    // Verify pipeline map correctness
++    expect(result?.evidencePipeline).toEqual({
++      submittedCount: 1,
++      underReviewCount: 1, // "ESCALATED" belongs here
++      revisionRequestedCount: 1,
++      acceptedCount: 1,
++      rejectedCount: 0,
++    });
++
++    // Verify Capacity areas filter logic
++    expect(result?.capacityAreasCovered).toContain("Environmental Policy");
++    expect(result?.capacityAreasCovered).toContain("Public Safety");
++
++    // Verify staff roster composition logic
++    expect(result?.staffRoster).toHaveLength(2);
++    
++    const alice = result?.staffRoster.find((s) => s.userName === "Alice");
++    expect(alice).toBeDefined();
++    expect(alice?.completedCoursesCount).toBe(4);
++    expect(alice?.enrolledCoursesCount).toBe(5);
++    expect(alice?.certificatesCount).toBe(2);
++    
++    // Ensure it correctly selected the LATEST status for User 1 (ACCEPTED vs SUBMITTED)
++    expect(alice?.practicalProofStatus).toBe("ACCEPTED");
++
++    // STRICT SAFETY CHECKS
++    expect(alice).not.toHaveProperty("userEmail");
++    expect(alice).not.toHaveProperty("proofText");
++    expect(alice).not.toHaveProperty("evidenceLink");
++  });
++});
+diff --git a/src/lib/organization-safe-summary.ts b/src/lib/organization-safe-summary.ts
+new file mode 100644
+index 0000000..22e8a98
+--- /dev/null
++++ b/src/lib/organization-safe-summary.ts
+@@ -0,0 +1,168 @@
++import { LearnerEnrollmentStatus, MembershipStatus, UserStatus } from "@prisma/client";
++
++import { prisma } from "@/lib/db/client";
++
++export interface SafeStaffRosterEntry {
++  userId: string;
++  userName: string;
++  enrolledCoursesCount: number;
++  completedCoursesCount: number;
++  certificatesCount: number;
++  practicalProofStatus: string | null;
++}
++
++export interface OrganizationSafeSummary {
++  organizationName: string;
++  activeMemberCount: number;
++  totalEnrollments: number;
++  completedEnrollments: number;
++  completionRatePercent: number;
++  certificatesIssued: number;
++  verifiedAchievementsAwarded: number;
++  capacityAreasCovered: string[];
++  evidencePipeline: {
++    submittedCount: number;
++    underReviewCount: number;
++    revisionRequestedCount: number;
++    acceptedCount: number;
++    rejectedCount: number;
++  };
++  staffRoster: SafeStaffRosterEntry[];
++}
++
++export async function getOrganizationSafeSummary(
++  organizationId: string
++): Promise<OrganizationSafeSummary | null> {
++  const organization = await prisma.organization.findUnique({
++    where: { id: organizationId },
++    select: { name: true },
++  });
++
++  if (!organization) {
++    return null;
++  }
++
++  const [
++    activeMemberCount,
++    totalEnrollments,
++    completedEnrollments,
++    verifiedAchievementsAwarded,
++    certificatesIssued,
++    allProofs,
++    capacityAreas,
++    users,
++    completedCountByUser,
++  ] = await Promise.all([
++    prisma.organizationMembership.count({
++      where: { organizationId, status: MembershipStatus.ACTIVE, user: { status: UserStatus.ACTIVE } },
++    }),
++    prisma.learnerEnrollment.count({
++      where: { organizationId },
++    }),
++    prisma.learnerEnrollment.count({
++      where: { organizationId, status: LearnerEnrollmentStatus.COMPLETED },
++    }),
++    prisma.learnerVerifiedAchievement.count({
++      where: { organizationId },
++    }),
++    prisma.learnerCertificate.count({
++      where: { user: { memberships: { some: { organizationId, status: MembershipStatus.ACTIVE } } } },
++    }),
++    prisma.learnerPracticalProofSubmission.findMany({
++      where: { user: { memberships: { some: { organizationId, status: MembershipStatus.ACTIVE } } } },
++      select: { userId: true, status: true, updatedAt: true },
++      orderBy: { updatedAt: "desc" },
++    }),
++    prisma.learnerVerifiedAchievement.findMany({
++      where: { organizationId },
++      distinct: ["capacityArea"],
++      select: { capacityArea: true },
++    }),
++    prisma.user.findMany({
++      where: { memberships: { some: { organizationId, status: MembershipStatus.ACTIVE } }, status: UserStatus.ACTIVE },
++      select: {
++        id: true,
++        name: true,
++        _count: {
++          select: {
++            learnerEnrollments: true,
++            certificates: true,
++          },
++        },
++      },
++      orderBy: { name: "asc" },
++    }),
++    prisma.learnerEnrollment.groupBy({
++      by: ["userId"],
++      where: { organizationId, status: LearnerEnrollmentStatus.COMPLETED },
++      _count: { _all: true },
++    }),
++  ]);
++
++  const pipeline = {
++    submittedCount: 0,
++    underReviewCount: 0,
++    revisionRequestedCount: 0,
++    acceptedCount: 0,
++    rejectedCount: 0,
++  };
++
++  const latestUserProofStatus = new Map<string, string>();
++
++  for (const proof of allProofs) {
++    // Group-level aggregation across all submissions
++    if (proof.status === "SUBMITTED") {
++      pipeline.submittedCount++;
++    } else if (proof.status === "UNDER_REVIEW" || proof.status === "ESCALATED") {
++      pipeline.underReviewCount++;
++    } else if (
++      proof.status === "REVISION_REQUESTED" ||
++      proof.status === "UNSAFE_REDACTION_REQUIRED"
++    ) {
++      pipeline.revisionRequestedCount++;
++    } else if (proof.status === "ACCEPTED") {
++      pipeline.acceptedCount++;
++    } else if (proof.status === "REJECTED") {
++      pipeline.rejectedCount++;
++    }
++
++    // Because we sorted by updatedAt DESC, the first one we process for each user IS their latest
++    if (!latestUserProofStatus.has(proof.userId)) {
++      latestUserProofStatus.set(proof.userId, proof.status);
++    }
++  }
++
++  const completedMap = new Map<string, number>();
++  for (const entry of completedCountByUser) {
++    completedMap.set(entry.userId, entry._count._all);
++  }
++
++  const staffRoster: SafeStaffRosterEntry[] = users.map((u) => ({
++    userId: u.id,
++    userName: u.name,
++    enrolledCoursesCount: u._count.learnerEnrollments,
++    completedCoursesCount: completedMap.get(u.id) ?? 0,
++    certificatesCount: u._count.certificates,
++    practicalProofStatus: latestUserProofStatus.get(u.id) ?? null,
++  }));
++
++  const completionRatePercent =
++    totalEnrollments > 0
++      ? Math.round((completedEnrollments / totalEnrollments) * 100)
++      : 0;
++
++  return {
++    organizationName: organization.name,
++    activeMemberCount,
++    totalEnrollments,
++    completedEnrollments,
++    completionRatePercent,
++    certificatesIssued,
++    verifiedAchievementsAwarded,
++    capacityAreasCovered: capacityAreas
++      .map((c) => c.capacityArea)
++      .filter((area) => !!area),
++    evidencePipeline: pipeline,
++    staffRoster,
++  };
++}
+diff --git a/src/middleware.ts b/src/middleware.ts
+index e870fbd..6133ed5 100644
+--- a/src/middleware.ts
++++ b/src/middleware.ts
+@@ -36,5 +36,5 @@ export async function middleware(request: NextRequest) {
+ }
+ 
+ export const config = {
+-  matcher: ["/learn/:path*", "/studio/:path*", "/review/:path*", "/admin/:path*"],
++  matcher: ["/learn/:path*", "/studio/:path*", "/review/:path*", "/admin/:path*", "/oversight/:path*"],
+ };

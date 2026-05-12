@@ -44,7 +44,8 @@ export default async function AdminProofBadgesPage() {
               title="Certificates"
             />
             <EvidenceLayerCard
-              detail="Private learner evidence submitted for human review where proof is enabled."
+              detail="Private learner evidence submitted for human review. View queue or manage verifiers."
+              href="/admin/proof-badges/assignments"
               status="Private proof"
               title="Practical proof submissions"
             />

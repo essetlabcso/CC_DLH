@@ -6,8 +6,11 @@ import {
   recordPracticalProofReviewAction,
 } from "@/app/(review)/review/actions";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
-import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import { requirePermissionIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
+import {
+  canReviewAssignedProof,
+} from "@/lib/permissions/scoped-access";
 import {
   formatProofAuditEventType,
   formatProofAuditStatus,
@@ -51,17 +54,12 @@ export default async function ProofReviewDetailPage({
     notFound();
   }
 
-  const identity = await requireWorkspaceIdentity(
+  const identity = await requirePermissionIdentity(
     `/review/proof/${submissionId}`,
   );
   const submission = await prisma.learnerPracticalProofSubmission.findFirst({
     where: {
       id: submissionId,
-      courseVersion: {
-        course: {
-          organizationId: identity.user.organizationId,
-        },
-      },
       visibilityDefault: "PRIVATE",
       donorVisibilityConsent: false,
       aiVerificationUsed: false,
@@ -92,6 +90,10 @@ export default async function ProofReviewDetailPage({
   });
 
   if (!submission) {
+    notFound();
+  }
+
+  if (!canReviewAssignedProof(identity, submission)) {
     notFound();
   }
 
