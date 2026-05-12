@@ -51,26 +51,27 @@ export default async function AdminMonitoringPage({
   const completionRate = counts.totalLearners > 0 ? Math.round((counts.totalCertificates / counts.totalLearners) * 100) : 0;
   const proofRate = counts.totalLearners > 0 ? Math.round((counts.totalVerifiedAchievements / counts.totalLearners) * 100) : 0;
 
+  const hasDateFilter = Boolean(filters.startDate || filters.endDate);
   const monitoringCards = [
     {
       label: "Total Enrolled",
       value: counts.totalEnrolled,
-      detail: "Total primary learner assignments recorded.",
+      detail: `Total primary learner assignments recorded${hasDateFilter ? " in selected range" : ""}.`,
     },
     {
       label: "Learners With Progress",
       value: counts.totalLearners,
-      detail: `Learners who started at least one lesson. (${startRate}% Start Rate)`,
+      detail: `Learners active in range${hasDateFilter ? "" : " (lifetime)"}. (${startRate}% Start Rate)`,
     },
     {
       label: "Course Certificates",
       value: counts.totalCertificates,
-      detail: `Automated certificates issued for 80%+ scores. (${completionRate}% of Started)`,
+      detail: `Certificates issued${hasDateFilter ? " in range" : ""}. (${completionRate}% of Started)`,
     },
     {
       label: "Verified Achievements",
       value: counts.totalVerifiedAchievements,
-      detail: `Accepted applied evidence records. (${proofRate}% of Started)`,
+      detail: `Accepted evidence records${hasDateFilter ? " in range" : ""}. (${proofRate}% of Started)`,
     },
   ];
 
@@ -223,7 +224,11 @@ export default async function AdminMonitoringPage({
         <section className="admin-section" aria-labelledby="platform-metrics-title">
           <div className="admin-section-heading">
             <h2 id="platform-metrics-title">Platform Metrics</h2>
-            <p>Aggregate counts and benchmark rates across courses and organizations.</p>
+            <p>
+              {hasDateFilter
+                ? "Aggregate activity within the selected date window."
+                : "Lifetime aggregate counts and benchmark rates across courses and organizations."}
+            </p>
           </div>
           <div className="admin-metrics-grid">
             {monitoringCards.map((card) => (
@@ -238,8 +243,8 @@ export default async function AdminMonitoringPage({
 
         <section className="admin-section" aria-labelledby="monthly-trends-title">
           <div className="admin-section-heading">
-            <h2 id="monthly-trends-title">Chronological Volume Trends</h2>
-            <p>Certificates and verified achievements volume over the past 6 months.</p>
+            <h2 id="monthly-trends-title">Chronological Volume Trends (Last 6 Months)</h2>
+            <p>Certificates and verified achievements volume over the rolling last 6 months, independent of page filters.</p>
           </div>
           <div className="admin-table-container" style={{ padding: "1.5rem", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #eee" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -254,11 +259,11 @@ export default async function AdminMonitoringPage({
                     <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "#666" }}>{point.monthLabel}</span>
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <div style={{ height: "12px", backgroundColor: "#2563eb", width: `${Math.max(certPct, 1)}%`, minWidth: point.certificates > 0 ? "2px" : "0", borderRadius: "2px", transition: "width 0.3s" }} title={`Certificates: ${point.certificates}`} />
+                        <div style={{ height: "12px", backgroundColor: "var(--dec-color-primary)", width: `${Math.max(certPct, 1)}%`, minWidth: point.certificates > 0 ? "2px" : "0", borderRadius: "2px", transition: "width 0.3s" }} title={`Certificates: ${point.certificates}`} />
                         {point.certificates > 0 && <span style={{ fontSize: "0.75rem" }}>{point.certificates} certs</span>}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <div style={{ height: "12px", backgroundColor: "#16a34a", width: `${Math.max(achPct, 1)}%`, minWidth: point.achievements > 0 ? "2px" : "0", borderRadius: "2px", transition: "width 0.3s" }} title={`Achievements: ${point.achievements}`} />
+                        <div style={{ height: "12px", backgroundColor: "var(--dec-color-secondary)", width: `${Math.max(achPct, 1)}%`, minWidth: point.achievements > 0 ? "2px" : "0", borderRadius: "2px", transition: "width 0.3s" }} title={`Achievements: ${point.achievements}`} />
                         {point.achievements > 0 && <span style={{ fontSize: "0.75rem" }}>{point.achievements} achv.</span>}
                       </div>
                     </div>
@@ -267,16 +272,16 @@ export default async function AdminMonitoringPage({
               })}
             </div>
             <div style={{ marginTop: "1rem", display: "flex", gap: "1rem", fontSize: "0.75rem", color: "#666" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", backgroundColor: "#2563eb", display: "inline-block" }}></span> Certificates</span>
-              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", backgroundColor: "#16a34a", display: "inline-block" }}></span> Achievements</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", backgroundColor: "var(--dec-color-primary)", display: "inline-block" }}></span> Certificates</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", backgroundColor: "var(--dec-color-secondary)", display: "inline-block" }}></span> Achievements</span>
             </div>
           </div>
         </section>
 
         <section className="admin-section" aria-labelledby="course-signals-title">
           <div className="admin-section-heading">
-            <h2 id="course-signals-title">Course Performance Signals</h2>
-            <p>Active courses filtered by enrollment volumes and completion rates to detect potential bottlenecks.</p>
+            <h2 id="course-signals-title">Lifetime Course Performance Signals</h2>
+            <p>Active courses filtered by enrollment volumes to detect potential bottlenecks. Computed as cumulative lifetime performance independent of date filters.</p>
           </div>
           <div className="admin-table-container">
             {courseSignals.length > 0 ? (
@@ -300,12 +305,12 @@ export default async function AdminMonitoringPage({
                       <td>{signal.totalEnrolled}</td>
                       <td>{signal.startedLearners}</td>
                       <td>
-                        <span style={{ color: signal.startRate < 30 && signal.totalEnrolled > 5 ? "#b91c1c" : "inherit" }}>
+                        <span style={{ color: signal.startRate < 30 && signal.totalEnrolled > 5 ? "var(--dec-color-danger)" : "inherit" }}>
                           {signal.startRate}%
                         </span>
                       </td>
                       <td>
-                        <span style={{ color: signal.completionRate < 30 && signal.startedLearners > 5 ? "#b91c1c" : "inherit", fontWeight: signal.completionRate < 30 && signal.startedLearners > 5 ? "bold" : "normal" }}>
+                        <span style={{ color: signal.completionRate < 30 && signal.startedLearners > 5 ? "var(--dec-color-danger)" : "inherit", fontWeight: signal.completionRate < 30 && signal.startedLearners > 5 ? "bold" : "normal" }}>
                           {signal.completionRate}%
                         </span>
                       </td>
