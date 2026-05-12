@@ -189,7 +189,13 @@ export function canAnalysisProceedToDesign(
     courseFitDecision: string;
   },
 ) {
-  if (input.courseFitDecision !== "course-fit") {
+  const fitNorm = String(input.courseFitDecision || "").trim().toLowerCase();
+  const isFit =
+    fitNorm === "course-fit" ||
+    fitNorm === "course-addressable" ||
+    fitNorm.includes("partly course-addressable");
+
+  if (!isFit) {
     return false;
   }
 
@@ -197,7 +203,8 @@ export function canAnalysisProceedToDesign(
     return false;
   }
 
-  if (input.ksmeRoute === "knowledge" || input.ksmeRoute === "skill") {
+  const routeNorm = String(input.ksmeRoute || "").trim().toLowerCase();
+  if (routeNorm === "knowledge" || routeNorm === "skill") {
     return true;
   }
 
@@ -358,7 +365,13 @@ export function getAnalysisRouteDecisionLabel(
     return "Analysis handover not prepared";
   }
 
-  if (input.courseFitDecision !== "course-fit") {
+  const fitNorm = String(input.courseFitDecision || "").trim().toLowerCase();
+  const isFit =
+    fitNorm === "course-fit" ||
+    fitNorm === "course-addressable" ||
+    fitNorm.includes("partly course-addressable");
+
+  if (!isFit) {
     return "Needs further diagnosis or non-course support before Design";
   }
 
@@ -374,7 +387,8 @@ export function getAnalysisRouteDecisionLabel(
     return "Analysis Gate decision not ready";
   }
 
-  if (input.ksmeRoute === "knowledge" || input.ksmeRoute === "skill") {
+  const routeNorm = String(input.ksmeRoute || "").trim().toLowerCase();
+  if (routeNorm === "knowledge" || routeNorm === "skill") {
     return "Ready for course design";
   }
 
@@ -403,18 +417,27 @@ export function getAnalysisHandoverStatusLabel(
 }
 
 export function requiresSeparableKnowledgeSkill(ksmeRoute: string) {
-  return ["motivation", "environment", "mixed"].includes(ksmeRoute);
+  const norm = String(ksmeRoute || "").trim().toLowerCase();
+  return ["motivation", "environment", "mixed"].includes(norm);
 }
 
 export function requiresReferralOrFurtherDiagnosisNote(
   analysisGateDecision: string,
   courseFitDecision = "",
 ) {
+  const fitNorm = String(courseFitDecision || "").trim().toLowerCase();
+  const fitNeedsNote =
+    fitNorm === "needs-more-evidence" ||
+    fitNorm === "alternative-intervention" ||
+    fitNorm.includes("needs further diagnosis") ||
+    fitNorm.includes("not course-addressable") ||
+    fitNorm.includes("non-course support") ||
+    fitNorm.includes("non-course route");
+
   return (
     analysisGateDecision === "needs-further-diagnosis" ||
     analysisGateDecision === "non-course-route" ||
-    courseFitDecision === "needs-more-evidence" ||
-    courseFitDecision === "alternative-intervention"
+    fitNeedsNote
   );
 }
 
