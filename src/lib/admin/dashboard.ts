@@ -210,20 +210,37 @@ export async function getAdminDashboardQueues(): Promise<AdminDashboardQueues> {
       where: { status: CourseVersionStatus.SUBMITTED },
       take: 5,
       orderBy: { updatedAt: "desc" },
-      include: { course: { select: { title: true } } },
+      select: {
+        id: true,
+        courseId: true,
+        versionNumber: true,
+        updatedAt: true,
+        course: { select: { title: true } },
+      },
     }),
     prisma.diagnosisRecord.findMany({
       where: { approvalStatus: "UNDER_REVIEW" },
       take: 5,
       orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        diagnosisTitle: true,
+        diagnosisCode: true,
+        updatedAt: true,
+      },
     }),
     prisma.learnerPracticalProofSubmission.findMany({
       where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } },
       take: 5,
       orderBy: { updatedAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
         courseVersion: {
-          include: { course: { select: { title: true } } },
+          select: {
+            course: { select: { title: true } },
+          },
         },
       },
     }),
@@ -233,9 +250,15 @@ export async function getAdminDashboardQueues(): Promise<AdminDashboardQueues> {
       },
       take: 5,
       orderBy: { updatedAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        specialistReviewRequired: true,
+        redactionRequired: true,
+        updatedAt: true,
         courseVersion: {
-          include: { course: { select: { title: true } } },
+          select: {
+            course: { select: { title: true } },
+          },
         },
       },
     }),
@@ -250,13 +273,22 @@ export async function getAdminDashboardQueues(): Promise<AdminDashboardQueues> {
       },
       take: 5,
       orderBy: { updatedAt: "desc" },
-      include: { organization: { select: { name: true } } },
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
+        organization: { select: { name: true } },
+      },
     }),
     prisma.learnerEnrollment.findMany({
       where: { status: LearnerEnrollmentStatus.SUSPENDED },
       take: 5,
       orderBy: { updatedAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        organizationId: true,
+        courseId: true,
+        updatedAt: true,
         organization: { select: { name: true } },
         course: { select: { title: true } },
       },
@@ -265,7 +297,11 @@ export async function getAdminDashboardQueues(): Promise<AdminDashboardQueues> {
       where: { status: LearnerInvitationStatus.EXPIRED },
       take: 5,
       orderBy: { updatedAt: "desc" },
-      include: { organization: { select: { name: true } } },
+      select: {
+        id: true,
+        updatedAt: true,
+        organization: { select: { name: true } },
+      },
     }),
   ]);
 
