@@ -1,4 +1,4 @@
-import { CourseVersionStatus } from "@prisma/client";
+import { CourseVersionStatus, PermissionScopeType, ScopedRoleKey } from "@prisma/client";
 import Link from "next/link";
 
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
@@ -21,6 +21,27 @@ export default async function LearnerWorkspacePage() {
       permissionIdentity,
       identity.user.organizationId,
     );
+
+  const facilitatorAssignments =
+    permissionIdentity?.scopedRoleAssignments?.filter(
+      (a) =>
+        a.roleKey === ScopedRoleKey.FACILITATOR &&
+        a.scopeType === PermissionScopeType.COHORT &&
+        a.cohortId,
+    ) || [];
+
+  const facilitatedCohortIds = Array.from(
+    new Set(facilitatorAssignments.map((a) => a.cohortId as string)),
+  );
+
+  const facilitatedCohorts =
+    facilitatedCohortIds.length > 0
+      ? await prisma.cohort.findMany({
+          where: { id: { in: facilitatedCohortIds } },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        })
+      : [];
   const publishedVersions = await prisma.courseVersion.findMany({
     where: {
       status: CourseVersionStatus.PUBLISHED,
@@ -198,6 +219,15 @@ export default async function LearnerWorkspacePage() {
             Organizational oversight
           </Link>
         )}
+        {facilitatedCohorts.map((cohort) => (
+          <Link
+            key={cohort.id}
+            className="workspace-link"
+            href={`/oversight/cohorts/${cohort.id}`}
+          >
+            Facilitate: {cohort.name}
+          </Link>
+        ))}
       </nav>
 
       <section className="studio-section" aria-labelledby="available-title">
