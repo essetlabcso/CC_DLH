@@ -17,7 +17,7 @@ The following Reference Data categories are now fully managed by the Admin Looku
 - `course_fit_decisions`
 
 **Design Decisions Applied:**
-- **Value Sourcing**: To prevent breakage caused by cosmetic text modifications, dropdowns now correctly bind `value: valueKey` instead of `displayLabel` for storage and query lookups.
+- **Value Sourcing**: Adopted a selective dual strategy to maximize system resilience. Specialized decision sets (KSME routes and course-fit decisions) correctly bind `value: valueKey` as stable keys. All other general setup categories (specifically `capacity_areas`) intentionally store their canonical `displayLabel` to protect Phase 1 anchor and diagnosis consistency.
 - **Dynamic Expansion**: `isDecCapacityArea` has been updated to accept any non-empty string to facilitate scaling beyond static lists without re-deploying application binaries.
 
 ## 3. Hard-coded Dependencies and Deferred Integrations
