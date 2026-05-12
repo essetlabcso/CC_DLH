@@ -62,11 +62,11 @@ Recent merged work finalized operational learner access, invitation lifecycle co
 - Data safety queues and safe visibility controls.
 - Audit log overview and filters.
 - Review and Publish separation.
+- Super Admin Platform Admin authority lifecycle management.
 
 ## Partial Or Missing
 
 - Program and cohort management actions.
-- Super Admin workflow to create, approve, suspend, and remove scoped Platform Admin authority.
 - Organization focal-person safe summary view.
 - Facilitator or cohort lead support view.
 - Practical proof verifier assignment workspace.
@@ -75,11 +75,7 @@ Recent merged work finalized operational learner access, invitation lifecycle co
 
 ## Recommended Next Action
 
-Start with a **plan-first package** for:
-
-> Super Admin / Platform Admin Authority Management.
-
-This should allow Super Admin-equivalent users to create, approve, suspend, and remove Platform Admin roles with strict reason enforcement and specialized audit logs.
+Start with **final Admin demo/UAT validation**, route smoke testing, documentation freeze, and handover readiness. Larger next work should move beyond Admin into Course Creator and learner runtime gaps.
 
 ## Warning For Future Agents
 

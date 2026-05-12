@@ -38,7 +38,7 @@
 | Risk level | High |
 | Evidence pack | Confirm no deletion and no unsafe learner roster exposure. |
 
-### 4. Super Admin / Platform Admin Authority Management
+### 4. [ COMPLETED ] Super Admin / Platform Admin Authority Management
 
 | Item | Detail |
 | --- | --- |

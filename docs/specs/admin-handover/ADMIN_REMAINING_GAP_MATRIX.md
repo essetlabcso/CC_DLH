@@ -13,7 +13,7 @@
 | Area | Estimated completion | Current status | Remaining gaps | Recommended build task | Effort | Priority | Suggested package name |
 | --- | ---: | --- | --- | --- | --- | --- | --- |
 | Admin dashboard/navigation | 95% | Complete | Action-required queues integrated; landing navigation card copy updated. | Maintain and audit performance metrics. | Low | Complete | Admin Action Required Dashboard |
-| User and role management | 60% | Partial | No full scoped Platform Admin management; no full user invite/account lifecycle. | Add Super Admin Platform Admin authority management. | High | Phase 1 essential | Super Admin Authority Management |
+| User and role management | 90% | Complete | Platform Admin authority management implemented; missing general public invite/account automation. | Maintain strict role audit and authority mapping. | Low | Complete | Super Admin Authority Management |
 | Organization management | 70% | Mostly complete | Missing CSO focal-person safe view and stronger organization-level access summary. | Add safe organization focal-person summary. | Medium | Phase 1 essential | Organization Focal Person Summary |
 | Program/cohort/member learner management | 75% | Mostly complete | Full access overview and direct assignments implemented; missing status changes. | Add program/cohort participant status actions. | Medium | Phase 1 essential | Admin Participant Access Overview |
 | Learner invitation lifecycle | 90% | Mostly complete | Token rotation and resend implemented; no bulk invite or email integration. | Add optional email delivery triggers. | Medium | Deferrable | Admin Invitation Resend Foundation |
@@ -28,4 +28,4 @@
 
 ## Main Phase 1 Gap
 
-The strongest remaining Phase 1 gap is Platform Admin authority lifecycle and Organization-scoped summary views. The system can now manage participant access and invitations completely, but Super Admin does not yet have an audited workspace to approve or suspend scoped Platform Admin roles, and CSOs do not yet have a safe focal-person summary view.
+The strongest remaining Phase 1 gap is Organization-scoped summary views and practical proof verifier assignments. The system can now manage participant access and invitations completely, but CSOs do not yet have a safe focal-person summary view, and verifiers do not yet have a scoped assignment workspace. Larger next work should move beyond Admin into Course Creator and learner runtime gaps.
