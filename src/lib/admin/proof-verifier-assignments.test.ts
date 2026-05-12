@@ -41,6 +41,9 @@ vi.mock("@/lib/db/client", () => {
     organization: {
       findUnique: vi.fn(),
     },
+    organizationMembership: {
+      findFirst: vi.fn(),
+    },
   };
   return { prisma: mockPrisma };
 });
@@ -113,13 +116,15 @@ describe("Proof verifier assignments library", () => {
     });
 
     it("verifies the actual course entity exists", async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "target_u" } as never);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "target_u", status: "ACTIVE" } as never);
+      vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({ id: "m1" } as never);
       vi.mocked(prisma.course.findUnique).mockResolvedValue(null);
       await expect(assignProofVerifier(input)).rejects.toThrow("Course not found.");
     });
 
     it("creates assignment and audit log sequentially in transaction", async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "target_u" } as never);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "target_u", status: "ACTIVE" } as never);
+      vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({ id: "m1" } as never);
       vi.mocked(prisma.course.findUnique).mockResolvedValue({ id: "course_id" } as never);
       vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.scopedRoleAssignment.create).mockResolvedValue({ id: "new_assign_id" } as never);
@@ -149,11 +154,38 @@ describe("Proof verifier assignments library", () => {
     });
 
     it("blocks redundant active assignments", async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "target_u" } as never);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "target_u", status: "ACTIVE" } as never);
+      vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({ id: "m1" } as never);
       vi.mocked(prisma.course.findUnique).mockResolvedValue({ id: "course_id" } as never);
-      vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue({ id: "existing" } as never);
+      vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue({
+        id: "existing",
+        status: ScopedRoleAssignmentStatus.ACTIVE,
+      } as never);
 
       await expect(assignProofVerifier(input)).rejects.toThrow("already has an active assignment");
+    });
+
+    it("reactivates disabled assignments instead of duplicating", async () => {
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "target_u", status: "ACTIVE" } as never);
+      vi.mocked(prisma.organizationMembership.findFirst).mockResolvedValue({ id: "m1" } as never);
+      vi.mocked(prisma.course.findUnique).mockResolvedValue({ id: "course_id" } as never);
+      vi.mocked(prisma.scopedRoleAssignment.findFirst).mockResolvedValue({
+        id: "existing_id",
+        status: ScopedRoleAssignmentStatus.DISABLED,
+      } as never);
+      vi.mocked(prisma.scopedRoleAssignment.update).mockResolvedValue({ id: "existing_id" } as never);
+
+      await assignProofVerifier(input);
+
+      expect(prisma.scopedRoleAssignment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "existing_id" },
+          data: expect.objectContaining({
+            status: ScopedRoleAssignmentStatus.ACTIVE,
+            expiresAt: null,
+          }),
+        })
+      );
     });
   });
 
@@ -171,14 +203,19 @@ describe("Proof verifier assignments library", () => {
     });
 
     it("updates assignment status and appends audit", async () => {
-      vi.mocked(prisma.scopedRoleAssignment.findUnique).mockResolvedValue({ id: "target_assign" } as never);
-      
+      vi.mocked(prisma.scopedRoleAssignment.findUnique).mockResolvedValue({
+        id: "target_assign",
+        roleKey: ScopedRoleKey.PRACTICAL_PROOF_VERIFIER,
+      } as never);
+
       await disableProofVerifierAssignment(disableInput);
 
       expect(prisma.scopedRoleAssignment.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "target_assign" },
-          data: { status: ScopedRoleAssignmentStatus.DISABLED },
+          data: expect.objectContaining({
+            status: ScopedRoleAssignmentStatus.DISABLED,
+          }),
         })
       );
 

@@ -170,10 +170,30 @@ export async function assignProofVerifier(input: AssignProofVerifierInput) {
   // 3. Load User
   const targetUser = await prisma.user.findFirst({
     where: { email },
-    select: { id: true },
+    select: { id: true, status: true, organizationId: true },
   });
   if (!targetUser) {
     throw new Error(`User with email ${email} not found.`);
+  }
+  if (targetUser.status !== "ACTIVE") {
+    throw new Error(
+      `Authority can only be granted to active user accounts. Current status: ${targetUser.status}`,
+    );
+  }
+
+  // NEW: Enforce active organization membership for target user
+  const membership = await prisma.organizationMembership.findFirst({
+    where: {
+      userId: targetUser.id,
+      organizationId: targetUser.organizationId,
+      status: "ACTIVE",
+    },
+    select: { id: true },
+  });
+  if (!membership) {
+    throw new Error(
+      "Target user must hold an ACTIVE membership within their system organization to hold verification authority.",
+    );
   }
 
   // 4. Verify target entity exists
@@ -215,25 +235,42 @@ export async function assignProofVerifier(input: AssignProofVerifierInput) {
     capacityArea,
   };
 
-  // 5. Check for existing active assignment
+  // 5. Check for existing assignment record to either block (if ACTIVE) or reactivate (if DISABLED)
   const existing = await prisma.scopedRoleAssignment.findFirst({
     where: {
       userId: targetUser.id,
       roleKey: ScopedRoleKey.PRACTICAL_PROOF_VERIFIER,
       scopeType: input.scopeType,
       scopeId: scopeValue,
-      status: ScopedRoleAssignmentStatus.ACTIVE,
     },
+    select: { id: true, status: true },
   });
-  if (existing) {
+
+  if (existing && existing.status === ScopedRoleAssignmentStatus.ACTIVE) {
     throw new Error("User already has an active assignment for this exact scope.");
   }
 
   // 6. Run Transaction
   return await prisma.$transaction(async (tx) => {
-    const assignment = await tx.scopedRoleAssignment.create({
-      data: updateData,
-    });
+    let assignment;
+
+    if (existing) {
+      // Reactivate historical record rather than creating duplicate row
+      assignment = await tx.scopedRoleAssignment.update({
+        where: { id: existing.id },
+        data: {
+          reason,
+          startsAt: new Date(),
+          status: ScopedRoleAssignmentStatus.ACTIVE,
+          expiresAt: null, // Clear previous expiration
+          createdById: input.actorId, // Record who reactivated it
+        },
+      });
+    } else {
+      assignment = await tx.scopedRoleAssignment.create({
+        data: updateData,
+      });
+    }
 
     await tx.adminAuditLog.create({
       data: {
@@ -269,11 +306,17 @@ export async function disableProofVerifierAssignment(input: {
     where: { id: input.assignmentId },
   });
   if (!assignment) throw new Error("Assignment not found.");
+  if (assignment.roleKey !== ScopedRoleKey.PRACTICAL_PROOF_VERIFIER) {
+    throw new Error("Modification denied: Assignment is not a proof verifier role.");
+  }
 
   return await prisma.$transaction(async (tx) => {
     const updated = await tx.scopedRoleAssignment.update({
       where: { id: input.assignmentId },
-      data: { status: ScopedRoleAssignmentStatus.DISABLED },
+      data: {
+        status: ScopedRoleAssignmentStatus.DISABLED,
+        expiresAt: new Date(),
+      },
     });
 
     await tx.adminAuditLog.create({
