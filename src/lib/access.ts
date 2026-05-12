@@ -29,6 +29,11 @@ export const protectedWorkspaces: readonly ProtectedWorkspace[] = [
     label: "Admin",
     allowedRoles: ["admin"],
   },
+  {
+    pathPrefix: "/oversight",
+    label: "Oversight",
+    allowedRoles: ["learner", "admin"],
+  },
 ];
 
 export function isDecRole(value: string | undefined): value is DecRole {
