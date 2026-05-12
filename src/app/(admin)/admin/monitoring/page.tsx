@@ -244,7 +244,7 @@ export default async function AdminMonitoringPage({
         <section className="admin-section" aria-labelledby="monthly-trends-title">
           <div className="admin-section-heading">
             <h2 id="monthly-trends-title">Chronological Volume Trends (Last 6 Months)</h2>
-            <p>Certificates and verified achievements volume over the rolling last 6 months, independent of page filters.</p>
+            <p>Certificates and verified achievements over the rolling last 6 months. The date range fields do not change this rolling trend window; other selected filters still apply.</p>
           </div>
           <div className="admin-table-container" style={{ padding: "1.5rem", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #eee" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
