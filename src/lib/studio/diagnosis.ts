@@ -4,7 +4,7 @@ export const courseFitDecisions = [
   "alternative-intervention",
 ] as const;
 
-export type CourseFitDecision = (typeof courseFitDecisions)[number];
+export type CourseFitDecision = (typeof courseFitDecisions)[number] | (string & {});
 
 export const ksmeGapTypes = [
   "knowledge",
@@ -14,7 +14,7 @@ export const ksmeGapTypes = [
   "mixed",
 ] as const;
 
-export type KsmeGapType = (typeof ksmeGapTypes)[number];
+export type KsmeGapType = (typeof ksmeGapTypes)[number] | (string & {});
 
 export type CourseDiagnosisInput = {
   surfaceRequest: string;
@@ -111,14 +111,21 @@ export function parseCourseDiagnosisFormData(
   };
 }
 
-export function shouldOpenCapacityMap(decision: CourseFitDecision | "") {
-  return decision === "course-fit";
+export function shouldOpenCapacityMap(decision: string) {
+  const norm = String(decision || "").trim().toLowerCase();
+  return (
+    norm === "course-fit" ||
+    norm === "course-addressable" ||
+    norm === "partly course-addressable" ||
+    norm.startsWith("partly course-addressable")
+  );
 }
 
 export function getCourseFitDecisionLabel(value: string) {
-  return courseFitDecisions.includes(value as CourseFitDecision)
-    ? courseFitDecisionLabels[value as CourseFitDecision]
-    : "Not decided";
+  const normalized = String(value || "").trim();
+  return (courseFitDecisions as readonly string[]).includes(normalized)
+    ? courseFitDecisionLabels[normalized as keyof typeof courseFitDecisionLabels]
+    : normalized || "Not decided";
 }
 
 export function buildEvidenceSources(input: CourseDiagnosisInput) {
@@ -159,16 +166,12 @@ export function parseEvidenceSources(value: string | undefined) {
   }
 }
 
-function normalizeKsmeGap(value: string): KsmeGapType | "" {
-  return ksmeGapTypes.includes(value as KsmeGapType)
-    ? (value as KsmeGapType)
-    : "";
+function normalizeKsmeGap(value: string): string {
+  return String(value || "").trim();
 }
 
-function normalizeCourseFitDecision(value: string): CourseFitDecision | "" {
-  return courseFitDecisions.includes(value as CourseFitDecision)
-    ? (value as CourseFitDecision)
-    : "";
+function normalizeCourseFitDecision(value: string): string {
+  return String(value || "").trim();
 }
 
 function getTextValue(formData: FormData, key: string) {

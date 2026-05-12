@@ -1,19 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { mapLookupCategoriesToCourseSetupOptions } from "@/lib/studio/setup-reference-options";
+import {
+  mapLookupCategoriesToCourseSetupOptions,
+  type CourseSetupLookupCategory,
+} from "@/lib/studio/setup-reference-options";
 
 describe("admin lookup configuration & safety", () => {
   it("includes active lookup values in creator setup options", () => {
-    const mockCategories = [
+    const testInput: CourseSetupLookupCategory[] = [
       {
         categoryKey: "delivery_formats",
         values: [
-          { displayLabel: "Self-paced", isActive: true },
-          { displayLabel: "Blended", isActive: true },
+          { displayLabel: "Self-paced", valueKey: "self-paced" },
+          { displayLabel: "Blended", valueKey: "blended" },
         ],
       },
     ];
 
-    const options = mapLookupCategoriesToCourseSetupOptions(mockCategories);
+    const options = mapLookupCategoriesToCourseSetupOptions(testInput);
     expect(options.deliveryFormats).toEqual([
       { label: "Self-paced", value: "Self-paced" },
       { label: "Blended", value: "Blended" },
@@ -21,24 +24,32 @@ describe("admin lookup configuration & safety", () => {
   });
 
   it("excludes inactive lookup values from creator setup options", () => {
-    const mockCategories = [
+    const mockSource = [
       {
         categoryKey: "delivery_formats",
         values: [
-          { displayLabel: "Self-paced", isActive: true },
-          { displayLabel: "Offline-supported (deactivated)", isActive: false },
+          { displayLabel: "Self-paced", valueKey: "self-paced", isActive: true },
+          {
+            displayLabel: "Offline-supported (deactivated)",
+            valueKey: "offline",
+            isActive: false,
+          },
         ],
       },
     ];
 
-    // Note: getCourseSetupReferenceOptions filters out isActive: false values from the db.
-    // If we map them, we can verify that only active ones are mapped or inactive ones are excluded.
-    const activeValuesOnly = mockCategories.map(cat => ({
-      ...cat,
-      values: cat.values.filter(val => val.isActive)
+    // Simulate filtering that getCourseSetupReferenceOptions does at database level
+    const activeOnlyInput: CourseSetupLookupCategory[] = mockSource.map((cat) => ({
+      categoryKey: cat.categoryKey,
+      values: cat.values
+        .filter((val) => val.isActive)
+        .map((val) => ({
+          displayLabel: val.displayLabel,
+          valueKey: val.valueKey,
+        })),
     }));
 
-    const options = mapLookupCategoriesToCourseSetupOptions(activeValuesOnly);
+    const options = mapLookupCategoriesToCourseSetupOptions(activeOnlyInput);
     expect(options.deliveryFormats).toEqual([
       { label: "Self-paced", value: "Self-paced" },
     ]);

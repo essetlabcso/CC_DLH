@@ -15,7 +15,10 @@ import {
   requiresSeparableKnowledgeSkill,
   validateAnalysisAnchorConsistency,
 } from "@/lib/studio/analysis-handover";
-import { decCapacityAreas } from "@/lib/studio/capacity-map";
+import {
+  getCourseSetupReferenceOptions,
+  type CourseSetupReferenceOption,
+} from "@/lib/studio/setup-reference-options";
 import { getEditableCourseVersion, getWorkflowStepStatus } from "@/lib/studio/courses";
 import {
   getCourseFitDecisionLabel,
@@ -102,6 +105,7 @@ export default async function DiagnosisPage({
   }
 
   const diagnosis = editable.version.diagnosis;
+  const referenceOptions = await getCourseSetupReferenceOptions(prisma);
   const handover = editable.version.analysisHandover;
   const linkedDiagnosisRecord = editable.version.setup?.selectedDiagnosisRecordId
     ? await prisma.diagnosisRecord.findUnique({
@@ -373,31 +377,23 @@ export default async function DiagnosisPage({
           <div className="form-grid">
             <label>
               <span>KSME gap</span>
-              <select name="ksmeGap" required defaultValue={diagnosis?.ksmeGap}>
-                <option value="">Choose the main gap</option>
-                <option value="knowledge">Knowledge</option>
-                <option value="skill">Skill</option>
-                <option value="motivation">Motivation</option>
-                <option value="environment">Environment or resource condition</option>
-                <option value="mixed">Mixed</option>
-              </select>
+              <SelectWithCurrentOption
+                currentValue={diagnosis?.ksmeGap}
+                name="ksmeGap"
+                options={referenceOptions.ksmeRoutes}
+                placeholder="Choose the main gap"
+                required
+              />
             </label>
             <label>
               <span>Course-fit decision</span>
-              <select
+              <SelectWithCurrentOption
+                currentValue={diagnosis?.courseFitDecision}
                 name="courseFitDecision"
+                options={referenceOptions.courseFitDecisions}
+                placeholder="Choose a decision"
                 required
-                defaultValue={diagnosis?.courseFitDecision}
-              >
-                <option value="">Choose a decision</option>
-                <option value="course-fit">A course is likely appropriate</option>
-                <option value="needs-more-evidence">
-                  Needs further diagnosis
-                </option>
-                <option value="alternative-intervention">
-                  Recommend another intervention
-                </option>
-              </select>
+              />
             </label>
           </div>
           <label>
@@ -421,18 +417,13 @@ export default async function DiagnosisPage({
           <div className="form-grid">
             <label>
               <span>Capacity area</span>
-              <select
+              <SelectWithCurrentOption
+                currentValue={handover?.capacityArea}
                 name="capacityArea"
+                options={referenceOptions.capacityAreas}
+                placeholder="Choose a DEC capacity area"
                 required
-                defaultValue={handover?.capacityArea || ""}
-              >
-                <option value="">Choose a DEC capacity area</option>
-                {decCapacityAreas.map((area) => (
-                  <option key={area} value={area}>
-                    {area}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label>
               <span>Capacity Practice Area</span>
@@ -802,5 +793,44 @@ function EvidenceFact({ label, value }: { label: string; value: string }) {
       <dt>{label}</dt>
       <dd>{value || "Not specified"}</dd>
     </div>
+  );
+}
+
+function SelectWithCurrentOption({
+  currentValue,
+  name,
+  options,
+  placeholder,
+  required,
+}: {
+  currentValue: string | null | undefined;
+  name: string;
+  options: CourseSetupReferenceOption[];
+  placeholder: string;
+  required?: boolean;
+}) {
+  const normalizedCurrentValue = currentValue?.trim() ?? "";
+  const hasCurrentOption =
+    !normalizedCurrentValue ||
+    options.some((option) => option.value === normalizedCurrentValue);
+
+  return (
+    <select
+      defaultValue={normalizedCurrentValue}
+      name={name}
+      required={required}
+    >
+      <option value="">{placeholder}</option>
+      {!hasCurrentOption ? (
+        <option value={normalizedCurrentValue}>
+          {normalizedCurrentValue} (saved value)
+        </option>
+      ) : null}
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }

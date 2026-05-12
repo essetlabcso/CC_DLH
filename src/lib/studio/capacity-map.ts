@@ -61,8 +61,8 @@ export const decCapacityAreas = [
 
 export type DecCapacityArea = (typeof decCapacityAreas)[number];
 
-export function isDecCapacityArea(value: string): value is DecCapacityArea {
-  return decCapacityAreas.includes(value as DecCapacityArea);
+export function isDecCapacityArea(value: string): boolean {
+  return Boolean(value && value.trim().length > 0);
 }
 
 export function parseCourseCapacityMapFormData(
