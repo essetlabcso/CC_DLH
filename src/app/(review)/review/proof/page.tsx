@@ -63,14 +63,17 @@ export default async function ProofReviewQueuePage() {
   const submissions = await prisma.learnerPracticalProofSubmission.findMany({
     where: whereClause,
     include: {
-      user: true,
+      user: {
+        select: {
+          name: true,
+        },
+      },
       practicalProofConfig: true,
       courseVersion: {
         include: {
           course: true,
         },
       },
-      reviewer: true,
     },
     orderBy: {
       submittedAt: "asc",

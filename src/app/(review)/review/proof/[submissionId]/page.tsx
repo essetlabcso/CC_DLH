@@ -65,8 +65,16 @@ export default async function ProofReviewDetailPage({
       aiVerificationUsed: false,
     },
     include: {
-      user: true,
-      reviewer: true,
+      user: {
+        select: {
+          name: true,
+        },
+      },
+      reviewer: {
+        select: {
+          name: true,
+        },
+      },
       practicalProofConfig: true,
       courseVersion: {
         include: {
@@ -78,12 +86,20 @@ export default async function ProofReviewDetailPage({
           createdAt: "asc",
         },
         include: {
-          actor: true,
+          actor: {
+            select: {
+              name: true,
+            },
+          },
         },
       },
       verifiedAchievement: {
         include: {
-          issuedBy: true,
+          issuedBy: {
+            select: {
+              name: true,
+            },
+          },
         },
       },
     },
@@ -279,7 +295,9 @@ export default async function ProofReviewDetailPage({
           </div>
         ) : (
           <>
-            {achievementEligibility.allowed ? (
+            {achievementEligibility.allowed &&
+            (identity.session.role === "admin" ||
+              identity.session.role === "reviewer") ? (
               <form
                 action={issueVerifiedAchievementAction.bind(
                   null,
