@@ -5,6 +5,8 @@ import {
   getCapacityAreaAchievementSummaries,
   getRecentVerifiedAchievements,
   parseAdminMonitoringFilters,
+  getMonthlyMonitoringTrends,
+  getCoursePerformanceSignals,
 } from "./monitoring";
 import { prisma } from "@/lib/db/client";
 
@@ -18,6 +20,8 @@ vi.mock("@/lib/db/client", () => ({
     learnerCertificate: { count: vi.fn() },
     learnerPracticalProofSubmission: { count: vi.fn() },
     learnerVerifiedAchievement: { count: vi.fn(), groupBy: vi.fn(), findMany: vi.fn() },
+    learnerEnrollment: { count: vi.fn() },
+    courseVersion: { findMany: vi.fn() },
   },
 }));
 
@@ -26,7 +30,7 @@ describe("monitoring data aggregations", () => {
     vi.clearAllMocks();
   });
 
-  it("parses only non-empty monitoring filter values", () => {
+  it("parses non-empty monitoring filters including dates", () => {
     expect(
       parseAdminMonitoringFilters({
         capacityArea: " MEAL ",
@@ -34,6 +38,8 @@ describe("monitoring data aggregations", () => {
         courseId: "course-1",
         organizationId: "   ",
         programId: "program-1",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
       }),
     ).toEqual({
       capacityArea: "MEAL",
@@ -41,11 +47,14 @@ describe("monitoring data aggregations", () => {
       courseId: "course-1",
       organizationId: undefined,
       programId: "program-1",
+      startDate: "2026-01-01",
+      endDate: "2026-01-31",
     });
   });
 
   describe("getAdminMonitoringCounts", () => {
     it("returns correct aggregated counts", async () => {
+      vi.mocked(prisma.learnerEnrollment.count).mockResolvedValue(20);
       vi.mocked(prisma.user.count).mockResolvedValue(15);
       vi.mocked(prisma.learnerCertificate.count).mockResolvedValue(10);
       vi.mocked(prisma.learnerPracticalProofSubmission.count).mockResolvedValue(5);
@@ -54,6 +63,7 @@ describe("monitoring data aggregations", () => {
       const counts = await getAdminMonitoringCounts();
 
       expect(counts).toEqual({
+        totalEnrolled: 20,
         totalLearners: 15,
         totalCertificates: 10,
         proofsUnderReview: 5,
@@ -138,6 +148,7 @@ describe("monitoring data aggregations", () => {
     });
 
     it("handles zero counts gracefully", async () => {
+      vi.mocked(prisma.learnerEnrollment.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.learnerCertificate.count).mockResolvedValue(0);
       vi.mocked(prisma.learnerPracticalProofSubmission.count).mockResolvedValue(0);
@@ -146,10 +157,45 @@ describe("monitoring data aggregations", () => {
       const counts = await getAdminMonitoringCounts();
 
       expect(counts).toEqual({
+        totalEnrolled: 0,
         totalLearners: 0,
         totalCertificates: 0,
         proofsUnderReview: 0,
         totalVerifiedAchievements: 0,
+      });
+    });
+
+    it("injects date constraints to where clause for all counted entities", async () => {
+      vi.mocked(prisma.learnerEnrollment.count).mockResolvedValue(1);
+      vi.mocked(prisma.user.count).mockResolvedValue(1);
+      vi.mocked(prisma.learnerCertificate.count).mockResolvedValue(1);
+      vi.mocked(prisma.learnerPracticalProofSubmission.count).mockResolvedValue(1);
+      vi.mocked(prisma.learnerVerifiedAchievement.count).mockResolvedValue(1);
+
+      await getAdminMonitoringCounts({
+        startDate: "2026-02-01",
+        endDate: "2026-02-28",
+      });
+
+      const expectedDateWhere = {
+        gte: new Date("2026-02-01T00:00:00"),
+        lte: new Date("2026-02-28T23:59:59"),
+      };
+
+      expect(prisma.learnerEnrollment.count).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          createdAt: expectedDateWhere,
+        }),
+      });
+
+      expect(prisma.user.count).toHaveBeenCalledWith({
+        where: {
+          lessonProgress: {
+            some: expect.objectContaining({
+              createdAt: expectedDateWhere,
+            }),
+          },
+        },
       });
     });
   });
@@ -323,6 +369,92 @@ describe("monitoring data aggregations", () => {
           },
           title: true,
         },
+      });
+    });
+  });
+
+  describe("getMonthlyMonitoringTrends", () => {
+    it("returns 6 monthly points with accumulated counts", async () => {
+      vi.mocked(prisma.learnerCertificate.count).mockResolvedValue(5);
+      vi.mocked(prisma.learnerVerifiedAchievement.count).mockResolvedValue(3);
+
+      const trends = await getMonthlyMonitoringTrends();
+
+      expect(trends).toHaveLength(6);
+      expect(trends[0]).toEqual(
+        expect.objectContaining({
+          monthLabel: expect.any(String),
+          certificates: 5,
+          achievements: 3,
+        }),
+      );
+      expect(prisma.learnerCertificate.count).toHaveBeenCalledTimes(6);
+      expect(prisma.learnerVerifiedAchievement.count).toHaveBeenCalledTimes(6);
+    });
+  });
+
+  describe("getCoursePerformanceSignals", () => {
+    it("computes zero-safe rates for active courses", async () => {
+      vi.mocked(prisma.courseVersion.findMany).mockResolvedValue([
+        {
+          id: "cv1",
+          courseId: "c1",
+          course: {
+            title: "Zero Stats Course",
+            organization: { name: "Test Org" },
+          },
+          _count: {
+            learnerEnrollments: 0,
+            certificates: 0,
+            verifiedAchievements: 0,
+          },
+        },
+        {
+          id: "cv2",
+          courseId: "c2",
+          course: {
+            title: "Active Course",
+            organization: { name: "Test Org" },
+          },
+          _count: {
+            learnerEnrollments: 100,
+            certificates: 30,
+            verifiedAchievements: 15,
+          },
+        },
+      ] as never);
+
+      vi.mocked(prisma.user.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(50);
+
+      const signals = await getCoursePerformanceSignals();
+
+      expect(signals).toHaveLength(2);
+      expect(signals[0]).toEqual({
+        courseId: "c1",
+        courseTitle: "Zero Stats Course",
+        organizationName: "Test Org",
+        totalEnrolled: 0,
+        startedLearners: 0,
+        certificates: 0,
+        verifiedAchievements: 0,
+        startRate: 0,
+        completionRate: 0,
+        proofRate: 0,
+      });
+
+      expect(signals[1]).toEqual({
+        courseId: "c2",
+        courseTitle: "Active Course",
+        organizationName: "Test Org",
+        totalEnrolled: 100,
+        startedLearners: 50,
+        certificates: 30,
+        verifiedAchievements: 15,
+        startRate: 50,
+        completionRate: 60,
+        proofRate: 30,
       });
     });
   });
