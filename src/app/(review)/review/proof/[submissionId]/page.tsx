@@ -6,8 +6,11 @@ import {
   recordPracticalProofReviewAction,
 } from "@/app/(review)/review/actions";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
-import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import { requirePermissionIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
+import {
+  canReviewAssignedProof,
+} from "@/lib/permissions/scoped-access";
 import {
   formatProofAuditEventType,
   formatProofAuditStatus,
@@ -51,24 +54,64 @@ export default async function ProofReviewDetailPage({
     notFound();
   }
 
-  const identity = await requireWorkspaceIdentity(
+  const identity = await requirePermissionIdentity(
     `/review/proof/${submissionId}`,
   );
-  const submission = await prisma.learnerPracticalProofSubmission.findFirst({
+  // Step 1: Fetch minimal scope fields for authorization.
+  const authSubmission = await prisma.learnerPracticalProofSubmission.findFirst({
     where: {
       id: submissionId,
-      courseVersion: {
-        course: {
-          organizationId: identity.user.organizationId,
-        },
-      },
       visibilityDefault: "PRIVATE",
       donorVisibilityConsent: false,
       aiVerificationUsed: false,
     },
+    select: {
+      id: true,
+      userId: true,
+      courseVersionId: true,
+      practicalProofConfig: {
+        select: {
+          capacityArea: true,
+        },
+      },
+      courseVersion: {
+        select: {
+          id: true,
+          courseId: true,
+          course: {
+            select: {
+              id: true,
+              organizationId: true,
+              ownerId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!authSubmission) {
+    notFound();
+  }
+
+  if (!canReviewAssignedProof(identity, authSubmission)) {
+    notFound();
+  }
+
+  // Step 2: Fetch full proof details after authorization passes.
+  const submission = await prisma.learnerPracticalProofSubmission.findUnique({
+    where: { id: submissionId },
     include: {
-      user: true,
-      reviewer: true,
+      user: {
+        select: {
+          name: true,
+        },
+      },
+      reviewer: {
+        select: {
+          name: true,
+        },
+      },
       practicalProofConfig: true,
       courseVersion: {
         include: {
@@ -80,12 +123,20 @@ export default async function ProofReviewDetailPage({
           createdAt: "asc",
         },
         include: {
-          actor: true,
+          actor: {
+            select: {
+              name: true,
+            },
+          },
         },
       },
       verifiedAchievement: {
         include: {
-          issuedBy: true,
+          issuedBy: {
+            select: {
+              name: true,
+            },
+          },
         },
       },
     },
@@ -277,7 +328,9 @@ export default async function ProofReviewDetailPage({
           </div>
         ) : (
           <>
-            {achievementEligibility.allowed ? (
+            {achievementEligibility.allowed &&
+            (identity.session.role === "admin" ||
+              identity.session.role === "reviewer") ? (
               <form
                 action={issueVerifiedAchievementAction.bind(
                   null,

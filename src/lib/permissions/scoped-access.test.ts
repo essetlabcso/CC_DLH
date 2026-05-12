@@ -296,7 +296,7 @@ describe("scoped role and access foundation", () => {
     expect(canViewRawProof(identity("learner", { userId: "learner-1" }), submission)).toBe(true);
     expect(canViewRawProof(identity("admin"), submission)).toBe(true);
     expect(canViewRawProof(identity("reviewer"), submission)).toBe(false);
-    expect(canReviewAssignedProof(identity("reviewer"), submission)).toBe(true);
+    expect(canReviewAssignedProof(identity("reviewer"), submission)).toBe(false);
     expect(canViewRawProof(assignedVerifier, submission)).toBe(true);
   });
 

@@ -1,33 +1,79 @@
 import Link from "next/link";
 
+import { Prisma, ScopedRoleKey } from "@prisma/client";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
-import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import { requirePermissionIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
+import { hasPlatformAdmin } from "@/lib/permissions/scoped-access";
 import { getProofReviewStatusLabel } from "@/lib/review/proof-review";
 import { formatPublishedDate } from "@/lib/review/publishing";
 
 export default async function ProofReviewQueuePage() {
-  const identity = await requireWorkspaceIdentity("/review/proof");
+  const identity = await requirePermissionIdentity("/review/proof");
+  const isGlobal = hasPlatformAdmin(identity);
+
+  let whereClause: Prisma.LearnerPracticalProofSubmissionWhereInput = {
+    visibilityDefault: "PRIVATE",
+    donorVisibilityConsent: false,
+    aiVerificationUsed: false,
+  };
+
+  if (!isGlobal) {
+    const verifierAssignments = (identity.scopedRoleAssignments || []).filter(
+      (a) => a.roleKey === ScopedRoleKey.PRACTICAL_PROOF_VERIFIER,
+    );
+
+    const submissionIds = verifierAssignments
+      .map((a) => a.proofSubmissionId)
+      .filter(Boolean) as string[];
+    const courseIds = verifierAssignments
+      .map((a) => a.courseId)
+      .filter(Boolean) as string[];
+    const orgIds = verifierAssignments
+      .map((a) => a.organizationId)
+      .filter(Boolean) as string[];
+    const capacityAreas = verifierAssignments
+      .map((a) => a.capacityArea)
+      .filter(Boolean) as string[];
+
+    if (
+      submissionIds.length === 0 &&
+      courseIds.length === 0 &&
+      orgIds.length === 0 &&
+      capacityAreas.length === 0
+    ) {
+      // Force an empty set if user has no assignments
+      whereClause = { id: "BLOCK_ALL" };
+    } else {
+      whereClause.OR = [
+        submissionIds.length > 0 ? { id: { in: submissionIds } } : null,
+        courseIds.length > 0
+          ? { courseVersion: { courseId: { in: courseIds } } }
+          : null,
+        orgIds.length > 0
+          ? { courseVersion: { course: { organizationId: { in: orgIds } } } }
+          : null,
+        capacityAreas.length > 0
+          ? { practicalProofConfig: { capacityArea: { in: capacityAreas } } }
+          : null,
+      ].filter(Boolean) as Prisma.LearnerPracticalProofSubmissionWhereInput[];
+    }
+  }
+
   const submissions = await prisma.learnerPracticalProofSubmission.findMany({
-    where: {
-      courseVersion: {
-        course: {
-          organizationId: identity.user.organizationId,
+    where: whereClause,
+    include: {
+      user: {
+        select: {
+          name: true,
         },
       },
-      visibilityDefault: "PRIVATE",
-      donorVisibilityConsent: false,
-      aiVerificationUsed: false,
-    },
-    include: {
-      user: true,
       practicalProofConfig: true,
       courseVersion: {
         include: {
           course: true,
         },
       },
-      reviewer: true,
     },
     orderBy: {
       submittedAt: "asc",

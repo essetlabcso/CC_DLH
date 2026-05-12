@@ -39,7 +39,7 @@ describe("DEC workspace access policy", () => {
     expect(canAccessWorkspace("reviewer", achievementSummary!)).toBe(true);
     expect(canAccessWorkspace("learner", achievementSummary!)).toBe(false);
     expect(canAccessWorkspace("creator", achievementSummary!)).toBe(false);
-    expect(canAccessWorkspace("learner", proofReview!)).toBe(false);
+    expect(canAccessWorkspace("learner", proofReview!)).toBe(true);
     expect(canAccessWorkspace("creator", proofReview!)).toBe(false);
   });
 });

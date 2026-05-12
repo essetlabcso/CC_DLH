@@ -251,7 +251,7 @@ export function canViewRawProof(
 ) {
   return (
     submission.userId === identity.user.id ||
-    hasLegacyRole(identity, "admin") ||
+    hasPlatformAdmin(identity) ||
     hasProofVerifierScope(identity, submission)
   );
 }
@@ -260,15 +260,8 @@ export function canReviewAssignedProof(
   identity: PermissionIdentity,
   submission: ProofSubmissionScopeLike,
 ) {
-  const organizationId = submission.courseVersion?.course.organizationId;
-
-  // Transitional compatibility: legacy reviewer/admin proof review remains
-  // organization-scoped until the dedicated proof-verifier assignment slice.
   return (
-    hasLegacyRole(identity, "admin") ||
-    (hasLegacyRole(identity, "reviewer") &&
-      organizationId !== undefined &&
-      identity.user.organizationId === organizationId) ||
+    hasPlatformAdmin(identity) ||
     hasProofVerifierScope(identity, submission)
   );
 }

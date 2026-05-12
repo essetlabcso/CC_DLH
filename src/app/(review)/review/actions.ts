@@ -14,7 +14,10 @@ import {
 } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { canTransitionCourseVersion } from "@/lib/db/lifecycle";
-import { canPublishCourseVersion } from "@/lib/permissions/scoped-access";
+import {
+  canPublishCourseVersion,
+  canReviewAssignedProof,
+} from "@/lib/permissions/scoped-access";
 import {
   buildReviewerPauseChecklist,
   buildReviewerApprovalChecklist,
@@ -714,7 +717,7 @@ export async function recordPracticalProofReviewAction(
   formData: FormData,
 ) {
   const reviewPath = `/review/proof/${submissionId}`;
-  const identity = await requireWorkspaceIdentity(reviewPath);
+  const identity = await requirePermissionIdentity(reviewPath);
   const result = parseProofReviewDecisionFormData(formData);
 
   if (!result.ok) {
@@ -728,11 +731,6 @@ export async function recordPracticalProofReviewAction(
   const submission = await prisma.learnerPracticalProofSubmission.findFirst({
     where: {
       id: submissionId,
-      courseVersion: {
-        course: {
-          organizationId: identity.user.organizationId,
-        },
-      },
       visibilityDefault: "PRIVATE",
       donorVisibilityConsent: false,
       aiVerificationUsed: false,
@@ -747,6 +745,10 @@ export async function recordPracticalProofReviewAction(
   });
 
   if (!submission) {
+    notFound();
+  }
+
+  if (!canReviewAssignedProof(identity, submission)) {
     notFound();
   }
 
@@ -788,15 +790,17 @@ export async function recordPracticalProofReviewAction(
 
 export async function issueVerifiedAchievementAction(submissionId: string) {
   const reviewPath = `/review/proof/${submissionId}`;
-  const identity = await requireWorkspaceIdentity(reviewPath);
+  const identity = await requirePermissionIdentity(reviewPath);
+
+  const isReviewAdmin =
+    identity.session.role === "admin" || identity.session.role === "reviewer";
+  if (!isReviewAdmin) {
+    notFound();
+  }
+
   const submission = await prisma.learnerPracticalProofSubmission.findFirst({
     where: {
       id: submissionId,
-      courseVersion: {
-        course: {
-          organizationId: identity.user.organizationId,
-        },
-      },
       visibilityDefault: "PRIVATE",
       donorVisibilityConsent: false,
       aiVerificationUsed: false,
@@ -813,6 +817,10 @@ export async function issueVerifiedAchievementAction(submissionId: string) {
   });
 
   if (!submission) {
+    notFound();
+  }
+
+  if (!canReviewAssignedProof(identity, submission)) {
     notFound();
   }
 

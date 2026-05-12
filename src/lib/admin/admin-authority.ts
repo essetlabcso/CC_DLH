@@ -93,6 +93,7 @@ const authorityAuditActions = [
   "MEMBERSHIP_UPDATED",
   "AUTHORITY_GRANTED",
   "AUTHORITY_UPDATED",
+  "AUTHORITY_REVOKED",
 ] as const;
 
 export async function getAdminAuthorityOverview(): Promise<AdminAuthorityOverview> {
@@ -381,6 +382,8 @@ function getAuthorityAuditActionLabel(action: string) {
       return "Platform Admin authority granted";
     case "AUTHORITY_UPDATED":
       return "Platform Admin authority updated";
+    case "AUTHORITY_REVOKED":
+      return "Authority revoked";
     default:
       return formatAdminAuthorityLabel(action);
   }

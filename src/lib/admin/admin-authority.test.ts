@@ -246,6 +246,7 @@ describe("Admin authority boundary", () => {
               "MEMBERSHIP_UPDATED",
               "AUTHORITY_GRANTED",
               "AUTHORITY_UPDATED",
+              "AUTHORITY_REVOKED",
             ],
           },
         },

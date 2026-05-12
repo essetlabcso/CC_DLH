@@ -20,6 +20,11 @@ export const protectedWorkspaces: readonly ProtectedWorkspace[] = [
     allowedRoles: ["creator", "admin"],
   },
   {
+    pathPrefix: "/review/proof",
+    label: "Review",
+    allowedRoles: ["learner", "reviewer", "admin"],
+  },
+  {
     pathPrefix: "/review",
     label: "Review",
     allowedRoles: ["reviewer", "admin"],
