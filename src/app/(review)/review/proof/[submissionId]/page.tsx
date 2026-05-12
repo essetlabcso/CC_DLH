@@ -62,7 +62,6 @@ export default async function ProofReviewDetailPage({
     where: {
       id: submissionId,
       visibilityDefault: "PRIVATE",
-      donorVisibilityConsent: false,
       aiVerificationUsed: false,
     },
     select: {
@@ -276,7 +275,7 @@ export default async function ProofReviewDetailPage({
           Safety acknowledged: {submission.safetyAcknowledged ? "yes" : "no"} ·
           Certificate separation acknowledged:{" "}
           {submission.certificateSeparationAcknowledged ? "yes" : "no"} · Donor
-          visibility disabled · AI verification not used
+          visibility {submission.donorVisibilityConsent ? "consented" : "disabled"} · AI verification not used
         </p>
       </section>
 
@@ -314,6 +313,14 @@ export default async function ProofReviewDetailPage({
               <span>{submission.verifiedAchievement.visibilityDefault}</span>
             </article>
             <article>
+              <strong>Donor visibility</strong>
+              <span>
+                {submission.verifiedAchievement.donorVisibilityEnabled
+                  ? "Enabled"
+                  : "Disabled"}
+              </span>
+            </article>
+            <article>
               <strong>Capacity indicator</strong>
               <span>{submission.verifiedAchievement.capacityIndicator}</span>
             </article>
@@ -341,7 +348,7 @@ export default async function ProofReviewDetailPage({
                 <p className="workspace-note">
                   This accepted proof is eligible for a private verified
                   achievement. Raw proof stays private and donor visibility
-                  remains disabled.
+                  will be {submission.donorVisibilityConsent ? "enabled" : "disabled"}.
                 </p>
                 <button className="workspace-button" type="submit">
                   Issue verified achievement
@@ -420,7 +427,7 @@ export default async function ProofReviewDetailPage({
                   ) : null}
                   <p className="workspace-note">
                     Raw proof visibility {event.visibilityDefault} · Donor
-                    visibility disabled · AI verification not used
+                    visibility {event.donorVisibilityConsent ? "consented" : "disabled"} · AI verification not used
                     {event.redactionRequired ? " · Redaction required" : ""}
                     {event.specialistReviewRequired
                       ? " · Specialist review required"

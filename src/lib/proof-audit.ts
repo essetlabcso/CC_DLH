@@ -23,6 +23,7 @@ export type PracticalProofAuditInput = {
   requiredAction?: string | null;
   redactionRequired?: boolean | null;
   specialistReviewRequired?: boolean | null;
+  donorVisibilityConsent?: boolean | null;
   metadata?: Record<string, unknown>;
 };
 
@@ -79,7 +80,7 @@ export function buildPracticalProofAuditEventData(
     redactionRequired: Boolean(input.redactionRequired),
     specialistReviewRequired: Boolean(input.specialistReviewRequired),
     visibilityDefault: practicalProofVisibilityDefault,
-    donorVisibilityConsent: false,
+    donorVisibilityConsent: Boolean(input.donorVisibilityConsent),
     aiVerificationUsed: false,
     metadata: JSON.stringify({
       proofSeparateFromCertificate: true,

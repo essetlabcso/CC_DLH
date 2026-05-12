@@ -86,7 +86,10 @@ export function parseProofReviewDecisionFormData(
   };
 }
 
-export function buildProofReviewUpdateData(input: ProofReviewDecisionInput) {
+export function buildProofReviewUpdateData(
+  input: ProofReviewDecisionInput,
+  options: { donorVisibilityConsent?: boolean } = {},
+) {
   const reviewedAt = new Date();
 
   return {
@@ -100,7 +103,7 @@ export function buildProofReviewUpdateData(input: ProofReviewDecisionInput) {
       proofReviewSeparateFromCertificate: true,
       noBadgeOrVerifiedAchievementIssued: true,
       rawProofPrivateByDefault: true,
-      donorVisibilityEnabled: false,
+      donorVisibilityEnabled: Boolean(options.donorVisibilityConsent),
       aiVerificationUsed: false,
       decidedAt: reviewedAt.toISOString(),
     }),

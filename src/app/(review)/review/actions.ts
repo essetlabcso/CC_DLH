@@ -732,7 +732,6 @@ export async function recordPracticalProofReviewAction(
     where: {
       id: submissionId,
       visibilityDefault: "PRIVATE",
-      donorVisibilityConsent: false,
       aiVerificationUsed: false,
     },
     include: {
@@ -752,7 +751,9 @@ export async function recordPracticalProofReviewAction(
     notFound();
   }
 
-  const reviewUpdateData = buildProofReviewUpdateData(result.value);
+  const reviewUpdateData = buildProofReviewUpdateData(result.value, {
+    donorVisibilityConsent: submission.donorVisibilityConsent,
+  });
 
   await prisma.$transaction(async (tx) => {
     await tx.learnerPracticalProofSubmission.update({
@@ -777,6 +778,7 @@ export async function recordPracticalProofReviewAction(
           requiredAction: result.value.requiredAction,
           redactionRequired: reviewUpdateData.redactionRequired,
           specialistReviewRequired: reviewUpdateData.specialistReviewRequired,
+          donorVisibilityConsent: submission.donorVisibilityConsent,
         }),
       },
     });
@@ -802,7 +804,6 @@ export async function issueVerifiedAchievementAction(submissionId: string) {
     where: {
       id: submissionId,
       visibilityDefault: "PRIVATE",
-      donorVisibilityConsent: false,
       aiVerificationUsed: false,
     },
     include: {
@@ -863,6 +864,7 @@ export async function issueVerifiedAchievementAction(submissionId: string) {
             publicBadgeEnabled: false,
             badgeVisualIssued: false,
           },
+          donorVisibilityConsent: submission.donorVisibilityConsent,
         }),
       },
     });

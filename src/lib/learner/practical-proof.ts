@@ -24,6 +24,7 @@ export type LearnerPracticalProofInput = {
   evidenceLink: string;
   safetyAcknowledged: boolean;
   certificateSeparationAcknowledged: boolean;
+  donorVisibilityConsent: boolean;
 };
 
 export type LearnerPracticalProofSubmissionLike = {
@@ -62,6 +63,7 @@ export function parseLearnerPracticalProofFormData(formData: FormData):
     safetyAcknowledged: formData.get("safetyAcknowledged") === "on",
     certificateSeparationAcknowledged:
       formData.get("certificateSeparationAcknowledged") === "on",
+    donorVisibilityConsent: formData.get("donorVisibilityConsent") === "on",
   };
   const missingFields: string[] = [];
 
@@ -113,7 +115,7 @@ export function buildPrivatePracticalProofSubmissionData(
     safetyAcknowledged: input.safetyAcknowledged,
     certificateSeparationAcknowledged:
       input.certificateSeparationAcknowledged,
-    donorVisibilityConsent: false,
+    donorVisibilityConsent: input.donorVisibilityConsent,
     aiVerificationUsed: false,
   };
 }

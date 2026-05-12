@@ -40,6 +40,13 @@ describe("verified achievement foundation", () => {
     });
     expect(data.title).toContain("Verified Achievement");
     expect(data.description).toContain("reviewed practical evidence");
+
+    // Dynamic propagation check
+    const dataConsented = buildVerifiedAchievementCreateData(
+      makeSubmission({ donorVisibilityConsent: true }),
+      { issuedById: "reviewer-1" },
+    );
+    expect(dataConsented.donorVisibilityEnabled).toBe(true);
   });
 
   it("blocks non-accepted proof and unsafe recognition cases", () => {
@@ -66,7 +73,7 @@ describe("verified achievement foundation", () => {
     ).toContain("specialist-review-required");
   });
 
-  it("blocks duplicate, donor-visible, AI-verified, or unlinked proof", () => {
+  it("blocks duplicate, AI-verified, or unlinked proof", () => {
     expect(
       getVerifiedAchievementEligibility(
         makeSubmission({
@@ -74,13 +81,6 @@ describe("verified achievement foundation", () => {
         }),
       ).blockers,
     ).toContain("achievement-already-issued");
-    expect(
-      getVerifiedAchievementEligibility(
-        makeSubmission({
-          donorVisibilityConsent: true,
-        }),
-      ).blockers,
-    ).toContain("donor-visibility-consented");
     expect(
       getVerifiedAchievementEligibility(
         makeSubmission({
