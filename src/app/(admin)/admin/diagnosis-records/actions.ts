@@ -372,6 +372,172 @@ export async function lockDiagnosisRecordForCourseSetupAction(
   redirect(`/admin/diagnosis-records/${locked.id}?locked=1`);
 }
 
+export async function returnDiagnosisRecordToDraftAction(
+  recordId: string,
+  formData: FormData,
+) {
+  const identity = await requireWorkspaceIdentity(
+    `/admin/diagnosis-records/${recordId}`,
+  );
+  const reason = parseActionReason(formData, "returnReason");
+
+  if (!reason) {
+    redirectWithRecordError(
+      recordId,
+      "Add a reason before returning this validated capacity gap to draft.",
+    );
+  }
+
+  const current = await getRecordForGovernanceAction(recordId);
+
+  if (!current) {
+    notFound();
+  }
+
+  if (!current.isActive || current.archivedAt) {
+    redirectWithRecordError(
+      recordId,
+      "Archived or inactive validated capacity gaps cannot be returned to draft.",
+    );
+  }
+
+  if (current.isLocked) {
+    redirectWithRecordError(
+      recordId,
+      "This validated capacity gap has already been released to Course Creators. Use 'Reopen released record' instead.",
+    );
+  }
+
+  if (current._count.selectedCourseSetups > 0) {
+    redirectWithRecordError(
+      recordId,
+      "This validated capacity gap is already selected by a Course Setup and cannot be returned to draft.",
+    );
+  }
+
+  if (!isStatus(current.approvalStatus, "APPROVED")) {
+    redirectWithRecordError(
+      recordId,
+      "Only approved validated capacity gaps can be returned to draft.",
+    );
+  }
+
+  const returned = await prisma.$transaction(async (tx) => {
+    const saved = await tx.diagnosisRecord.update({
+      data: {
+        approvalStatus: "DRAFT",
+        approvedAt: null,
+        approvedById: null,
+        changeReason: reason,
+        updatedById: identity.user.id,
+      },
+      where: {
+        id: recordId,
+      },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "DIAGNOSIS_RECORD_RETURNED_TO_DRAFT",
+        actorId: identity.user.id,
+        afterJson: JSON.stringify(toAuditRecord(saved)),
+        beforeJson: JSON.stringify(toAuditRecord(current)),
+        entityId: saved.id,
+        entityType: "DiagnosisRecord",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return saved;
+  });
+
+  revalidateRecordPaths(returned.datasetId, returned.id);
+  redirect(`/admin/diagnosis-records/${returned.id}?returned=1`);
+}
+
+export async function reopenDiagnosisRecordAction(
+  recordId: string,
+  formData: FormData,
+) {
+  const identity = await requireWorkspaceIdentity(
+    `/admin/diagnosis-records/${recordId}`,
+  );
+  const reason = parseActionReason(formData, "reopenReason");
+
+  if (!reason) {
+    redirectWithRecordError(
+      recordId,
+      "Add a reason before reopening this validated capacity gap.",
+    );
+  }
+
+  const current = await getRecordForGovernanceAction(recordId);
+
+  if (!current) {
+    notFound();
+  }
+
+  if (!current.isActive || current.archivedAt) {
+    redirectWithRecordError(
+      recordId,
+      "Archived or inactive validated capacity gaps cannot be reopened.",
+    );
+  }
+
+  if (!current.isLocked) {
+    redirectWithRecordError(
+      recordId,
+      "This validated capacity gap has not been released. Use 'Return to draft' instead.",
+    );
+  }
+
+  if (current._count.selectedCourseSetups > 0) {
+    redirectWithRecordError(
+      recordId,
+      "This validated capacity gap is already selected by a Course Setup. It cannot be reopened because it is anchoring active course design work.",
+    );
+  }
+
+  const reopened = await prisma.$transaction(async (tx) => {
+    const saved = await tx.diagnosisRecord.update({
+      data: {
+        approvalStatus: "DRAFT",
+        approvedAt: null,
+        approvedById: null,
+        changeReason: reason,
+        courseCreationStatus: "NOT_SELECTED",
+        isLocked: false,
+        lockedAt: null,
+        lockedById: null,
+        updatedById: identity.user.id,
+      },
+      where: {
+        id: recordId,
+      },
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        action: "DIAGNOSIS_RECORD_REOPENED",
+        actorId: identity.user.id,
+        afterJson: JSON.stringify(toAuditRecord(saved)),
+        beforeJson: JSON.stringify(toAuditRecord(current)),
+        entityId: saved.id,
+        entityType: "DiagnosisRecord",
+        reason,
+        riskLevel: "MEDIUM",
+      },
+    });
+
+    return saved;
+  });
+
+  revalidateRecordPaths(reopened.datasetId, reopened.id);
+  revalidatePath("/studio/courses/[courseId]/setup", "page");
+  redirect(`/admin/diagnosis-records/${reopened.id}?reopened=1`);
+}
+
 function revalidateRecordPaths(datasetId: string, recordId: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/audit-log");

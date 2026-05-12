@@ -94,6 +94,14 @@ const adminAuditActionMetadata = {
     area: "VALIDATED_CAPACITY_GAPS",
     label: "Validated capacity gap approved",
   },
+  DIAGNOSIS_RECORD_RETURNED_TO_DRAFT: {
+    area: "VALIDATED_CAPACITY_GAPS",
+    label: "Validated capacity gap returned to draft",
+  },
+  DIAGNOSIS_RECORD_REOPENED: {
+    area: "VALIDATED_CAPACITY_GAPS",
+    label: "Validated capacity gap reopened",
+  },
   DIAGNOSIS_RECORD_CREATED: {
     area: "VALIDATED_CAPACITY_GAPS",
     label: "Validated capacity gap created",

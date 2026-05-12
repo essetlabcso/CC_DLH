@@ -2,6 +2,8 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import {
   approveDiagnosisRecordAction,
   lockDiagnosisRecordForCourseSetupAction,
+  returnDiagnosisRecordToDraftAction,
+  reopenDiagnosisRecordAction,
 } from "@/app/(admin)/admin/diagnosis-records/actions";
 import { getAdminDiagnosisRecordDetail } from "@/lib/admin/diagnosis";
 import {
@@ -19,6 +21,8 @@ type AdminDiagnosisRecordDetailPageProps = {
     approved?: string;
     error?: string;
     locked?: string;
+    reopened?: string;
+    returned?: string;
     updated?: string;
   }>;
 };
@@ -77,6 +81,17 @@ export default async function AdminDiagnosisRecordDetailPage({
     readiness.lockReady &&
     isApproved(record.approvalStatus) &&
     !record.isLocked &&
+    !record.archivedAt &&
+    record.isActive &&
+    record.selectedCourseSetupCount === 0;
+  const canReturnToDraft =
+    isApproved(record.approvalStatus) &&
+    !record.isLocked &&
+    !record.archivedAt &&
+    record.isActive &&
+    record.selectedCourseSetupCount === 0;
+  const canReopen =
+    record.isLocked &&
     !record.archivedAt &&
     record.isActive &&
     record.selectedCourseSetupCount === 0;
@@ -247,6 +262,41 @@ export default async function AdminDiagnosisRecordDetailPage({
               helpText="Release keeps the approved capacity gap read-only and makes it available for Course Setup selection."
               label="Release reason"
               title="Release to Course Creators"
+            />
+            <GovernanceActionCard
+              action={returnDiagnosisRecordToDraftAction.bind(
+                null,
+                record.id,
+              )}
+              buttonLabel="Return to draft"
+              disabledHelp={
+                record.isLocked
+                  ? "Use 'Reopen released record' for released records."
+                  : record.selectedCourseSetupCount > 0
+                    ? "This record is anchoring an active Course Setup and cannot be returned to draft."
+                    : "Only approved, unreleased records with no Course Setup usage can be returned to draft."
+              }
+              enabled={canReturnToDraft}
+              fieldName="returnReason"
+              helpText="Returns the approved record to DRAFT. Only permitted before release and before any Course Setup has selected this record."
+              label="Return to draft reason"
+              title="Return to draft"
+            />
+            <GovernanceActionCard
+              action={reopenDiagnosisRecordAction.bind(null, record.id)}
+              buttonLabel="Reopen released record"
+              disabledHelp={
+                !record.isLocked
+                  ? "Only released records can be reopened."
+                  : record.selectedCourseSetupCount > 0
+                    ? "This record is anchoring active course design work and cannot be reopened."
+                    : "Only released records with no Course Setup usage can be reopened."
+              }
+              enabled={canReopen}
+              fieldName="reopenReason"
+              helpText="Removes the release lock and returns the record to DRAFT. Only permitted when no Course Setup has selected this record as an evidence anchor."
+              label="Reopen reason"
+              title="Reopen released record"
             />
           </div>
           <div className="diagnosis-preview-grid">
@@ -482,6 +532,8 @@ function StatusMessage({
         approved?: string;
         error?: string;
         locked?: string;
+        reopened?: string;
+        returned?: string;
         updated?: string;
       }
     | undefined;
@@ -515,6 +567,34 @@ function StatusMessage({
         <p>
           This validated capacity gap is now available as a read-only evidence
           anchor for eligible Course Setup use.
+        </p>
+      </section>
+    );
+  }
+
+  if (searchParams?.returned) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-published">
+          Returned to draft
+        </span>
+        <p>
+          This validated capacity gap has been returned to draft and must be
+          re-approved before it can be released to Course Creators.
+        </p>
+      </section>
+    );
+  }
+
+  if (searchParams?.reopened) {
+    return (
+      <section className="admin-section" aria-label="Action message">
+        <span className="status-badge status-badge-published">
+          Reopened
+        </span>
+        <p>
+          This validated capacity gap has been reopened. The release lock has
+          been removed and the record returned to draft for correction.
         </p>
       </section>
     );
