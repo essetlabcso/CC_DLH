@@ -1,4 +1,4 @@
-import { CertificateStatusEventType } from "@prisma/client";
+import { CertificateStatusEventType, Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "@/lib/db/client";
@@ -126,5 +126,30 @@ describe("getAdminCertificateOverview", () => {
     expect(courseVersionSelect).not.toHaveProperty("practicalProofSubmissions");
     expect(courseVersionSelect).not.toHaveProperty("verifiedAchievements");
     expect(courseVersionSelect).not.toHaveProperty("modules");
+  });
+
+  it("applies query, status, and courseId filters safely", async () => {
+    vi.mocked(prisma.learnerCertificate.findMany).mockResolvedValue([] as never);
+
+    await getAdminCertificateOverview("org-1", {
+      query: "test",
+      status: "ACTIVE",
+      courseId: "course-123",
+    });
+
+    const where =
+      vi.mocked(prisma.learnerCertificate.findMany).mock.calls[0][0]?.where as Prisma.LearnerCertificateWhereInput;
+
+    const courseWhere = where.courseVersion as Prisma.CourseVersionWhereInput;
+    const courseInnerWhere = courseWhere.course as Prisma.CourseWhereInput;
+
+    expect(courseInnerWhere.organizationId).toBe("org-1");
+    expect(courseInnerWhere.id).toBe("course-123");
+    expect(where.revokedAt).toBeNull();
+    expect(where.OR).toEqual([
+      { certificateNumber: { contains: "test" } },
+      { user: { name: { contains: "test" } } },
+      { user: { email: { contains: "test" } } },
+    ]);
   });
 });

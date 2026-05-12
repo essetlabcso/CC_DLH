@@ -6,6 +6,7 @@ import {
   type AdminCertificateRecord,
 } from "@/lib/admin/certificates";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
+import { prisma } from "@/lib/db/client";
 import {
   getCertificateStatusEventLabel,
   getCertificateStatusLabel,
@@ -23,6 +24,9 @@ type AdminCertificatesPageProps = {
     error?: string;
     reactivated?: string;
     revoked?: string;
+    q?: string;
+    status?: "ACTIVE" | "REVOKED";
+    courseId?: string;
   }>;
 };
 
@@ -31,7 +35,27 @@ export default async function AdminCertificatesPage({
 }: AdminCertificatesPageProps) {
   const resolvedSearchParams = await searchParams;
   const identity = await requireWorkspaceIdentity("/admin/certificates");
-  const overview = await getAdminCertificateOverview(identity.user.organizationId);
+
+  const statusFilter =
+    resolvedSearchParams?.status === "ACTIVE" ||
+    resolvedSearchParams?.status === "REVOKED"
+      ? resolvedSearchParams.status
+      : undefined;
+
+  const overview = await getAdminCertificateOverview(
+    identity.user.organizationId,
+    {
+      query: resolvedSearchParams?.q,
+      status: statusFilter,
+      courseId: resolvedSearchParams?.courseId,
+    },
+  );
+
+  const courses = await prisma.course.findMany({
+    where: { organizationId: identity.user.organizationId },
+    select: { id: true, title: true },
+    orderBy: { title: "asc" },
+  });
 
   return (
     <WorkspaceShell eyebrow="Admin Control Center" title="Certificate Oversight">
@@ -126,6 +150,11 @@ export default async function AdminCertificatesPage({
               practical proof records.
             </p>
           </div>
+
+          <CertificateFilters
+            courses={courses}
+            searchParams={resolvedSearchParams || {}}
+          />
 
           {overview.certificates.length > 0 ? (
             <div className="course-list course-list-spacious">
@@ -371,4 +400,82 @@ function StatusMessage({
   }
 
   return null;
+}
+
+function CertificateFilters({
+  courses,
+  searchParams,
+}: {
+  courses: { id: string; title: string }[];
+  searchParams: { q?: string; status?: string; courseId?: string };
+}) {
+  const exportParams = new URLSearchParams();
+  if (searchParams.q) exportParams.set("q", searchParams.q);
+  if (searchParams.status) exportParams.set("status", searchParams.status);
+  if (searchParams.courseId) exportParams.set("courseId", searchParams.courseId);
+
+  return (
+    <div className="admin-filters">
+      <form method="GET" className="admin-filters-form">
+        <label>
+          <span className="visually-hidden">Search</span>
+          <input
+            type="search"
+            name="q"
+            placeholder="Search by learner name, email, or cert number..."
+            defaultValue={searchParams.q || ""}
+            className="filter-input"
+          />
+        </label>
+
+        <label>
+          <span className="visually-hidden">Status</span>
+          <select
+            name="status"
+            defaultValue={searchParams.status || ""}
+            className="filter-select"
+          >
+            <option value="">All statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="REVOKED">Revoked</option>
+          </select>
+        </label>
+
+        <label>
+          <span className="visually-hidden">Course</span>
+          <select
+            name="courseId"
+            defaultValue={searchParams.courseId || ""}
+            className="filter-select"
+          >
+            <option value="">All courses</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.id}>
+                {course.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <button type="submit" className="workspace-button">
+          Filter
+        </button>
+
+        {(searchParams.q || searchParams.status || searchParams.courseId) && (
+          <Link href="/admin/certificates" className="workspace-button secondary">
+            Clear
+          </Link>
+        )}
+      </form>
+
+      <div className="admin-filters-actions">
+        <Link
+          href={`/admin/certificates/export?${exportParams.toString()}`}
+          className="workspace-link secondary"
+        >
+          Export CSV
+        </Link>
+      </div>
+    </div>
+  );
 }
