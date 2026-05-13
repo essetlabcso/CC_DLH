@@ -30,9 +30,9 @@ const adminAreaGroups = [
       {
         title: "Learner Invitations",
         href: "/admin/learner-invitations",
-        status: "Create",
+        status: "Manage",
         summary:
-          "Create one learner invitation and review invitation status safely.",
+          "Create, rotate, or cancel learner invitations and review status safely.",
       },
       {
         title: "Admin Authority",
@@ -58,9 +58,9 @@ const adminAreaGroups = [
       {
         title: "Participant Access",
         href: "/admin/participant-access",
-        status: "View",
+        status: "Manage",
         summary:
-          "Review learner access across invitations, enrollments, programs, and cohorts.",
+          "Assign learners directly and review access across enrollments, programs, and cohorts.",
       },
     ],
   },
