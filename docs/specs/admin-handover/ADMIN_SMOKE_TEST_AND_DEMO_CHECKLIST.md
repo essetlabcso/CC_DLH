@@ -24,9 +24,9 @@ Expected:
 | --- | --- | --- |
 | `/admin` loads | Admin Control Center with specialized action triage queues appears. | Confirm operational dashboard queues render correctly. |
 | `/admin/users` loads | Users and role management appears. | Confirm role update requires reason. |
-| `/admin/admin-authority` loads | Super Admin-equivalent and Platform Admin authority overview appears. | Read-only currently. |
+| `/admin/admin-authority` loads | Super Admin-equivalent and Platform Admin authority overview appears. | Confirm Super Admin-equivalent can assign authority. |
 | `/admin/organizations` loads | Organization list and summary appear. | Confirm safe organization summaries. |
-| `/admin/programs-cohorts` loads | Program/cohort overview appears. | Read-only currently. |
+| `/admin/programs-cohorts` loads | Program/cohort overview appears. | Confirm program/cohort summaries and details work. |
 | `/admin/participant-access` loads | Safe access overview and direct assignment panels appear. | Confirm direct enrollment assignments work. |
 | `/admin/reference-data` loads | Lookup category/value browser appears. | Confirm add/edit links exist. |
 | `/admin/diagnosis-datasets` loads | Evidence source package browser appears. | Confirm draft/new entry point. |
@@ -35,7 +35,7 @@ Expected:
 | `/review/queue` loads | Review queue appears. | Confirm Review remains separate from Publish. |
 | `/review/publishing` loads | Publish queue appears. | Confirm publish buttons only for approved/ready versions and authorized Admin. |
 | `/admin/certificates` loads | Certificate registry appears. | Confirm 80% rule language. |
-| `/admin/proof-badges` loads | Proof/badge overview appears. | Confirm read-only aggregate behavior. |
+| `/admin/proof-badges` loads | Proof/badge overview appears. | Confirm safe aggregate summaries and verifier assignment workspace link. |
 | `/admin/data-safety` loads | Data safety queues appear. | Confirm no raw proof in Admin overview. |
 | `/admin/monitoring` loads | Aggregate monitoring dashboard appears. | Confirm no learner rosters or raw proof. |
 | `/admin/audit-log` loads | Audit log appears. | Confirm safe summaries and filters. |

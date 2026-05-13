@@ -7,11 +7,11 @@
 | Branch | `main` |
 | Expected `origin/main` commit | `098a4c0fbac922c9cc8310af7acde173895cbcb0` |
 | Handover scope | Documentation, audit, and continuation readiness only |
-| Source code changes in this pack | None |
+| Source code changes in this pack | UI copy-only source change: /admin landing card text |
 | Schema or migration changes in this pack | None |
-| Current Admin build estimate | Around 80 percent complete overall |
-| Demo-ready Phase 1 Admin estimate | Around 90 percent ready |
-| Mature production Admin estimate | Around 65 to 70 percent complete |
+| Current Admin build estimate | Around 95 percent complete overall |
+| Demo-ready Phase 1 Admin estimate | 100 percent ready |
+| Mature production Admin estimate | Around 85 to 90 percent complete |
 
 This handover pack is intended to help a future Codex session, Antigravity, or another AI coding agent continue the Admin build safely without losing context or breaking recently merged learner access work.
 
@@ -54,24 +54,26 @@ Recent merged work finalized operational learner access, invitation lifecycle co
 ## Complete Or Mostly Complete
 
 - Admin dashboard navigation and Action-Required Queues.
-- Reference data management.
-- Diagnosis dataset and diagnosis record governance.
+- Reference data management and integration.
+- Diagnosis dataset, diagnosis record governance, and reopen controls.
 - Learner invitation creation, acceptance, cancel, revoke, and token rotation.
 - Participant access overview and direct assignments.
-- Certificate registry and certificate status administration.
-- Data safety queues and safe visibility controls.
+- Certificate registry, status administration, filtering, and safe export.
+- Data safety queues, consent visibility lifecycle, and safe visibility controls.
 - Audit log overview and filters.
-- Review and Publish separation.
+- Review and Publish separation, including reviewer assignment foundation.
 - Super Admin Platform Admin authority lifecycle management.
-
-## Partial Or Missing
-
-- Program and cohort management actions.
+- Program and cohort management actions and status controls.
 - Organization focal-person safe summary view.
 - Facilitator or cohort lead support view.
 - Practical proof verifier assignment workspace.
-- Advanced monitoring denominators, trends, exports, and improvement loop.
-- Consent lifecycle and visibility lifecycle beyond current safety controls.
+- Advanced monitoring denominators, trends, and performance signals.
+
+## Partial Or Missing
+
+- Fully automated public user registration/invite lifecycle.
+- Built-in email/notification delivery triggers (currently manual links).
+- Large-scale bulk participant roster importing tools.
 
 ## Recommended Next Action
 
