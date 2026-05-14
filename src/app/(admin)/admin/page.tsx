@@ -28,6 +28,13 @@ const adminAreaGroups = [
           "Invite users, update roles, and protect Platform Admin authority.",
       },
       {
+        title: "Local Scoped Roles",
+        href: "/admin/users/scoped-assignments",
+        status: "Manage",
+        summary:
+          "Assign local scoped roles like Facilitators and Focal Persons bounded by specific entities.",
+      },
+      {
         title: "Learner Invitations",
         href: "/admin/learner-invitations",
         status: "Manage",

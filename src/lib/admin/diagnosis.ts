@@ -914,7 +914,7 @@ function evaluateCourseEligibility({
   if (fit === "course addressable") {
     // Fully course-addressable records pass the course-fit rule.
   } else if (
-    fit === "partly course addressable" ||
+    fit.startsWith("partly course addressable") ||
     fit === "blended support recommended"
   ) {
     if (!hasKnowledgeSkillComponent) {
@@ -922,7 +922,7 @@ function evaluateCourseEligibility({
         "A partly course-addressable record needs an explicit Knowledge or Skill component.",
       );
     }
-  } else if (fit === "non course support required") {
+  } else if (fit.startsWith("non course support")) {
     reasons.push("This record is marked for non-course support.");
   } else if (fit === "further diagnosis needed") {
     reasons.push("This record needs further diagnosis before course creation.");

@@ -7,19 +7,29 @@ export default async function AdminOrganizationsPage() {
   const overview = await getOrganizationsOverview();
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Organizations">
+    <WorkspaceShell eyebrow="Admin Control Center" title="CSOs & Programs">
       <div className="admin-dashboard">
         <section className="admin-hero">
           <div>
-            <h2>CSO and organization management</h2>
+            <h2>CSOs & Programs</h2>
             <p>
-              Review registered CSOs, membership links, programs, cohorts, and
-              safe grouping summaries.
+              Review registered CSOs, programs, optional cohorts, participants,
+              and safe organization summaries for the admin MVP.
+            </p>
+            <p>
+              Cohorts are optional. Courses can also be assigned directly
+              through projects or open/self-paced access.
             </p>
           </div>
           <div className="admin-hero-actions">
             <Link className="workspace-link" href="/admin/organizations/new">
-              New Organization
+              New CSO / Organization
+            </Link>
+            <Link className="workspace-link secondary" href="/admin/programs-cohorts">
+              Programs & Cohorts
+            </Link>
+            <Link className="workspace-link secondary" href="/admin/participant-access">
+              Participants
             </Link>
             <Link className="workspace-link secondary" href="/admin">
               Back to Admin
@@ -27,15 +37,60 @@ export default async function AdminOrganizationsPage() {
           </div>
         </section>
 
+        <section className="admin-section" aria-labelledby="cso-navigation-title">
+          <div className="admin-section-heading">
+            <h2 id="cso-navigation-title">CSO structure</h2>
+            <p>
+              Use these areas to move between CSO records, program and cohort
+              groupings, and participant access. Program and cohort records are
+              read-only in the current admin MVP; participant assignment actions
+              live in Participant Access.
+            </p>
+          </div>
+          <div className="admin-card-grid">
+            <QuickLinkCard
+              detail="Registered CSO/organization profiles and safe rollups."
+              href="#registered-csos"
+              label="CSOs"
+            />
+            <QuickLinkCard
+              detail="Read-only program records and participating CSOs."
+              href="/admin/programs-cohorts#programs"
+              label="Programs"
+            />
+            <QuickLinkCard
+              detail="Optional cohort groups where a program uses cohort delivery."
+              href="/admin/programs-cohorts#cohorts"
+              label="Cohorts"
+            />
+            <QuickLinkCard
+              detail="Invitations, enrollments, program participants, and cohort participants."
+              href="/admin/participant-access"
+              label="Participants"
+            />
+          </div>
+        </section>
+
+        <section className="admin-section" aria-labelledby="cso-safety-title">
+          <div className="admin-section-heading">
+            <h2 id="cso-safety-title">Safe organization summaries</h2>
+            <p>
+              This view shows aggregate CSO, program, cohort, certificate, and
+              verified achievement counts. Raw proof, sensitive learner data,
+              and private CSO documents are not shown here.
+            </p>
+          </div>
+        </section>
+
         <section className="admin-section" aria-labelledby="org-health-title">
           <div className="admin-section-heading">
-            <h2 id="org-health-title">Organization summary</h2>
-            <p>Live counts of organizations and staff participants.</p>
+            <h2 id="org-health-title">CSO and participant summary</h2>
+            <p>Live counts of CSOs, programs, optional cohorts, and participants.</p>
           </div>
           <div className="admin-metrics-grid">
             <MetricCard
               detail="Total registered CSOs"
-              label="Organizations"
+              label="CSOs"
               value={overview.totals.organizations}
             />
             <MetricCard
@@ -56,12 +111,17 @@ export default async function AdminOrganizationsPage() {
           </div>
         </section>
 
-        <section className="admin-section" aria-labelledby="orgs-title">
+        <section
+          className="admin-section"
+          aria-labelledby="orgs-title"
+          id="registered-csos"
+        >
           <div className="admin-section-heading">
-            <h2 id="orgs-title">Registered organizations</h2>
+            <h2 id="orgs-title">Registered CSOs</h2>
             <p>
-              Review organization-level learning, program, and cohort grouping
-              summaries without exposing raw proof.
+              Review CSO-level learning, program, and cohort grouping
+              summaries without exposing raw proof, sensitive learner data, or
+              private CSO documents.
             </p>
           </div>
 
@@ -83,6 +143,28 @@ export default async function AdminOrganizationsPage() {
         </section>
       </div>
     </WorkspaceShell>
+  );
+}
+
+function QuickLinkCard({
+  detail,
+  href,
+  label,
+}: {
+  detail: string;
+  href: string;
+  label: string;
+}) {
+  return (
+    <article className="admin-readiness-card">
+      <div>
+        <h3>{label}</h3>
+        <Link className="workspace-link secondary" href={href}>
+          Open
+        </Link>
+      </div>
+      <p>{detail}</p>
+    </article>
   );
 }
 

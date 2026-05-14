@@ -589,7 +589,7 @@ function getDiagnosisStatusLabel(tone: "ready" | "partial" | "blocked") {
     return "Not selectable";
   }
 
-  return "Partly course-addressable";
+  return "Partly course-addressable (requires direct complementary support)";
 }
 
 function parseLearnerReality(value: string | undefined) {

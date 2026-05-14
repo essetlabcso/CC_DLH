@@ -1,0 +1,25 @@
+ scripts/seed-admin-reference-data.mjs              |   4 +-
+ src/app/(admin)/admin/courses/page.tsx             | 102 ++++++++-
+ .../diagnosis-records/DiagnosisRecordDraftForm.tsx |   8 +-
+ .../diagnosis-records/[recordId]/edit/page.tsx     |   4 +-
+ .../admin/diagnosis-records/[recordId]/page.tsx    |  91 +++++---
+ src/app/(admin)/admin/diagnosis-records/actions.ts |  28 +--
+ .../(admin)/admin/diagnosis-records/new/page.tsx   |   8 +-
+ src/app/(admin)/admin/diagnosis-records/page.tsx   |  89 ++++++--
+ src/app/(admin)/admin/layout.tsx                   |   3 +-
+ src/app/(admin)/admin/monitoring/page.tsx          | 129 ++++++++---
+ src/app/(admin)/admin/organizations/page.tsx       | 106 ++++++++-
+ src/app/(admin)/admin/page.tsx                     |   7 +
+ src/app/(admin)/admin/programs-cohorts/page.tsx    |  85 ++++++-
+ src/app/(admin)/admin/users/page.tsx               | 147 +++++++++++-
+ .../studio/courses/[courseId]/setup/page.tsx       |   2 +-
+ src/app/(review)/review/publishing/page.tsx        |  49 ++--
+ src/app/globals.css                                | 247 +++++++++++++++++++++
+ src/lib/admin/course-workflow-overview.test.ts     |   2 +
+ src/lib/admin/course-workflow-overview.ts          | 124 +++++++++++
+ src/lib/admin/diagnosis.ts                         |   4 +-
+ src/lib/admin/role-labels.test.ts                  |   8 +-
+ src/lib/admin/role-labels.ts                       |   6 +-
+ src/lib/studio/analysis-handover.ts                |   2 +-
+ src/lib/studio/diagnosis-selection.ts              |   4 +-
+ 24 files changed, 1084 insertions(+), 175 deletions(-)

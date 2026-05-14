@@ -11,17 +11,27 @@ export default async function AdminProgramsCohortsPage() {
   const overview = await getAdminProgramsCohortsOverview();
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Programs & Cohorts">
+    <WorkspaceShell eyebrow="Admin Control Center" title="CSOs, Programs & Cohorts">
       <div className="admin-dashboard">
         <section className="admin-hero">
           <div>
             <h2>Programs & Cohorts</h2>
             <p>
-              Review how programs, cohorts, organizations, and courses are
-              grouped.
+              Review how programs, optional cohorts, CSOs, participants, and
+              courses are grouped for the admin MVP.
+            </p>
+            <p>
+              Cohorts are optional. Courses can also be assigned directly
+              through projects or open/self-paced access.
             </p>
           </div>
           <div className="admin-hero-actions">
+            <Link className="workspace-link secondary" href="/admin/organizations">
+              CSOs
+            </Link>
+            <Link className="workspace-link secondary" href="/admin/participant-access">
+              Participants
+            </Link>
             <Link className="workspace-link secondary" href="/admin">
               Back to Admin
             </Link>
@@ -30,11 +40,45 @@ export default async function AdminProgramsCohortsPage() {
 
         <section className="admin-section" aria-labelledby="program-safety-title">
           <div className="admin-section-heading">
-            <h2 id="program-safety-title">Read-only overview</h2>
+            <h2 id="program-safety-title">Read-only program and cohort overview</h2>
             <p>
-              This overview does not manage assignments, enrollment, learner
-              records, or raw proof.
+              Program and cohort records remain read-only here in the current
+              admin MVP. Participant assignments are handled in Participant
+              Access. This overview does not expose raw proof, sensitive learner
+              data, or private CSO documents.
             </p>
+          </div>
+        </section>
+
+        <section className="admin-section" aria-labelledby="program-nav-title">
+          <div className="admin-section-heading">
+            <h2 id="program-nav-title">CSO structure quick links</h2>
+            <p>
+              Move between the four MVP structure areas without implying that
+              every learner or course must belong to a cohort.
+            </p>
+          </div>
+          <div className="admin-card-grid">
+            <QuickLinkCard
+              detail="Registered CSO/organization profiles and safe rollups."
+              href="/admin/organizations#registered-csos"
+              label="CSOs"
+            />
+            <QuickLinkCard
+              detail="Read-only program records and participating CSOs."
+              href="#programs"
+              label="Programs"
+            />
+            <QuickLinkCard
+              detail="Optional delivery groups linked to programs where needed."
+              href="#cohorts"
+              label="Cohorts"
+            />
+            <QuickLinkCard
+              detail="Course, program, cohort, and invitation access records."
+              href="/admin/participant-access"
+              label="Participants"
+            />
           </div>
         </section>
 
@@ -67,7 +111,7 @@ export default async function AdminProgramsCohortsPage() {
           </div>
         </section>
 
-        <section className="admin-section" aria-labelledby="programs-title">
+        <section className="admin-section" aria-labelledby="programs-title" id="programs">
           <div className="admin-section-heading">
             <h2 id="programs-title">Programs</h2>
             <p>
@@ -92,12 +136,13 @@ export default async function AdminProgramsCohortsPage() {
           )}
         </section>
 
-        <section className="admin-section" aria-labelledby="cohorts-title">
+        <section className="admin-section" aria-labelledby="cohorts-title" id="cohorts">
           <div className="admin-section-heading">
             <h2 id="cohorts-title">Cohorts</h2>
             <p>
               Cohort records show linked program, linked organization, course
-              count, status, and date range.
+              count, status, and date range. Cohorts are optional and are not
+              required for every course or participant.
             </p>
           </div>
           {overview.cohorts.length > 0 ? (
@@ -118,6 +163,28 @@ export default async function AdminProgramsCohortsPage() {
         </section>
       </div>
     </WorkspaceShell>
+  );
+}
+
+function QuickLinkCard({
+  detail,
+  href,
+  label,
+}: {
+  detail: string;
+  href: string;
+  label: string;
+}) {
+  return (
+    <article className="admin-readiness-card">
+      <div>
+        <h3>{label}</h3>
+        <Link className="workspace-link secondary" href={href}>
+          Open
+        </Link>
+      </div>
+      <p>{detail}</p>
+    </article>
   );
 }
 

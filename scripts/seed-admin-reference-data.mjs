@@ -50,9 +50,9 @@ const categories = [
     description: "Approved decisions for whether a diagnosis record should proceed toward course creation.",
     values: [
       value("Course-addressable", 1),
-      value("Partly course-addressable", 2),
+      value("Partly course-addressable (requires direct complementary support)", 2),
       value("Blended support recommended", 3),
-      value("Non-course support required", 4),
+      value("Non-course support recommended (environmental/motivational barriers)", 4),
       value("Further diagnosis needed", 5),
       value("Not prioritized for Phase 1", 6),
     ],

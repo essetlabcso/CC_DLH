@@ -13,6 +13,71 @@ type AdminUsersPageProps = {
   }>;
 };
 
+const mvpRoleSummaries = [
+  {
+    title: "Admin",
+    detail: "Platform governance, reference data, reporting, and admin console access.",
+    status: "Core role",
+  },
+  {
+    title: "Course Creator",
+    detail: "Creates course designs from approved diagnosis evidence.",
+    status: "Core role",
+  },
+  {
+    title: "Reviewer",
+    detail: "Reviews course versions and supports publish governance.",
+    status: "Core role",
+  },
+  {
+    title: "Proof Verifier",
+    detail: "Reviews practical proof queues without changing certificates.",
+    status: "Scoped workflow",
+  },
+  {
+    title: "Organization Admin",
+    detail: "Manages or views assigned CSO/organization records within scope.",
+    status: "Scoped role",
+  },
+  {
+    title: "Facilitator",
+    detail: "Supports assigned cohorts, courses, or organization learning activity.",
+    status: "Scoped role",
+  },
+  {
+    title: "Participant",
+    detail: "Learns through assigned courses, programs, cohorts, or open access.",
+    status: "Core role",
+  },
+];
+
+const scopeSummaries = [
+  {
+    title: "Program",
+    detail: "Supported by local scoped assignments.",
+  },
+  {
+    title: "Project",
+    detail: "Visible as an MVP scope concept; no separate auth filter is rewired here.",
+  },
+  {
+    title: "CSO / Organization",
+    detail: "Supported through organization memberships and scoped assignments.",
+  },
+  {
+    title: "Cohort",
+    detail: "Supported for facilitator-style scoped access when cohorts are used.",
+  },
+  {
+    title: "Course",
+    detail: "Supported for local course-bounded assignments.",
+  },
+  {
+    title: "Proof Queue",
+    detail: "Managed through the separate Proof Verifier assignment workflow.",
+  },
+];
+
 export default async function AdminUsersPage({
   searchParams,
 }: AdminUsersPageProps) {
@@ -26,18 +91,81 @@ export default async function AdminUsersPage({
       <div className="admin-dashboard">
         <section className="admin-hero">
           <div>
-            <h2>User and role management</h2>
+            <h2>Users & Roles</h2>
             <p>
-              Review current users, manage platform access, and keep
-              Platform Admin authority under Super Admin-equivalent control.
+              Review current users, manage platform access, and make role
+              boundaries visible across the admin MVP.
             </p>
+            <p>Users only access records within their assigned scope.</p>
           </div>
-          <Link className="workspace-link secondary" href="/admin">
-            Back to Admin
-          </Link>
+          <div style={{ display: "flex", gap: "1rem" }}>
+            <Link className="workspace-link" href="/admin/users/scoped-assignments">
+              Manage scoped assignments
+            </Link>
+            <Link className="workspace-link secondary" href="/admin/proof-badges/assignments">
+              Proof verifier queue
+            </Link>
+            <Link className="workspace-link secondary" href="/admin">
+              Back to Admin
+            </Link>
+          </div>
         </section>
 
         <StatusMessage searchParams={resolvedSearchParams} />
+
+        <section className="admin-section" aria-labelledby="role-scope-title">
+          <div className="admin-section-heading">
+            <h2 id="role-scope-title">MVP roles and scope boundaries</h2>
+            <p>
+              Core platform roles are assigned from this registry. Local scoped
+              roles and proof queue assignments remain in their dedicated
+              assignment screens.
+            </p>
+          </div>
+          <div className="admin-card-grid">
+            {mvpRoleSummaries.map((role) => (
+              <article className="admin-readiness-card" key={role.title}>
+                <div>
+                  <h3>{role.title}</h3>
+                  <span className="status-badge status-badge-ready">
+                    {role.status}
+                  </span>
+                </div>
+                <p>{role.detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="admin-section" aria-labelledby="scope-summary-title">
+          <div className="admin-section-heading">
+            <h2 id="scope-summary-title">Scope summary</h2>
+            <p>
+              Users only access records within their assigned scope. Use scoped
+              assignments for bounded local authority rather than broad platform
+              access.
+            </p>
+          </div>
+          <div className="admin-card-grid">
+            {scopeSummaries.map((scope) => (
+              <article className="admin-readiness-card" key={scope.title}>
+                <div>
+                  <h3>{scope.title}</h3>
+                  <span className="status-badge">Scope concept</span>
+                </div>
+                <p>{scope.detail}</p>
+              </article>
+            ))}
+          </div>
+          <div className="admin-card-actions" style={{ marginTop: "1rem" }}>
+            <Link className="workspace-link" href="/admin/users/scoped-assignments">
+              Open scoped assignments
+            </Link>
+            <Link className="workspace-link secondary" href="/admin/proof-badges/assignments">
+              Open proof queue assignments
+            </Link>
+          </div>
+        </section>
 
         <section className="admin-section" aria-labelledby="user-health-title">
           <div className="admin-section-heading">
@@ -56,8 +184,8 @@ export default async function AdminUsersPage({
               value={overview.totals.activeUsers}
             />
             <MetricCard
-              detail="Can grant or change Platform Admin authority"
-              label="Super Admin-equivalent"
+              detail="Platform governance users"
+              label="Admins"
               value={overview.totals.admins}
             />
             <MetricCard
@@ -83,7 +211,8 @@ export default async function AdminUsersPage({
             <h2 id="users-title">Users</h2>
             <p>
               Role updates are recorded in the Admin audit log. This foundation
-              does not create external authentication accounts.
+              does not create external authentication accounts. Admin authority
+              remains controlled by Super Admin-equivalent users.
             </p>
           </div>
 

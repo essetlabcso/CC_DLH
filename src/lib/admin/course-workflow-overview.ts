@@ -5,6 +5,7 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "@/lib/db/client";
+import { getDiagnosisCourseFitDisplayLabel } from "@/lib/admin/diagnosis-display";
 import { getReturnGuidanceFromChecklist } from "@/lib/review/decisions";
 import { buildPublishReadiness } from "@/lib/review/publishing";
 import {
@@ -53,7 +54,13 @@ export type AdminCourseWorkflowItem = {
   organizationName: string;
   programCohortLabel: string;
   capacityArea: string;
+  courseFitDecisionLabel: string;
   sourceAnchorSummary: string;
+  readinessChecklist: {
+    detail: string;
+    label: string;
+    ready: boolean;
+  }[];
   reviewerName: string;
   workflowStage: string;
   workflowProgressLabel: string;
@@ -84,6 +91,7 @@ export async function getAdminCourseWorkflowOverview({
   const versions = await prisma.courseVersion.findMany({
     include: {
       analysisHandover: true,
+      diagnosis: true,
       course: {
         include: {
           cohortCourses: {
@@ -112,6 +120,8 @@ export async function getAdminCourseWorkflowOverview({
         },
       },
       setup: true,
+      actionMap: true,
+      storyboard: true,
       workflowSteps: true,
     },
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
@@ -166,6 +176,24 @@ export async function getAdminCourseWorkflowOverview({
       status: version.status,
       warnings,
     });
+    const courseFitDecisionLabel = getDiagnosisCourseFitDisplayLabel(
+      handover?.anchors.courseFitDecision ||
+        version.diagnosis?.courseFitDecision ||
+        "",
+    );
+    const workflowStatusByStep = buildWorkflowStatusByStep(version.workflowSteps);
+    const readinessChecklist = buildAdminCourseReadinessChecklist({
+      actionMapRecorded: Boolean(version.actionMap),
+      courseFitDecisionLabel,
+      diagnosisLocked: Boolean(version.setup?.selectedDiagnosisRecordId),
+      proofRulesRecorded: Boolean(version.practicalProofConfig) ||
+        version.setup?.practicalProofEnabled === false,
+      reviewApproved: version.status === CourseVersionStatus.APPROVED ||
+        version.status === CourseVersionStatus.PUBLISHED,
+      reviewStatus: version.status,
+      storyboardReady: Boolean(version.storyboard?.approvedForBuild),
+      workflowStatusByStep,
+    });
 
     return {
       id: version.id,
@@ -185,7 +213,9 @@ export async function getAdminCourseWorkflowOverview({
         version.analysisHandover?.capacityArea ||
         handover?.anchors.capacityArea ||
         "Not recorded",
+      courseFitDecisionLabel,
       sourceAnchorSummary: summarizeSourceAnchorForAdmin(handover),
+      readinessChecklist,
       reviewerName: version.reviewRecord?.reviewer?.name || "Not assigned",
       workflowStage: getAdminWorkflowStage(version.status, version.workflowSteps),
       workflowProgressLabel: summarizeWorkflowProgress(version.workflowSteps),
@@ -218,6 +248,100 @@ export async function getAdminCourseWorkflowOverview({
     items,
     summary: summarizeAdminCourseWorkflow(allItems),
   };
+}
+
+function buildAdminCourseReadinessChecklist({
+  actionMapRecorded,
+  courseFitDecisionLabel,
+  diagnosisLocked,
+  proofRulesRecorded,
+  reviewApproved,
+  reviewStatus,
+  storyboardReady,
+  workflowStatusByStep,
+}: {
+  actionMapRecorded: boolean;
+  courseFitDecisionLabel: string;
+  diagnosisLocked: boolean;
+  proofRulesRecorded: boolean;
+  reviewApproved: boolean;
+  reviewStatus: CourseVersionStatus;
+  storyboardReady: boolean;
+  workflowStatusByStep: Partial<Record<CourseWorkflowStep, WorkflowStepStatus>>;
+}) {
+  const finalCheckReady =
+    workflowStatusByStep[CourseWorkflowStep.CREATOR_REVIEW] ===
+      WorkflowStepStatus.COMPLETE ||
+    reviewStatus === CourseVersionStatus.SUBMITTED ||
+    reviewApproved;
+
+  return [
+    {
+      detail: diagnosisLocked
+        ? "Approved locked diagnosis selected in Course Setup."
+        : "Course setup must select an approved locked diagnosis.",
+      label: "Diagnosis locked",
+      ready: diagnosisLocked,
+    },
+    {
+      detail:
+        courseFitDecisionLabel === "Not set"
+          ? "Routing decision not recorded."
+          : courseFitDecisionLabel,
+      label: "Routing decision",
+      ready: courseFitDecisionLabel !== "Not set",
+    },
+    {
+      detail: actionMapRecorded
+        ? "Action Map record exists."
+        : "Action Map is not recorded yet.",
+      label: "Action Map",
+      ready: actionMapRecorded,
+    },
+    {
+      detail: storyboardReady
+        ? "Storyboard approved for build."
+        : "Storyboard is not approved for build yet.",
+      label: "Storyboard",
+      ready: storyboardReady,
+    },
+    {
+      detail: finalCheckReady
+        ? "Final check is ready or already submitted for review."
+        : "Creator final check is not complete yet.",
+      label: "Final check",
+      ready: finalCheckReady,
+    },
+    {
+      detail: proofRulesRecorded
+        ? "Proof rules are recorded or practical proof is not enabled."
+        : "Practical proof rules need setup before publish readiness.",
+      label: "Proof rules",
+      ready: proofRulesRecorded,
+    },
+    {
+      detail: reviewApproved
+        ? "Review approval is complete."
+        : "Publish remains unavailable until review approval is complete.",
+      label: "Review status",
+      ready: reviewApproved,
+    },
+  ];
+}
+
+function buildWorkflowStatusByStep(
+  workflowSteps: readonly {
+    status: WorkflowStepStatus;
+    step: CourseWorkflowStep;
+  }[],
+) {
+  return workflowSteps.reduce<Partial<Record<CourseWorkflowStep, WorkflowStepStatus>>>(
+    (summary, item) => {
+      summary[item.step] = item.status;
+      return summary;
+    },
+    {},
+  );
 }
 
 function summarizeSourceAnchorForAdmin(

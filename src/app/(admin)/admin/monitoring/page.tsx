@@ -27,6 +27,20 @@ type AdminMonitoringPageProps = {
 export default async function AdminMonitoringPage({
   searchParams,
 }: AdminMonitoringPageProps) {
+  return (
+    <AdminMonitoringDashboard
+      basePath="/admin/monitoring"
+      searchParams={searchParams}
+    />
+  );
+}
+
+async function AdminMonitoringDashboard({
+  basePath,
+  searchParams,
+}: AdminMonitoringPageProps & {
+  basePath: "/admin/monitoring" | "/admin/reports";
+}) {
   const params = await searchParams;
   const filters = parseAdminMonitoringFilters(params ?? {});
   const [
@@ -50,6 +64,16 @@ export default async function AdminMonitoringPage({
   const startRate = counts.totalEnrolled > 0 ? Math.round((counts.totalLearners / counts.totalEnrolled) * 100) : 0;
   const completionRate = counts.totalLearners > 0 ? Math.round((counts.totalCertificates / counts.totalLearners) * 100) : 0;
   const proofRate = counts.totalLearners > 0 ? Math.round((counts.totalVerifiedAchievements / counts.totalLearners) * 100) : 0;
+  const lowStartSignals = courseSignals.filter(
+    (signal) => signal.totalEnrolled > 5 && signal.startRate < 30,
+  ).length;
+  const lowCompletionSignals = courseSignals.filter(
+    (signal) => signal.startedLearners > 5 && signal.completionRate < 30,
+  ).length;
+  const latestTrend = trends[trends.length - 1];
+  const latestSafeEvidenceCount = latestTrend
+    ? latestTrend.certificates + latestTrend.achievements
+    : 0;
 
   const hasDateFilter = Boolean(filters.startDate || filters.endDate);
   const monitoringCards = [
@@ -69,6 +93,11 @@ export default async function AdminMonitoringPage({
       detail: `Certificates issued${hasDateFilter ? " in range" : ""}. (${completionRate}% of Started)`,
     },
     {
+      label: "Proof Submissions Under Review",
+      value: counts.proofsUnderReview,
+      detail: "Private practical proof awaiting human review. Raw files are not shown.",
+    },
+    {
       label: "Verified Achievements",
       value: counts.totalVerifiedAchievements,
       detail: `Accepted evidence records${hasDateFilter ? " in range" : ""}. (${proofRate}% of Started)`,
@@ -76,15 +105,19 @@ export default async function AdminMonitoringPage({
   ];
 
   return (
-    <WorkspaceShell eyebrow="DEC Admin" title="Monitoring & Capacity Evidence">
+    <WorkspaceShell eyebrow="DEC Admin" title="Reports & Data Dashboard">
       <div className="admin-dashboard">
         <section className="admin-hero" aria-labelledby="monitoring-overview-title">
           <div>
-            <h2 id="monitoring-overview-title">Platform Evidence Overview</h2>
+            <h2 id="monitoring-overview-title">Reports & Data Dashboard</h2>
             <p>
-              Aggregate insights into learning progress, certificates, private
-              proof review, and verified achievements. Raw proof, sensitive
-              learner details, and internal review notes are omitted.
+              Safe aggregate insights into learner progress, certificates,
+              practical proof review, verified achievements, course
+              performance, organization summaries, and improvement signals.
+            </p>
+            <p>
+              Reports show safe summaries only. Raw proof files, sensitive
+              learner data, and private CSO documents are not shown here.
             </p>
           </div>
           <span className="status-badge status-badge-published">Read-only overview</span>
@@ -92,10 +125,16 @@ export default async function AdminMonitoringPage({
 
         <section className="admin-section" aria-labelledby="monitoring-filter-title">
           <div className="admin-section-heading">
-            <h2 id="monitoring-filter-title">Filter aggregate evidence</h2>
-            <p>Filters update aggregate counts only. No learner rosters, raw proof, or individual progress records are shown.</p>
+            <h2 id="monitoring-filter-title">Filter safe summaries</h2>
+            <p>
+              Filters are available for Program, CSO/Organization, Course,
+              optional Cohort, Capacity Area, and Date Range. Project is not a
+              distinct monitoring filter yet. Filters update aggregate counts
+              only; no learner rosters, raw proof, or individual progress
+              records are shown.
+            </p>
           </div>
-          <form action="/admin/monitoring" className="reference-filter-panel">
+          <form action={basePath} className="reference-filter-panel">
             <div className="diagnosis-filter-grid">
               <SelectField
                 label="Program"
@@ -120,7 +159,7 @@ export default async function AdminMonitoringPage({
                 value={filters.cohortId}
               />
               <SelectField
-                label="Organization"
+                label="CSO / Organization"
                 name="organizationId"
                 options={filterOptions.organizations.map((organization) => ({
                   label: organization.name,
@@ -147,7 +186,7 @@ export default async function AdminMonitoringPage({
                 value={filters.capacityArea}
               />
               <label>
-                <span>From Date</span>
+                <span>Date range from</span>
                 <input
                   type="date"
                   name="startDate"
@@ -156,7 +195,7 @@ export default async function AdminMonitoringPage({
                 />
               </label>
               <label>
-                <span>To Date</span>
+                <span>Date range to</span>
                 <input
                   type="date"
                   name="endDate"
@@ -169,7 +208,7 @@ export default async function AdminMonitoringPage({
               <button className="workspace-button" type="submit">
                 Apply filters
               </button>
-              <Link className="workspace-link secondary" href="/admin/monitoring">
+              <Link className="workspace-link secondary" href={basePath}>
                 Clear
               </Link>
             </div>
@@ -188,32 +227,31 @@ export default async function AdminMonitoringPage({
 
         <section className="admin-section" aria-labelledby="evidence-boundaries-title">
           <div className="admin-section-heading">
-            <h2 id="evidence-boundaries-title">Evidence boundaries</h2>
+            <h2 id="evidence-boundaries-title">Certificate, proof, and achievement boundaries</h2>
             <p>
-              Monitoring distinguishes course completion evidence from applied
-              evidence. These summaries support platform learning and safe
-              follow-up; they do not certify full organizational transformation
-              or donor readiness.
+              These are separate concepts in the reports. Certificates come
+              from final-test performance, practical proof is private applied
+              evidence, and verified achievements require accepted proof review.
             </p>
           </div>
           <div className="admin-card-grid">
             <article className="admin-readiness-card">
               <div>
-                <h3>Certificate</h3>
-                <span className="status-badge status-badge-ready">Final test</span>
+                <h3>Certificates</h3>
+                <span className="status-badge status-badge-ready">80% final test</span>
               </div>
               <p>Issued automatically when a learner scores 80% or above on the final test.</p>
             </article>
             <article className="admin-readiness-card">
               <div>
-                <h3>Practical proof</h3>
+                <h3>Practical proof submissions</h3>
                 <span className="status-badge">Private by default</span>
               </div>
-              <p>Optional applied evidence reviewed separately from course certification.</p>
+              <p>Optional applied evidence reviewed separately from course certification. Files and sensitive details stay out of this dashboard.</p>
             </article>
             <article className="admin-readiness-card">
               <div>
-                <h3>Verified achievement</h3>
+                <h3>Verified achievements</h3>
                 <span className="status-badge status-badge-published">Human reviewed</span>
               </div>
               <p>Recognition based on accepted proof, shown only as safe summary data here.</p>
@@ -221,9 +259,42 @@ export default async function AdminMonitoringPage({
           </div>
         </section>
 
+        <section className="admin-section" aria-labelledby="improvement-signals-title">
+          <div className="admin-section-heading">
+            <h2 id="improvement-signals-title">Improvement signals</h2>
+            <p>
+              Safe signals for follow-up planning. These highlight where course
+              uptake, completion, or applied evidence may need support without
+              exposing private learner or proof details.
+            </p>
+          </div>
+          <div className="admin-metrics-grid">
+            <article className="admin-stat-card">
+              <span>Low start signals</span>
+              <strong>{lowStartSignals}</strong>
+              <p>Published courses with more than 5 enrollments and start rate below 30%.</p>
+            </article>
+            <article className="admin-stat-card">
+              <span>Low completion signals</span>
+              <strong>{lowCompletionSignals}</strong>
+              <p>Published courses with more than 5 started learners and completion below 30%.</p>
+            </article>
+            <article className="admin-stat-card">
+              <span>Capacity areas with achievements</span>
+              <strong>{capacitySummaries.length}</strong>
+              <p>Capacity areas currently showing accepted proof-based achievement summaries.</p>
+            </article>
+            <article className="admin-stat-card">
+              <span>Latest monthly safe evidence</span>
+              <strong>{latestSafeEvidenceCount}</strong>
+              <p>Certificates plus verified achievements in the latest rolling trend month.</p>
+            </article>
+          </div>
+        </section>
+
         <section className="admin-section" aria-labelledby="platform-metrics-title">
           <div className="admin-section-heading">
-            <h2 id="platform-metrics-title">Platform Metrics</h2>
+            <h2 id="platform-metrics-title">Learner progress and recognition summary</h2>
             <p>
               {hasDateFilter
                 ? "Aggregate activity within the selected date window."
@@ -243,7 +314,7 @@ export default async function AdminMonitoringPage({
 
         <section className="admin-section" aria-labelledby="monthly-trends-title">
           <div className="admin-section-heading">
-            <h2 id="monthly-trends-title">Chronological Volume Trends (Last 6 Months)</h2>
+            <h2 id="monthly-trends-title">Certificate and achievement trends</h2>
             <p>Certificates and verified achievements over the rolling last 6 months. The date range fields do not change this rolling trend window; other selected filters still apply.</p>
           </div>
           <div className="admin-table-container" style={{ padding: "1.5rem", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #eee" }}>
@@ -280,7 +351,7 @@ export default async function AdminMonitoringPage({
 
         <section className="admin-section" aria-labelledby="course-signals-title">
           <div className="admin-section-heading">
-            <h2 id="course-signals-title">Lifetime Course Performance Signals</h2>
+            <h2 id="course-signals-title">Course performance signals</h2>
             <p>Active courses filtered by enrollment volumes to detect potential bottlenecks. Computed as cumulative lifetime performance independent of date filters.</p>
           </div>
           <div className="admin-table-container">
@@ -289,7 +360,7 @@ export default async function AdminMonitoringPage({
                 <thead>
                   <tr>
                     <th>Course</th>
-                    <th>Organization</th>
+                    <th>CSO / Organization</th>
                     <th>Enrolled</th>
                     <th>Started</th>
                     <th>Start Rate</th>
@@ -327,7 +398,7 @@ export default async function AdminMonitoringPage({
 
         <section className="admin-section" aria-labelledby="capacity-focus-title">
           <div className="admin-section-heading">
-            <h2 id="capacity-focus-title">Capacity Area Focus</h2>
+            <h2 id="capacity-focus-title">Organization and capacity summaries</h2>
             <p>
               Verified achievements grouped by DEC capacity area. These are
               evidence signals, not proof of full organizational transformation.
@@ -358,7 +429,7 @@ export default async function AdminMonitoringPage({
 
         <section className="admin-section" aria-labelledby="recent-achievements-title">
           <div className="admin-section-heading">
-            <h2 id="recent-achievements-title">Recent Verified Achievements</h2>
+            <h2 id="recent-achievements-title">Recent verified achievements</h2>
             <p>
               The latest human-reviewed achievement summaries across the
               platform. This table intentionally excludes raw proof content.
@@ -374,7 +445,7 @@ export default async function AdminMonitoringPage({
                     <th>Capacity Area</th>
                     <th>Achievement</th>
                     <th>Course</th>
-                    <th>Organization</th>
+                    <th>CSO / Organization</th>
                   </tr>
                 </thead>
                 <tbody>

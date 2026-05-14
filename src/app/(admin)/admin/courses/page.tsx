@@ -37,18 +37,30 @@ export default async function AdminCoursesPage({
   });
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Courses & Workflow">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Courses">
       <div className="admin-dashboard">
         <section className="admin-hero" aria-labelledby="admin-courses-title">
           <div>
-            <h2 id="admin-courses-title">Course workflow oversight</h2>
+            <h2 id="admin-courses-title">Courses</h2>
             <p>
-              See which courses need attention and why. This view uses existing
-              workflow, review, and publish records without adding an Admin gate
-              override.
+              Admin oversight for course creation, review, publish readiness,
+              certificates, practical proof, and verified achievement signals.
+              This view uses existing workflow, review, and publish records
+              without adding an Admin gate override.
+            </p>
+            <p>
+              Course setup can only be completed after selecting an approved
+              locked diagnosis. Create-course entry points still route creators
+              through the existing setup gates.
             </p>
           </div>
           <div className="admin-hero-actions">
+            <Link className="workspace-link" href="/studio/courses/new">
+              Create course from locked diagnosis
+            </Link>
+            <Link className="workspace-link secondary" href="/admin/diagnosis-records">
+              Locked diagnosis records
+            </Link>
             <Link className="workspace-link secondary" href="/review/queue">
               Review queue
             </Link>
@@ -61,6 +73,38 @@ export default async function AdminCoursesPage({
             <Link className="workspace-link secondary" href="/admin">
               Back to Admin
             </Link>
+          </div>
+        </section>
+
+        <section className="admin-section" aria-labelledby="course-governance-title">
+          <div className="admin-section-heading">
+            <h2 id="course-governance-title">Course governance boundaries</h2>
+            <p>
+              Review and Publish remain separate. Publish is unavailable until
+              review approval is complete and publish readiness checks pass.
+              Certificates use the 80% final check score rule. Practical proof
+              is separate from certificates, and verified achievement requires
+              accepted proof review. Raw proof and sensitive learner data are
+              not shown here.
+            </p>
+          </div>
+          <div className="admin-card-grid">
+            <GovernanceCard
+              detail="Course setup starts from an approved locked diagnosis selected in Creator Studio."
+              label="Locked diagnosis required"
+            />
+            <GovernanceCard
+              detail="Reviewers approve, return, pause, or request specialist review in the Review queue."
+              label="Review is separate"
+            />
+            <GovernanceCard
+              detail="Publishing remains in the Publish queue after review approval and readiness checks."
+              label="Publish is gated"
+            />
+            <GovernanceCard
+              detail="80% final check score issues the course certificate; proof and verified achievement remain separate."
+              label="Certificate rule"
+            />
           </div>
         </section>
 
@@ -194,6 +238,10 @@ export default async function AdminCoursesPage({
                         <span>{item.capacityArea}</span>
                       </article>
                       <article>
+                        <strong>Routing decision</strong>
+                        <span>{item.courseFitDecisionLabel}</span>
+                      </article>
+                      <article>
                         <strong>Source anchor</strong>
                         <span>{item.sourceAnchorSummary}</span>
                       </article>
@@ -213,6 +261,32 @@ export default async function AdminCoursesPage({
                         <strong>Publish readiness</strong>
                         <span>{item.publishReadinessLabel}</span>
                       </article>
+                    </div>
+
+                    <div className="next-step-panel">
+                      <strong>Course readiness checklist</strong>
+                      <dl
+                        className="reference-meta-list"
+                        style={{ marginTop: "0.75rem" }}
+                      >
+                        {item.readinessChecklist.map((check) => (
+                          <div key={check.label}>
+                            <dt>{check.label}</dt>
+                            <dd>
+                              <span
+                                className={`status-badge ${
+                                  check.ready
+                                    ? "status-badge-ready"
+                                    : "status-badge-blocked"
+                                }`}
+                              >
+                                {check.ready ? "Ready" : "Blocked"}
+                              </span>
+                              <span>{check.detail}</span>
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
                     </div>
 
                     <div
@@ -296,6 +370,24 @@ function MetricCard({
     <article className="admin-stat-card">
       <span>{label}</span>
       <strong>{value}</strong>
+      <p>{detail}</p>
+    </article>
+  );
+}
+
+function GovernanceCard({
+  detail,
+  label,
+}: {
+  detail: string;
+  label: string;
+}) {
+  return (
+    <article className="admin-readiness-card">
+      <div>
+        <h3>{label}</h3>
+        <span className="status-badge status-badge-ready">MVP rule</span>
+      </div>
       <p>{detail}</p>
     </article>
   );

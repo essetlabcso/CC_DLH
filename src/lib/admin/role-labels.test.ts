@@ -4,12 +4,10 @@ import { getAdminRoleLabel, getAdminStatusLabel } from "./role-labels";
 
 describe("Admin role labels", () => {
   it("uses clear product labels for current membership roles", () => {
-    expect(getAdminRoleLabel("learner")).toBe("Learner / Participant");
+    expect(getAdminRoleLabel("learner")).toBe("Participant");
     expect(getAdminRoleLabel("CREATOR")).toBe("Course Creator");
-    expect(getAdminRoleLabel("reviewer")).toBe("Course Reviewer");
-    expect(getAdminRoleLabel("ADMIN")).toBe(
-      "Super Admin-equivalent authority",
-    );
+    expect(getAdminRoleLabel("reviewer")).toBe("Reviewer");
+    expect(getAdminRoleLabel("ADMIN")).toBe("Admin");
   });
 
   it("formats statuses without exposing enum style labels", () => {

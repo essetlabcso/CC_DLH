@@ -1,8 +1,8 @@
 const roleLabels: Record<string, string> = {
-  admin: "Super Admin-equivalent authority",
+  admin: "Admin",
   creator: "Course Creator",
-  learner: "Learner / Participant",
-  reviewer: "Course Reviewer",
+  learner: "Participant",
+  reviewer: "Reviewer",
 };
 
 const statusLabels: Record<string, string> = {

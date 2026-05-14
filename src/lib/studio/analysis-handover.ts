@@ -523,7 +523,7 @@ function courseFitContradictsAnchor(value: string, anchorValue: string) {
   const normalizedAnchor = normalizeComparableText(anchorValue);
   const anchorAllowsCourse =
     normalizedAnchor === "course addressable" ||
-    normalizedAnchor === "partly course addressable" ||
+    normalizedAnchor.startsWith("partly course addressable") ||
     normalizedAnchor === "blended support recommended";
 
   if (!anchorAllowsCourse) {

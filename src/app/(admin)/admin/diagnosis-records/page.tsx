@@ -1,5 +1,10 @@
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { getAdminDiagnosisRecordBrowser } from "@/lib/admin/diagnosis";
+import {
+  diagnosisCourseFitGuidance,
+  formatDiagnosisTextForDisplay,
+  getDiagnosisCourseFitDisplayLabel,
+} from "@/lib/admin/diagnosis-display";
 import Link from "next/link";
 
 type AdminDiagnosisRecordsPageProps = {
@@ -30,18 +35,26 @@ export default async function AdminDiagnosisRecordsPage({
     search: params?.search?.trim() ?? "",
   };
   const browser = await getAdminDiagnosisRecordBrowser(filters);
+  const courseFitLabels = [
+    "Course-ready",
+    "Course + support",
+    "Learning support pathway",
+    "Non-course support route",
+    "Needs further diagnosis",
+  ];
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Validated Capacity Gaps">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Records">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
-            <h2>Validated capacity gap browser</h2>
+            <h2>Diagnosis Records</h2>
             <p>
-              Browse records that package one validated capacity gap each.
-              Approved and released gaps become the evidence base Course
-              Creators select when building courses.
+              Browse diagnosis records that package capacity evidence,
+              K/S/M/E classification, course-fit routing, safeguards, and
+              release status for governed course creation.
             </p>
+            <p>{diagnosisCourseFitGuidance}</p>
           </div>
           <div className="admin-hero-actions">
             <Link className="workspace-link secondary" href="/admin">
@@ -53,15 +66,29 @@ export default async function AdminDiagnosisRecordsPage({
           </div>
         </section>
 
+        <section className="admin-section" aria-labelledby="course-fit-language-title">
+          <div className="admin-section-heading">
+            <h2 id="course-fit-language-title">Course-fit routing language</h2>
+            <p>{diagnosisCourseFitGuidance}</p>
+          </div>
+          <div className="reference-badge-row" style={{ justifyContent: "flex-start" }}>
+            {courseFitLabels.map((label) => (
+              <span className="status-badge status-badge-published" key={label}>
+                {label}
+              </span>
+            ))}
+          </div>
+        </section>
+
         <section className="admin-section" aria-labelledby="record-health-title">
           <div className="admin-section-heading">
             <h2 id="record-health-title">Record readiness</h2>
-            <p>Live totals for validated capacity gaps and creator release.</p>
+            <p>Live totals for diagnosis records and creator release.</p>
           </div>
           <div className="admin-metrics-grid">
             <MetricCard
-              detail="Validated capacity gap records available"
-              label="Total gaps"
+              detail="Diagnosis records available"
+              label="Total records"
               value={browser.totals.totalRecords}
             />
             <MetricCard
@@ -81,12 +108,12 @@ export default async function AdminDiagnosisRecordsPage({
             />
             <MetricCard
               detail="Suitable for a course response"
-              label="Course-addressable"
+              label="Course-ready"
               value={browser.totals.courseAddressableRecords}
             />
             <MetricCard
-              detail="Needs more analysis"
-              label="Further analysis"
+              detail="Needs further diagnosis"
+              label="Further diagnosis"
               value={browser.totals.needsFurtherDiagnosisRecords}
             />
           </div>
@@ -94,10 +121,10 @@ export default async function AdminDiagnosisRecordsPage({
 
         <section className="admin-section" aria-labelledby="record-filter-title">
           <div className="admin-section-heading">
-            <h2 id="record-filter-title">Find validated capacity gaps</h2>
+            <h2 id="record-filter-title">Find diagnosis records</h2>
             <p>
               Filter by evidence source package, approval status, capacity area,
-              K/S/M/E route, course-fit decision, region, or active state.
+              K/S/M/E route, course-fit routing decision, region, or active state.
             </p>
           </div>
           <form action="/admin/diagnosis-records" className="diagnosis-filter-panel">
@@ -143,7 +170,9 @@ export default async function AdminDiagnosisRecordsPage({
               <SelectField
                 label="Course-fit decision"
                 name="courseFitDecision"
-                options={browser.filterOptions.courseFitDecisions.map(toOption)}
+                options={browser.filterOptions.courseFitDecisions.map(
+                  toCourseFitOption,
+                )}
                 value={filters.courseFitDecision}
               />
               <SelectField
@@ -175,10 +204,11 @@ export default async function AdminDiagnosisRecordsPage({
 
         <section className="admin-section" aria-labelledby="record-list-title">
           <div className="admin-section-heading">
-            <h2 id="record-list-title">Validated capacity gap browser</h2>
+            <h2 id="record-list-title">Diagnosis record browser</h2>
             <p>
-              {browser.records.length} gaps shown with evidence context,
-              capacity alignment, release status, and governance status.
+              {browser.records.length} records shown with evidence context,
+              capacity alignment, course-fit routing, release status, and
+              governance status.
             </p>
           </div>
 
@@ -267,7 +297,9 @@ export default async function AdminDiagnosisRecordsPage({
                     />
                     <MetaItem
                       label="Course-fit decision"
-                      value={record.courseFitDecision || "Not set"}
+                      value={getDiagnosisCourseFitDisplayLabel(
+                        record.courseFitDecision,
+                      )}
                     />
                     <MetaItem label="Priority" value={record.priorityLabel} />
                     <MetaItem
@@ -295,15 +327,17 @@ export default async function AdminDiagnosisRecordsPage({
                   <div className="diagnosis-preview-grid">
                     <PreviewBlock
                       label="Baseline"
-                      value={record.currentBaseline}
+                      value={formatDiagnosisTextForDisplay(record.currentBaseline)}
                     />
                     <PreviewBlock
                       label="Capacity gap"
-                      value={record.capacityGapStatement}
+                      value={formatDiagnosisTextForDisplay(
+                        record.capacityGapStatement,
+                      )}
                     />
                     <PreviewBlock
                       label="Desired practice"
-                      value={record.desiredPractice}
+                      value={formatDiagnosisTextForDisplay(record.desiredPractice)}
                     />
                   </div>
                 </article>
@@ -314,10 +348,10 @@ export default async function AdminDiagnosisRecordsPage({
               <span className="status-badge status-badge-blocked">
                 0 records shown
               </span>
-              <h2>No validated capacity gaps are configured yet</h2>
+              <h2>No diagnosis records are configured yet</h2>
               <p>
-                Approved and released validated capacity gaps will later become
-                the evidence base selected by Course Creators. No gaps are
+                Approved and released diagnosis records will later become the
+                evidence base selected by Course Creators. No records are
                 available to browse yet.
               </p>
             </section>
@@ -423,6 +457,13 @@ function formatStatus(value: string) {
 function toOption(value: string) {
   return {
     label: formatStatus(value),
+    value,
+  };
+}
+
+function toCourseFitOption(value: string) {
+  return {
+    label: getDiagnosisCourseFitDisplayLabel(value),
     value,
   };
 }

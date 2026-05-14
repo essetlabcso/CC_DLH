@@ -224,7 +224,7 @@ export async function approveDiagnosisRecordAction(
   if (!reason) {
     redirectWithRecordError(
       recordId,
-      "Add an approval reason before approving this validated capacity gap.",
+      "Add an approval reason before approving this diagnosis record.",
     );
   }
 
@@ -237,7 +237,7 @@ export async function approveDiagnosisRecordAction(
   if (current.isLocked || current._count.selectedCourseSetups > 0) {
     redirectWithRecordError(
       recordId,
-      "This validated capacity gap is already released or used by Course Setup, so it cannot be approved again.",
+      "This diagnosis record is already released or used by Course Setup, so it cannot be approved again.",
     );
   }
 
@@ -253,7 +253,7 @@ export async function approveDiagnosisRecordAction(
     redirectWithRecordError(
       recordId,
       readiness.approvalBlockingIssues[0] ??
-        "Resolve approval readiness issues before approving this validated capacity gap.",
+        "Resolve approval readiness issues before approving this diagnosis record.",
     );
   }
 
@@ -303,7 +303,7 @@ export async function lockDiagnosisRecordForCourseSetupAction(
   if (!reason) {
     redirectWithRecordError(
       recordId,
-      "Add a release reason before making this validated capacity gap available to Course Creators.",
+      "Add a release reason before making this diagnosis record available to Course Creators.",
     );
   }
 
@@ -320,7 +320,7 @@ export async function lockDiagnosisRecordForCourseSetupAction(
   if (current._count.selectedCourseSetups > 0) {
     redirectWithRecordError(
       recordId,
-      "This validated capacity gap is already used by Course Setup and cannot be released again.",
+      "This diagnosis record is already used by Course Setup and cannot be released again.",
     );
   }
 
@@ -384,7 +384,7 @@ export async function returnDiagnosisRecordToDraftAction(
   if (!reason) {
     redirectWithRecordError(
       recordId,
-      "Add a reason before returning this validated capacity gap to draft.",
+      "Add a reason before returning this diagnosis record to draft.",
     );
   }
 
@@ -397,28 +397,28 @@ export async function returnDiagnosisRecordToDraftAction(
   if (!current.isActive || current.archivedAt) {
     redirectWithRecordError(
       recordId,
-      "Archived or inactive validated capacity gaps cannot be returned to draft.",
+      "Archived or inactive diagnosis records cannot be returned to draft.",
     );
   }
 
   if (current.isLocked) {
     redirectWithRecordError(
       recordId,
-      "This validated capacity gap has already been released to Course Creators. Use 'Reopen released record' instead.",
+      "This diagnosis record has already been released to Course Creators. Use 'Reopen released record' instead.",
     );
   }
 
   if (current._count.selectedCourseSetups > 0) {
     redirectWithRecordError(
       recordId,
-      "This validated capacity gap is already selected by a Course Setup and cannot be returned to draft.",
+      "This diagnosis record is already selected by a Course Setup and cannot be returned to draft.",
     );
   }
 
   if (!isStatus(current.approvalStatus, "APPROVED")) {
     redirectWithRecordError(
       recordId,
-      "Only approved validated capacity gaps can be returned to draft.",
+      "Only approved diagnosis records can be returned to draft.",
     );
   }
 
@@ -468,7 +468,7 @@ export async function reopenDiagnosisRecordAction(
   if (!reason) {
     redirectWithRecordError(
       recordId,
-      "Add a reason before reopening this validated capacity gap.",
+      "Add a reason before reopening this diagnosis record.",
     );
   }
 
@@ -481,21 +481,21 @@ export async function reopenDiagnosisRecordAction(
   if (!current.isActive || current.archivedAt) {
     redirectWithRecordError(
       recordId,
-      "Archived or inactive validated capacity gaps cannot be reopened.",
+      "Archived or inactive diagnosis records cannot be reopened.",
     );
   }
 
   if (!current.isLocked) {
     redirectWithRecordError(
       recordId,
-      "This validated capacity gap has not been released. Use 'Return to draft' instead.",
+      "This diagnosis record has not been released. Use 'Return to draft' instead.",
     );
   }
 
   if (current._count.selectedCourseSetups > 0) {
     redirectWithRecordError(
       recordId,
-      "This validated capacity gap is already selected by a Course Setup. It cannot be reopened because it is anchoring active course design work.",
+      "This diagnosis record is already selected by a Course Setup. It cannot be reopened because it is anchoring active course design work.",
     );
   }
 

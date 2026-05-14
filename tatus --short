@@ -1,0 +1,6 @@
+warning: in the working copy of 'src/app/(admin)/admin/courses/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(admin)/admin/diagnosis-records/DiagnosisRecordDraftForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(admin)/admin/diagnosis-records/[recordId]/edit/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(admin)/admin/diagnosis-records/[recordId]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(admin)/admin/diagnosis-records/actions.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(admin)/admin/diagnosis-records/new/page.tsx', LF will be replaced by CRLF the next time Git touches it

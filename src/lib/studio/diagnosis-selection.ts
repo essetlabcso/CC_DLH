@@ -217,7 +217,7 @@ export function getDiagnosisRecordEligibility(input: {
   }
 
   if (
-    courseFitDecision === "partly course-addressable" ||
+    courseFitDecision.startsWith("partly course-addressable") ||
     courseFitDecision === "blended support recommended"
   ) {
     if (!hasKnowledgeSkillComponent) {
@@ -232,7 +232,7 @@ export function getDiagnosisRecordEligibility(input: {
     return getKsmeEligibility(ksmeRoute, hasKnowledgeSkillComponent, false);
   }
 
-  if (courseFitDecision === "non-course support required") {
+  if (courseFitDecision.startsWith("non-course support")) {
     return {
       selectable: false,
       reason:

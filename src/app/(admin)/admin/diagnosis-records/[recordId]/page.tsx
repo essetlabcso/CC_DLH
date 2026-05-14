@@ -7,6 +7,12 @@ import {
 } from "@/app/(admin)/admin/diagnosis-records/actions";
 import { getAdminDiagnosisRecordDetail } from "@/lib/admin/diagnosis";
 import {
+  diagnosisCourseFitGuidance,
+  formatDiagnosisTextForDisplay,
+  getDiagnosisCourseEligibilityDisplayLabel,
+  getDiagnosisCourseFitDisplayLabel,
+} from "@/lib/admin/diagnosis-display";
+import {
   getDiagnosisRecordApprovalReadiness,
   type DiagnosisRecordApprovalReadiness,
 } from "@/lib/admin/diagnosis-record-approval";
@@ -97,7 +103,7 @@ export default async function AdminDiagnosisRecordDetailPage({
     record.selectedCourseSetupCount === 0;
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Validated Capacity Gap">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Diagnosis Record">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
@@ -106,9 +112,11 @@ export default async function AdminDiagnosisRecordDetailPage({
             </p>
             <h2>{record.diagnosisTitle}</h2>
             <p>
-              Governed view of one validated capacity gap, its course-fit
-              decision, safety context, and release status for Course Creators.
+              Governed view of one diagnosis record, its K/S/M/E
+              classification, course-fit routing, safety context, and release
+              status for Course Creators.
             </p>
+            <p>{diagnosisCourseFitGuidance}</p>
           </div>
           <div className="admin-hero-actions">
             <Link className="workspace-link secondary" href="/admin/diagnosis-records">
@@ -185,7 +193,9 @@ export default async function AdminDiagnosisRecordDetailPage({
                   : "status-badge-blocked"
               }`}
             >
-              {record.courseEligibility.label}
+              {getDiagnosisCourseEligibilityDisplayLabel(
+                record.courseEligibility.label,
+              )}
             </span>
             {record.canEdit ? (
               <span className="status-badge status-badge-ready">
@@ -206,7 +216,7 @@ export default async function AdminDiagnosisRecordDetailPage({
             <p>
               Read-only guidance for Admin review. Approval confirms the record
               is complete evidence; release makes an approved, eligible
-              validated capacity gap available to Course Creators.
+              diagnosis record available to Course Creators.
             </p>
           </div>
           <div className="diagnosis-preview-grid">
@@ -259,7 +269,7 @@ export default async function AdminDiagnosisRecordDetailPage({
               }
               enabled={canLock}
               fieldName="lockReason"
-              helpText="Release keeps the approved capacity gap read-only and makes it available for Course Setup selection."
+              helpText="Release keeps the approved diagnosis record read-only and makes it available for Course Setup selection."
               label="Release reason"
               title="Release to Course Creators"
             />
@@ -318,24 +328,29 @@ export default async function AdminDiagnosisRecordDetailPage({
           <div className="diagnosis-preview-grid">
             <PreviewBlock
               label="Baseline / current practice"
-              value={record.currentBaseline}
+              value={formatDiagnosisTextForDisplay(record.currentBaseline)}
             />
             <PreviewBlock
               label="Capacity gap"
-              value={record.capacityGapStatement}
+              value={formatDiagnosisTextForDisplay(record.capacityGapStatement)}
             />
             <PreviewBlock
               label="Desired practice"
-              value={record.desiredPractice}
+              value={formatDiagnosisTextForDisplay(record.desiredPractice)}
             />
-            <PreviewBlock label="Evidence source" value={record.evidenceSource} />
+            <PreviewBlock
+              label="Evidence source"
+              value={formatDiagnosisTextForDisplay(record.evidenceSource)}
+            />
             <PreviewBlock
               label="Root cause summary"
-              value={record.rootCauseSummary}
+              value={formatDiagnosisTextForDisplay(record.rootCauseSummary)}
             />
             <PreviewBlock
               label="Safe dashboard summary"
-              value={record.safeSummaryForDashboard}
+              value={formatDiagnosisTextForDisplay(
+                record.safeSummaryForDashboard,
+              )}
             />
           </div>
         </section>
@@ -396,7 +411,7 @@ export default async function AdminDiagnosisRecordDetailPage({
           <div className="admin-section-heading">
             <h2 id="record-fit-title">K/S/M/E and course-fit decision</h2>
             <p>
-              Whether this validated capacity gap can safely anchor course
+              Whether this diagnosis record can safely anchor course
               creation. Motivation and Environment records remain blocked unless
               a separable Knowledge or Skill component is recorded.
             </p>
@@ -405,23 +420,40 @@ export default async function AdminDiagnosisRecordDetailPage({
             <MetaItem label="K/S/M/E route" value={record.ksmeRoute || "Not set"} />
             <MetaItem
               label="Course-fit decision"
-              value={record.courseFitDecision || "Not set"}
+              value={getDiagnosisCourseFitDisplayLabel(
+                record.courseFitDecision,
+              )}
             />
             <MetaItem
               label="Separable Knowledge/Skill component"
-              value={record.separableKnowledgeSkillComponent || "Not recorded"}
+              value={
+                formatDiagnosisTextForDisplay(
+                  record.separableKnowledgeSkillComponent,
+                ) || "Not recorded"
+              }
             />
             <MetaItem
               label="Non-course barrier"
-              value={record.nonCourseBarrierSummary || "Not recorded"}
+              value={
+                formatDiagnosisTextForDisplay(record.nonCourseBarrierSummary) ||
+                "Not recorded"
+              }
             />
             <MetaItem
               label="Recommended intervention route"
-              value={record.recommendedInterventionRoute || "Not set"}
+              value={
+                formatDiagnosisTextForDisplay(
+                  record.recommendedInterventionRoute,
+                ) || "Not set"
+              }
             />
             <MetaItem
               label="Recommended course or support title"
-              value={record.recommendedCourseOrSupportTitle || "Not set"}
+              value={
+                formatDiagnosisTextForDisplay(
+                  record.recommendedCourseOrSupportTitle,
+                ) || "Not set"
+              }
             />
             <MetaItem
               label="Course creation status"
@@ -434,7 +466,7 @@ export default async function AdminDiagnosisRecordDetailPage({
               <strong>Course setup eligibility</strong>
               <ul>
                 {record.courseEligibility.reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
+                  <li key={reason}>{formatEligibilityReason(reason)}</li>
                 ))}
               </ul>
             </div>
@@ -553,7 +585,7 @@ function StatusMessage({
     return (
       <section className="admin-section" aria-label="Action message">
         <span className="status-badge status-badge-ready">Approved</span>
-        <p>This validated capacity gap has been approved.</p>
+        <p>This diagnosis record has been approved.</p>
       </section>
     );
   }
@@ -565,7 +597,7 @@ function StatusMessage({
           Released to Course Creators
         </span>
         <p>
-          This validated capacity gap is now available as a read-only evidence
+          This diagnosis record is now available as a read-only evidence
           anchor for eligible Course Setup use.
         </p>
       </section>
@@ -579,7 +611,7 @@ function StatusMessage({
           Returned to draft
         </span>
         <p>
-          This validated capacity gap has been returned to draft and must be
+          This diagnosis record has been returned to draft and must be
           re-approved before it can be released to Course Creators.
         </p>
       </section>
@@ -593,7 +625,7 @@ function StatusMessage({
           Reopened
         </span>
         <p>
-          This validated capacity gap has been reopened. The release lock has
+          This diagnosis record has been reopened. The release lock has
           been removed and the record returned to draft for correction.
         </p>
       </section>
@@ -601,6 +633,15 @@ function StatusMessage({
   }
 
   return null;
+}
+
+function formatEligibilityReason(reason: string) {
+  return reason
+    .replace(/course-addressable/gi, "course-ready")
+    .replace(/partly course-ready/gi, "Course + support")
+    .replace(/partly course addressable/gi, "Course + support")
+    .replace(/non-course support/gi, "non-course support route")
+    .replace(/course-fit decision/gi, "course-fit routing decision");
 }
 
 function ReadinessCard({
@@ -795,7 +836,7 @@ function UsageSection({
       <div className="admin-section-heading">
         <h2 id="record-usage-title">Linked Course Setup usage</h2>
         <p>
-          Courses that currently preserve this validated capacity gap as their
+          Courses that currently preserve this diagnosis record as their
           approved evidence anchor.
         </p>
       </div>
@@ -823,7 +864,7 @@ function UsageSection({
       ) : (
         <section className="admin-empty-panel">
           <span className="status-badge status-badge-published">No course usage</span>
-          <h2>No Course Setup records currently select this capacity gap</h2>
+          <h2>No Course Setup records currently select this diagnosis record</h2>
           <p>
             This record remains available for review even when it has not yet
             been selected by a course.

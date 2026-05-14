@@ -4,6 +4,7 @@ import type {
   AdminDiagnosisRecordDetail,
   AdminDiagnosisRecordDraftFormOptions,
 } from "@/lib/admin/diagnosis";
+import { getDiagnosisCourseFitDisplayLabel } from "@/lib/admin/diagnosis-display";
 import { getDiagnosisRecordDraftWarnings } from "@/lib/admin/diagnosis-record-form";
 
 type DiagnosisRecordDraftFormProps = {
@@ -223,6 +224,7 @@ export function DiagnosisRecordDraftForm({
           <SelectField
             defaultValue={record?.courseFitDecision}
             label="Course-Fit Decision"
+            labelFormatter={getDiagnosisCourseFitDisplayLabel}
             name="courseFitDecision"
             options={options.courseFitDecisions}
           />
@@ -233,7 +235,7 @@ export function DiagnosisRecordDraftForm({
           <textarea
             defaultValue={record?.separableKnowledgeSkillComponent ?? ""}
             name="separableKnowledgeSkillComponent"
-            placeholder="Required if a Motivation, Environment, or Mixed record should become partly course-addressable."
+            placeholder="Required if a Motivation, Environment, or Mixed record has a Course + support component."
           />
         </label>
 
@@ -433,12 +435,14 @@ export function DiagnosisRecordDraftForm({
 function SelectField({
   defaultValue,
   label,
+  labelFormatter,
   name,
   options,
   required = false,
 }: {
   defaultValue?: string;
   label: string;
+  labelFormatter?: (value: string) => string;
   name: string;
   options: string[];
   required?: boolean;
@@ -455,7 +459,7 @@ function SelectField({
         <option value="">Select</option>
         {options.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {labelFormatter ? labelFormatter(option) : option}
           </option>
         ))}
       </select>

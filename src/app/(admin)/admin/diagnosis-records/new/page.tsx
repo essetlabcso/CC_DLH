@@ -23,7 +23,7 @@ export default async function NewDiagnosisRecordPage({
 
   if (!datasetId) {
     return (
-      <WorkspaceShell eyebrow="Admin Control Center" title="New Validated Capacity Gap">
+      <WorkspaceShell eyebrow="Admin Control Center" title="New Diagnosis Record">
         <div className="admin-dashboard diagnosis-browser">
           <section className="admin-empty-panel">
             <span className="status-badge status-badge-blocked">
@@ -53,12 +53,12 @@ export default async function NewDiagnosisRecordPage({
   }
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="New Validated Capacity Gap">
+    <WorkspaceShell eyebrow="Admin Control Center" title="New Diagnosis Record">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
             <p className="workspace-kicker">{dataset.datasetCode}</p>
-            <h2>Create a draft validated capacity gap</h2>
+            <h2>Create a draft diagnosis record</h2>
             <p>
               Add one controlled draft diagnosis record under this evidence
               source package. Draft records are not selectable in Course Setup
@@ -81,7 +81,7 @@ export default async function NewDiagnosisRecordPage({
         {dataset.canEdit ? (
           <section className="admin-section" aria-labelledby="record-form-title">
             <div className="admin-section-heading">
-              <h2 id="record-form-title">Draft validated capacity gap details</h2>
+              <h2 id="record-form-title">Draft diagnosis record details</h2>
               <p>
                 Use safe summary wording only. Do not include raw interview,
                 safeguarding, political, or personal data.

@@ -92,6 +92,9 @@ export default async function PublishingPage({
         Publish only course versions that have completed reviewer approval.
         Publishing makes the course visible in learner discovery.
       </p>
+      <p className="workspace-note">
+        Certificates are issued when a participant scores 80% or above on the final check. Publishing and certificates remain separate from practical proof and verified achievement.
+      </p>
       <div
         className={
           canPublishApprovedVersions
@@ -212,30 +215,30 @@ export default async function PublishingPage({
                   </div>
 
                   <div className="publishing-card-actions">
-                  {canPublishApprovedVersions && readiness.ready ? (
-                    <form
-                      action={publishApprovedCourseAction.bind(
-                        null,
-                        version.course.id,
-                        version.id,
-                      )}
-                    >
-                      <button
-                        className="workspace-button"
-                        type="submit"
+                    {canPublishApprovedVersions && readiness.ready ? (
+                      <form
+                        action={publishApprovedCourseAction.bind(
+                          null,
+                          version.course.id,
+                          version.id,
+                        )}
                       >
-                        Publish now
-                      </button>
-                    </form>
-                  ) : canPublishApprovedVersions ? (
-                    <p className="workspace-note">
-                      Resolve blockers before publishing.
-                    </p>
-                  ) : (
-                    <p className="workspace-note">
-                      Approved courses must be published by a DEC Admin.
-                    </p>
-                  )}
+                        <button
+                          className="workspace-button"
+                          type="submit"
+                        >
+                          Publish now
+                        </button>
+                      </form>
+                    ) : canPublishApprovedVersions ? (
+                      <p className="workspace-note">
+                        Resolve blockers before publishing.
+                      </p>
+                    ) : (
+                      <p className="workspace-note">
+                        Approved courses must be published by a DEC Admin.
+                      </p>
+                    )}
                   </div>
                 </article>
               );

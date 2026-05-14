@@ -43,7 +43,7 @@ export default async function EditDiagnosisRecordPage({
   const action = updateDiagnosisRecordDraftAction.bind(null, record.id);
 
   return (
-    <WorkspaceShell eyebrow="Admin Control Center" title="Edit Validated Capacity Gap">
+    <WorkspaceShell eyebrow="Admin Control Center" title="Edit Diagnosis Record">
       <div className="admin-dashboard diagnosis-browser">
         <section className="admin-hero">
           <div>
@@ -97,7 +97,7 @@ export default async function EditDiagnosisRecordPage({
         ) : (
           <section className="admin-empty-panel">
             <span className="status-badge status-badge-blocked">Read only</span>
-            <h2>This validated capacity gap cannot be edited here</h2>
+            <h2>This diagnosis record cannot be edited here</h2>
             <p>
               Only draft, unreleased, active records under draft evidence source
               packages can be edited before Course Setup uses them. Approved,

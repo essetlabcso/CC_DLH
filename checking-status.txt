@@ -1,0 +1,33 @@
+ M scripts/seed-admin-reference-data.mjs
+ M src/app/(admin)/admin/courses/page.tsx
+ M src/app/(admin)/admin/diagnosis-records/DiagnosisRecordDraftForm.tsx
+ M src/app/(admin)/admin/diagnosis-records/[recordId]/edit/page.tsx
+ M src/app/(admin)/admin/diagnosis-records/[recordId]/page.tsx
+ M src/app/(admin)/admin/diagnosis-records/actions.ts
+ M src/app/(admin)/admin/diagnosis-records/new/page.tsx
+ M src/app/(admin)/admin/diagnosis-records/page.tsx
+ M src/app/(admin)/admin/layout.tsx
+ M src/app/(admin)/admin/monitoring/page.tsx
+ M src/app/(admin)/admin/organizations/page.tsx
+ M src/app/(admin)/admin/page.tsx
+ M src/app/(admin)/admin/programs-cohorts/page.tsx
+ M src/app/(admin)/admin/users/page.tsx
+ M src/app/(creator)/studio/courses/[courseId]/setup/page.tsx
+ M src/app/(review)/review/publishing/page.tsx
+ M src/app/globals.css
+ M src/lib/admin/course-workflow-overview.test.ts
+ M src/lib/admin/course-workflow-overview.ts
+ M src/lib/admin/diagnosis.ts
+ M src/lib/admin/role-labels.test.ts
+ M src/lib/admin/role-labels.ts
+ M src/lib/studio/analysis-handover.ts
+ M src/lib/studio/diagnosis-selection.ts
+?? checking-status.txt
+?? docs/specs/core-workflow/Annex_13_Evidence_Pack_Publishing_Rule_Polish.md
+?? src/app/(admin)/admin/reports/
+?? src/app/(admin)/admin/users/scoped-assignments/
+?? src/components/admin/
+?? src/lib/admin/diagnosis-display.test.ts
+?? src/lib/admin/diagnosis-display.ts
+?? src/lib/admin/scoped-assignments.ts
+?? "tatus --short"

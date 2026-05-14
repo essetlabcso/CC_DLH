@@ -1,4 +1,5 @@
 import { requireWorkspaceAccess } from "@/lib/auth/server";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 export default async function AdminLayout({
   children,
@@ -7,5 +8,5 @@ export default async function AdminLayout({
 }>) {
   await requireWorkspaceAccess("/admin");
 
-  return children;
+  return <AdminShell>{children}</AdminShell>;
 }
