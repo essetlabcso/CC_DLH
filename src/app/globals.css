@@ -2985,3 +2985,95 @@ select {
     text-align: center;
   }
 }
+.block-support-note {
+  color: var(--dec-color-muted-text);
+  font-size: 0.9rem;
+}
+
+.visual-placeholder {
+  align-items: center;
+  aspect-ratio: 16 / 7;
+  background:
+    linear-gradient(135deg, rgba(11, 102, 216, 0.12), rgba(49, 163, 84, 0.16)),
+    var(--dec-color-background);
+  border: 1px dashed var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: var(--dec-space-4);
+  padding: var(--dec-space-4);
+  text-align: center;
+}
+
+.visual-placeholder span {
+  color: var(--dec-color-muted-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.learner-reveal-list {
+  display: grid;
+  gap: var(--dec-space-3);
+  margin-top: var(--dec-space-4);
+}
+
+.learner-reveal-list details {
+  background: var(--dec-color-surface);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  padding: var(--dec-space-3) var(--dec-space-4);
+}
+
+.learner-reveal-list summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.branching-scenario {
+  display: grid;
+  gap: var(--dec-space-4);
+}
+
+.scenario-choice-grid {
+  display: grid;
+  gap: var(--dec-space-3);
+  margin-top: var(--dec-space-3);
+}
+
+.scenario-choice {
+  background: var(--dec-color-surface);
+  border: 1px solid var(--dec-color-border);
+  border-radius: var(--dec-radius-md);
+  color: var(--dec-color-text);
+  cursor: pointer;
+  font: inherit;
+  padding: var(--dec-space-3) var(--dec-space-4);
+  text-align: left;
+}
+
+.scenario-choice:hover,
+.scenario-choice.selected {
+  border-color: var(--dec-color-primary);
+  box-shadow: 0 0 0 3px rgba(11, 102, 216, 0.14);
+}
+
+.scenario-choice small {
+  color: var(--dec-color-secondary);
+  display: block;
+  font-weight: 700;
+  margin-top: var(--dec-space-2);
+}
+
+.scenario-feedback {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: var(--dec-radius-md);
+  padding: var(--dec-space-4);
+}
+
+.scenario-feedback-best {
+  background: #f3f9ec;
+  border-color: var(--dec-color-secondary);
+}

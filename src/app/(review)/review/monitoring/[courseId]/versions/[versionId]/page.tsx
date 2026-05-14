@@ -67,6 +67,7 @@ export default async function MonitoringDetailPage({
       },
       monitoringRecord: {
         select: {
+          signalSummary: true,
           improvementNotes: true,
         },
       },
@@ -119,6 +120,29 @@ export default async function MonitoringDetailPage({
     proofSubmissionCount: version._count.practicalProofSubmissions,
     verifiedAchievementCount: version._count.verifiedAchievements,
   });
+  const demoMetrics = parseDemoMonitoringMetrics(
+    version.monitoringRecord?.signalSummary,
+  );
+  const displayedMetrics = {
+    enrolled: demoMetrics?.enrolledLearners ?? summary.learnersStarted,
+    started: demoMetrics?.startedLearners ?? summary.learnersStarted,
+    completed: demoMetrics?.completedLearners ?? summary.learnersCompleted,
+    completionRate: demoMetrics?.completionRate ?? summary.completionRate,
+    finalTestPassRate:
+      demoMetrics?.finalTestPassRate ?? summary.finalTestPassRate,
+    certificatesIssued:
+      demoMetrics?.certificatesIssued ?? summary.certificateCount,
+    proofSubmissions:
+      demoMetrics?.practicalProofSubmissions ??
+      summary.proofSubmissionCount,
+    verifiedAchievements:
+      demoMetrics?.verifiedAchievementsAwarded ??
+      summary.verifiedAchievementCount,
+    learnerFeedbackAverage: demoMetrics?.learnerFeedbackAverage,
+    improvementSignal: demoMetrics?.improvementSignal,
+    safeCapacityEvidenceSummary: demoMetrics?.safeCapacityEvidenceSummary,
+    courseVersion: demoMetrics?.courseVersion,
+  };
 
   return (
     <WorkspaceShell
@@ -164,20 +188,20 @@ export default async function MonitoringDetailPage({
         <h2 id="engagement-title">Engagement & Progress</h2>
         <div className="metric-grid">
           <article>
-            <strong>{summary.learnersStarted}</strong>
-            <span>Learners started</span>
+            <strong>{displayedMetrics.enrolled}</strong>
+            <span>Enrolled participants</span>
           </article>
           <article>
-            <strong>{summary.learnersCompleted}</strong>
+            <strong>{displayedMetrics.started}</strong>
+            <span>Started</span>
+          </article>
+          <article>
+            <strong>{displayedMetrics.completed}</strong>
             <span>Learners completed</span>
           </article>
           <article>
-            <strong>{summary.completionRate}%</strong>
+            <strong>{displayedMetrics.completionRate}%</strong>
             <span>Completion rate</span>
-          </article>
-          <article>
-            <strong>{summary.lessonCompletions}</strong>
-            <span>Total lesson completions</span>
           </article>
         </div>
       </section>
@@ -186,20 +210,36 @@ export default async function MonitoringDetailPage({
         <h2 id="evidence-title">Impact Evidence</h2>
         <div className="metric-grid">
           <article>
-            <strong>{summary.finalTestPasses}</strong>
-            <span>Final test passes (80%+)</span>
+            <strong>{displayedMetrics.finalTestPassRate}%</strong>
+            <span>Final test pass rate (80%+)</span>
           </article>
           <article>
-            <strong>{summary.certificateCount}</strong>
+            <strong>{displayedMetrics.certificatesIssued}</strong>
             <span>Certificates issued</span>
           </article>
           <article>
-            <strong>{summary.proofSubmissionCount}</strong>
+            <strong>{displayedMetrics.proofSubmissions}</strong>
             <span>Practical proofs submitted</span>
           </article>
           <article>
-            <strong>{summary.verifiedAchievementCount}</strong>
-            <span>Verified badges issued</span>
+            <strong>{displayedMetrics.verifiedAchievements}</strong>
+            <span>Verified achievements</span>
+          </article>
+          {displayedMetrics.learnerFeedbackAverage ? (
+            <article>
+              <strong>{displayedMetrics.learnerFeedbackAverage} / 5</strong>
+              <span>Learner feedback</span>
+            </article>
+          ) : null}
+          {displayedMetrics.courseVersion ? (
+            <article>
+              <strong>{displayedMetrics.courseVersion}</strong>
+              <span>Course version</span>
+            </article>
+          ) : null}
+          <article>
+            <strong>{version.capacityMap?.capacityArea || "MEAL"}</strong>
+            <span>Capacity area</span>
           </article>
         </div>
         
@@ -215,11 +255,28 @@ export default async function MonitoringDetailPage({
             <p>
               Practical proof is separate from the automated course certificate. It requires human review of field evidence.
             </p>
-            <p>Submissions: {summary.proofSubmissionCount}</p>
-            <p>Achievements: {summary.verifiedAchievementCount}</p>
+            <p>Submissions: {displayedMetrics.proofSubmissions}</p>
+            <p>Verified achievements: {displayedMetrics.verifiedAchievements}</p>
+            <p>Raw proof is private by default and is not displayed here.</p>
           </div>
         </div>
       </section>
+
+      {displayedMetrics.safeCapacityEvidenceSummary ||
+      displayedMetrics.improvementSignal ? (
+        <section className="studio-section" aria-labelledby="safe-summary-title">
+          <h2 id="safe-summary-title">Safe Capacity Evidence Summary</h2>
+          {displayedMetrics.safeCapacityEvidenceSummary ? (
+            <p>{displayedMetrics.safeCapacityEvidenceSummary}</p>
+          ) : null}
+          {displayedMetrics.improvementSignal ? (
+            <div className="workspace-note">
+              <strong>Improvement signal:</strong>{" "}
+              {displayedMetrics.improvementSignal}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {version.monitoringRecord?.improvementNotes ? (
         <section className="studio-section" aria-labelledby="improvement-title">
@@ -240,4 +297,35 @@ export default async function MonitoringDetailPage({
       </nav>
     </WorkspaceShell>
   );
+}
+
+type DemoMonitoringMetrics = {
+  courseVersion?: string;
+  enrolledLearners?: number;
+  startedLearners?: number;
+  completedLearners?: number;
+  completionRate?: number;
+  finalTestPassRate?: number;
+  certificatesIssued?: number;
+  practicalProofSubmissions?: number;
+  verifiedAchievementsAwarded?: number;
+  learnerFeedbackAverage?: number;
+  improvementSignal?: string;
+  safeCapacityEvidenceSummary?: string;
+};
+
+function parseDemoMonitoringMetrics(
+  value: string | null | undefined,
+): DemoMonitoringMetrics | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as DemoMonitoringMetrics;
+
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
 }

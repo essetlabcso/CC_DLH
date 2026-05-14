@@ -968,20 +968,7 @@ export default async function BuildStudioPage({
                                 Move down
                               </button>
                             </form>
-                            <form
-                              action={deleteBlockAction}
-                              onSubmit={(e) => {
-                                const blockTitle =
-                                  content.title || getBlockTypeLabel(block.type);
-                                if (
-                                  !confirm(
-                                    `Are you sure you want to delete "${blockTitle}"?`
-                                  )
-                                ) {
-                                  e.preventDefault();
-                                }
-                              }}
-                            >
+                            <form action={deleteBlockAction}>
                               <button
                                 className="workspace-button danger"
                                 type="submit"

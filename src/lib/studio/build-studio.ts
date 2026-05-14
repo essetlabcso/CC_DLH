@@ -11,10 +11,14 @@ export type BuildStudioBlockDraft = {
 
 export type BuildStudioBlockContent = {
   title: string;
+  blockTypeLabel?: string;
+  interactionType?: string;
   purpose?: string;
   body?: string;
   prompt?: string;
   choices?: string[];
+  scenarioChoices?: BuildStudioScenarioChoice[];
+  revealItems?: BuildStudioRevealItem[];
   correctAnswer?: string;
   feedback?: string;
   linkedLearnerAction?: string;
@@ -25,6 +29,18 @@ export type BuildStudioBlockContent = {
   aiReviewStatus?: BuildAiReviewStatus;
   aiReviewNote?: string;
   reviewReadinessNote?: string;
+};
+
+export type BuildStudioScenarioChoice = {
+  id: string;
+  label: string;
+  feedback: string;
+  best?: boolean;
+};
+
+export type BuildStudioRevealItem = {
+  title: string;
+  body: string;
 };
 
 export const buildAiReviewStatuses = [
@@ -99,7 +115,9 @@ export function serializeBuildBlockContent(content: BuildStudioBlockContent) {
   return JSON.stringify(content);
 }
 
-export function parseBuildBlockContent(value: string | undefined) {
+export function parseBuildBlockContent(
+  value: string | undefined,
+): BuildStudioBlockContent {
   if (!value) {
     return {
       title: "",
@@ -111,12 +129,20 @@ export function parseBuildBlockContent(value: string | undefined) {
 
     return {
       title: String(parsed.title || ""),
+      blockTypeLabel: parsed.blockTypeLabel
+        ? String(parsed.blockTypeLabel)
+        : undefined,
+      interactionType: parsed.interactionType
+        ? String(parsed.interactionType)
+        : undefined,
       purpose: parsed.purpose ? String(parsed.purpose) : undefined,
       body: parsed.body ? String(parsed.body) : undefined,
       prompt: parsed.prompt ? String(parsed.prompt) : undefined,
       choices: Array.isArray(parsed.choices)
         ? parsed.choices.map((choice) => String(choice))
         : undefined,
+      scenarioChoices: parseScenarioChoices(parsed.scenarioChoices),
+      revealItems: parseRevealItems(parsed.revealItems),
       correctAnswer: parsed.correctAnswer
         ? String(parsed.correctAnswer)
         : undefined,
@@ -353,6 +379,72 @@ function normalizeAiReviewStatus(value: unknown): BuildAiReviewStatus {
   return buildAiReviewStatuses.includes(value as BuildAiReviewStatus)
     ? (value as BuildAiReviewStatus)
     : "not-used";
+}
+
+function isScenarioChoice(
+  choice: BuildStudioScenarioChoice | null,
+): choice is BuildStudioScenarioChoice {
+  return Boolean(choice?.id && choice.label);
+}
+
+function isRevealItem(
+  item: BuildStudioRevealItem | null,
+): item is BuildStudioRevealItem {
+  return Boolean(item?.title && item.body);
+}
+
+function parseScenarioChoices(value: unknown): BuildStudioScenarioChoice[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const choices: BuildStudioScenarioChoice[] = [];
+
+  for (const choice of value) {
+    if (!choice || typeof choice !== "object") {
+      continue;
+    }
+
+    const record = choice as Record<string, unknown>;
+    const parsedChoice = {
+      id: String(record.id || ""),
+      label: String(record.label || ""),
+      feedback: String(record.feedback || ""),
+      best: record.best === true,
+    };
+
+    if (isScenarioChoice(parsedChoice)) {
+      choices.push(parsedChoice);
+    }
+  }
+
+  return choices.length > 0 ? choices : undefined;
+}
+
+function parseRevealItems(value: unknown): BuildStudioRevealItem[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const items: BuildStudioRevealItem[] = [];
+
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const record = item as Record<string, unknown>;
+    const parsedItem = {
+      title: String(record.title || ""),
+      body: String(record.body || ""),
+    };
+
+    if (isRevealItem(parsedItem)) {
+      items.push(parsedItem);
+    }
+  }
+
+  return items.length > 0 ? items : undefined;
 }
 
 function buildOpeningBlock(

@@ -3,13 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EvidenceContextPanel } from "@/components/studio/EvidenceContextPanel";
+import { LearnerBlockRenderer } from "@/components/studio/LearnerBlockRenderer";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
-import {
-  getBlockTypeLabel,
-  parseBuildBlockContent,
-} from "@/lib/studio/build-studio";
+import { parseBuildBlockContent } from "@/lib/studio/build-studio";
 import {
   getEditableCourseVersion,
   getWorkflowStepStatus,
@@ -150,44 +148,14 @@ export default async function PreviewPage({
                 <article className="preview-lesson" key={lesson.id}>
                   <h4>{lesson.title}</h4>
                   <div className="preview-block-list">
-                    {lesson.blocks.map((block) => {
-                      const content = parseBuildBlockContent(block.content);
-
-                      return (
-                        <section className="preview-block" key={block.id}>
-                          <p className="preview-block-kind">
-                            {getPreviewBlockKind(block.type)}
-                          </p>
-                          <h5>
-                            {content.title || getBlockTypeLabel(block.type)}
-                          </h5>
-                          {content.body ? <p>{content.body}</p> : null}
-                          {content.prompt ? (
-                            <div className="preview-prompt">
-                              <strong>
-                                {block.type === "FINAL_TEST"
-                                  ? "Final test question"
-                                  : "Question"}
-                              </strong>
-                              <p>{content.prompt}</p>
-                              {content.choices ? (
-                                <ol className="preview-choice-list" type="A">
-                                  {content.choices.map((choice) => (
-                                    <li key={choice}>{choice}</li>
-                                  ))}
-                                </ol>
-                              ) : null}
-                              {block.type === "FINAL_TEST" &&
-                              content.correctAnswer ? (
-                                <p>
-                                  Correct answer: {content.correctAnswer}
-                                </p>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </section>
-                      );
-                    })}
+                    {lesson.blocks.map((block) => (
+                      <LearnerBlockRenderer
+                        blockType={block.type}
+                        content={parseBuildBlockContent(block.content)}
+                        key={block.id}
+                        mode="preview"
+                      />
+                    ))}
                   </div>
                 </article>
               ))}
@@ -265,19 +233,4 @@ export default async function PreviewPage({
       </nav>
     </WorkspaceShell>
   );
-}
-
-function getPreviewBlockKind(type: string) {
-  switch (type) {
-    case "SCENARIO":
-      return "Practice";
-    case "CHECK":
-      return "Check";
-    case "FINAL_TEST":
-      return "Final test";
-    case "REFLECTION":
-      return "Reflect";
-    default:
-      return "Read";
-  }
 }

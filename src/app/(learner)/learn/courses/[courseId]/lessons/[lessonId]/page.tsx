@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { completeLearnerLessonAction } from "@/app/(learner)/learn/actions";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
+import { LearnerBlockRenderer } from "@/components/studio/LearnerBlockRenderer";
 import { requireWorkspaceIdentity } from "@/lib/auth/server";
 import { prisma } from "@/lib/db/client";
 import { isLessonComplete } from "@/lib/learner/progress";
@@ -11,10 +12,7 @@ import {
   loadLearnerRuntimeAccess,
   type LearnerRuntimeAccessPrisma,
 } from "@/lib/learner/runtime-access";
-import {
-  getBlockTypeLabel,
-  parseBuildBlockContent,
-} from "@/lib/studio/build-studio";
+import { parseBuildBlockContent } from "@/lib/studio/build-studio";
 
 type LearnerLessonPageProps = {
   params?: Promise<{
@@ -164,50 +162,13 @@ export default async function LearnerLessonPage({
         <div className="learner-preview-shell">
           <article className="preview-lesson">
             <div className="preview-block-list">
-              {lesson.blocks.map((block) => {
-                const content = parseBuildBlockContent(block.content);
-
-                return (
-                  <section className="preview-block" key={block.id}>
-                    <p className="preview-block-kind">
-                      {getBlockTypeLabel(block.type)}
-                    </p>
-                    <h3>{content.title || getBlockTypeLabel(block.type)}</h3>
-                    {block.type === "FINAL_TEST" ? (
-                      <div className="preview-prompt">
-                        <strong>Final test preview</strong>
-                        <p>
-                          Final test assessment is available from the course
-                          overview page.
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        {content.body ? <p>{content.body}</p> : null}
-                        {content.prompt ? (
-                          <div className="preview-prompt">
-                            <strong>Question</strong>
-                            <p>{content.prompt}</p>
-                            {content.choices ? (
-                              <ol className="preview-choice-list" type="A">
-                                {content.choices.map((choice) => (
-                                  <li key={choice}>{choice}</li>
-                                ))}
-                              </ol>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        {content.feedback ? (
-                          <div className="preview-prompt">
-                            <strong>Feedback</strong>
-                            <p>{content.feedback}</p>
-                          </div>
-                        ) : null}
-                      </>
-                    )}
-                  </section>
-                );
-              })}
+              {lesson.blocks.map((block) => (
+                <LearnerBlockRenderer
+                  blockType={block.type}
+                  content={parseBuildBlockContent(block.content)}
+                  key={block.id}
+                />
+              ))}
             </div>
           </article>
         </div>
